@@ -4,7 +4,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://nomos-api.onrender.com/api/:path*"
+      "destination": "https://nomos-7wqy.onrender.com/api/:path*"
     }
   ]
 }
