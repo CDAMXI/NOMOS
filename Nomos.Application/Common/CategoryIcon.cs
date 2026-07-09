@@ -29,7 +29,7 @@ public static class CategoryIcon
         ("🏠", ["alquiler", "hipoteca", "casa", "vivienda", "piso", "comunidad", "renta"]),
         ("💡", ["luz", "electricidad", "endesa", "iberdrola"]),
         ("💧", ["agua", "canal"]),
-        ("🔥", ["gas", "calefaccion", "calefacción", "naturgy"]),
+        ("🔥", ["calefaccion", "calefacción", "naturgy", "butano", "gas natural"]),
         ("📶", ["internet", "fibra", "wifi", "movil", "móvil", "telefono", "teléfono", "movistar", "vodafone", "orange", "yoigo"]),
         ("💊", ["farmacia", "medicina", "medicamento"]),
         ("🏥", ["medico", "médico", "hospital", "dentista", "clinica", "clínica", "seguro medico", "salud"]),

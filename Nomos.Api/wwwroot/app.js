@@ -175,7 +175,7 @@ const ICON_RULES = [
   ['🏠', ['alquiler', 'hipoteca', 'casa', 'vivienda', 'piso', 'comunidad', 'renta', 'rent', 'mortgage', 'home', 'housing']],
   ['💡', ['luz', 'electricidad', 'endesa', 'iberdrola', 'electricity', 'power']],
   ['💧', ['agua', 'canal', 'water']],
-  ['🔥', ['gas', 'calefaccion', 'naturgy', 'heating']],
+  ['🔥', ['calefaccion', 'naturgy', 'heating', 'butano', 'gas natural']],
   ['📶', ['internet', 'fibra', 'wifi', 'movil', 'telefono', 'movistar', 'vodafone', 'orange', 'yoigo', 'phone', 'mobile']],
   ['💊', ['farmacia', 'medicina', 'medicamento', 'pharmacy', 'medicine']],
   ['🏥', ['medico', 'hospital', 'dentista', 'clinica', 'doctor', 'dentist']],
