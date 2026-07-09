@@ -1,24 +1,134 @@
 'use strict';
 
+// ---------- Internacionalización (ES / EN) ----------
+let lang = localStorage.getItem('nomos-lang') || 'es';
+const localeCode = () => (lang === 'en' ? 'en-GB' : 'es-ES');
+
+const I18N = {
+  es: {
+    error_generic: 'Ha ocurrido un error', login_required: 'Inicia sesión para continuar',
+    no_data: 'Sin datos todavía.', photo_error: 'No se pudo leer la imagen',
+    balance_label: 'Saldo disponible', adjust: 'Ajustar', evolution: 'Evolución',
+    category_breakdown: 'Por categoría', recent: 'Recientes', see_all: 'Ver todo',
+    summary_expenses: 'Gastos', summary_income: 'Ingresos', income_word: 'Ingreso',
+    no_expenses_period: 'Sin gastos en este periodo.',
+    no_movements_yet: 'Aún no hay movimientos. Añade uno con el botón +.',
+    net_worth: 'Patrimonio neto', assets: 'Activos', liabilities: 'Pasivos',
+    annual_evolution: 'Evolución anual', this_year: 'este año', no_history_year: 'sin histórico este año',
+    add_first_account: 'Añade tu primera cuenta con el botón +.',
+    section_cash: 'Cuentas y efectivo', section_investment: 'Inversiones',
+    section_other: 'Otros activos', section_liability: 'Pasivos',
+    available_balance_row: 'Saldo disponible', from_expenses: 'De la pestaña Gastos', updated_prefix: 'Act.',
+    tab_gastos: 'Gastos', tab_patrimonio: 'Patrimonio',
+    cancel: 'Cancelar', save: 'Guardar', amount: 'Monto',
+    new_expense: 'Nuevo gasto', edit_expense: 'Editar gasto', new_income: 'Nuevo ingreso', edit_income: 'Editar ingreso',
+    kind_expense: '💸 Gasto', kind_income: '💶 Ingreso', add_category_chip: '＋ categoría',
+    description_optional: 'Descripción (opcional)', delete_expense: 'Eliminar gasto', delete_income: 'Eliminar ingreso',
+    confirm_delete: '¿Eliminar "{0}"?', expense_saved: 'Gasto guardado', income_saved: 'Ingreso guardado',
+    movement_updated: 'Movimiento actualizado', expense_deleted: 'Gasto eliminado', income_deleted: 'Ingreso eliminado',
+    all_movements: 'Todos los movimientos', no_movements: 'Aún no hay movimientos.',
+    adjust_balance: 'Ajustar saldo', how_much_now: '¿Cuánto dinero tienes ahora?',
+    balance_hint: 'A partir de aquí, el saldo baja con cada gasto y sube con cada ingreso.',
+    balance_updated: 'Saldo actualizado',
+    categories: 'Categorías', add_category: '＋ Añadir categoría', new_category: 'Nueva categoría', edit_category: 'Editar categoría',
+    icon_auto_hint: 'El icono se elige solo según el nombre', category_name_ph: 'Nombre (p. ej. Gasolina, Gimnasio…)',
+    color: 'Color', delete_category: 'Eliminar categoría', confirm_delete_category: '¿Eliminar la categoría "{0}"?',
+    category_deleted: 'Categoría eliminada', category_created: 'Categoría creada', category_updated: 'Categoría actualizada',
+    new_account: 'Nueva cuenta', current_balance: 'Saldo actual', account_name_ph: 'Nombre (p. ej. BBVA Cuenta Corriente)',
+    account_created: 'Cuenta creada', delete_account: 'Eliminar cuenta', account_deleted: 'Cuenta eliminada',
+    profile: 'Perfil', change_photo: 'Cambiar foto', username: 'Nombre de usuario',
+    manage_categories: '🏷️ Gestionar categorías', language: 'Idioma',
+    change_password: 'Cambiar contraseña', current_password: 'Contraseña actual',
+    new_password_ph: 'Nueva contraseña (mín. 6 caracteres)', update_password: 'Actualizar contraseña',
+    logout: 'Cerrar sesión', password_updated: 'Contraseña actualizada', profile_updated: 'Perfil actualizado',
+    sign_in: 'Iniciar sesión', create_account: 'Crear cuenta', enter: 'Entrar', register: 'Registrarse',
+    no_account: '¿No tienes cuenta? Regístrate', have_account: '¿Ya tienes cuenta? Inicia sesión',
+    username_ph: 'Nombre de usuario', password_ph: 'Contraseña', repeat_password_ph: 'Repite la contraseña',
+    fill_user_pass: 'Rellena usuario y contraseña.', passwords_no_match: 'Las contraseñas no coinciden.',
+    choose_photo: 'Elegir foto de perfil', theme_toggle: 'Cambiar tema', add: 'Añadir', edit: 'Editar',
+    thousands: 'mil'
+  },
+  en: {
+    error_generic: 'Something went wrong', login_required: 'Please sign in to continue',
+    no_data: 'No data yet.', photo_error: 'Could not read the image',
+    balance_label: 'Available balance', adjust: 'Adjust', evolution: 'Trend',
+    category_breakdown: 'By category', recent: 'Recent', see_all: 'See all',
+    summary_expenses: 'Spent', summary_income: 'Income', income_word: 'Income',
+    no_expenses_period: 'No expenses in this period.',
+    no_movements_yet: 'No movements yet. Add one with the + button.',
+    net_worth: 'Net worth', assets: 'Assets', liabilities: 'Liabilities',
+    annual_evolution: 'Yearly trend', this_year: 'this year', no_history_year: 'no history this year',
+    add_first_account: 'Add your first account with the + button.',
+    section_cash: 'Cash & accounts', section_investment: 'Investments',
+    section_other: 'Other assets', section_liability: 'Liabilities',
+    available_balance_row: 'Available balance', from_expenses: 'From the Expenses tab', updated_prefix: 'Upd.',
+    tab_gastos: 'Expenses', tab_patrimonio: 'Wealth',
+    cancel: 'Cancel', save: 'Save', amount: 'Amount',
+    new_expense: 'New expense', edit_expense: 'Edit expense', new_income: 'New income', edit_income: 'Edit income',
+    kind_expense: '💸 Expense', kind_income: '💶 Income', add_category_chip: '＋ category',
+    description_optional: 'Description (optional)', delete_expense: 'Delete expense', delete_income: 'Delete income',
+    confirm_delete: 'Delete "{0}"?', expense_saved: 'Expense saved', income_saved: 'Income saved',
+    movement_updated: 'Movement updated', expense_deleted: 'Expense deleted', income_deleted: 'Income deleted',
+    all_movements: 'All movements', no_movements: 'No movements yet.',
+    adjust_balance: 'Adjust balance', how_much_now: 'How much money do you have now?',
+    balance_hint: 'From now on, the balance drops with each expense and rises with each income.',
+    balance_updated: 'Balance updated',
+    categories: 'Categories', add_category: '＋ Add category', new_category: 'New category', edit_category: 'Edit category',
+    icon_auto_hint: 'The icon is picked automatically from the name', category_name_ph: 'Name (e.g. Fuel, Gym…)',
+    color: 'Color', delete_category: 'Delete category', confirm_delete_category: 'Delete the category "{0}"?',
+    category_deleted: 'Category deleted', category_created: 'Category created', category_updated: 'Category updated',
+    new_account: 'New account', current_balance: 'Current balance', account_name_ph: 'Name (e.g. Checking account)',
+    account_created: 'Account created', delete_account: 'Delete account', account_deleted: 'Account deleted',
+    profile: 'Profile', change_photo: 'Change photo', username: 'Username',
+    manage_categories: '🏷️ Manage categories', language: 'Language',
+    change_password: 'Change password', current_password: 'Current password',
+    new_password_ph: 'New password (min. 6 characters)', update_password: 'Update password',
+    logout: 'Log out', password_updated: 'Password updated', profile_updated: 'Profile updated',
+    sign_in: 'Sign in', create_account: 'Create account', enter: 'Enter', register: 'Sign up',
+    no_account: "Don't have an account? Sign up", have_account: 'Already have an account? Sign in',
+    username_ph: 'Username', password_ph: 'Password', repeat_password_ph: 'Repeat password',
+    fill_user_pass: 'Fill in username and password.', passwords_no_match: 'Passwords do not match.',
+    choose_photo: 'Choose profile photo', theme_toggle: 'Toggle theme', add: 'Add', edit: 'Edit',
+    thousands: 'k'
+  }
+};
+
+const t = (k, ...a) => {
+  let s = (I18N[lang] && I18N[lang][k]) ?? I18N.es[k] ?? k;
+  a.forEach((v, i) => { s = s.replace(`{${i}}`, v); });
+  return s;
+};
+
 // ---------- Helpers ----------
 const $ = id => document.getElementById(id);
-const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
-const nf2 = new Intl.NumberFormat('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const nf0 = new Intl.NumberFormat('es-ES');
 
-const eur = v => nf2.format(v) + ' €';
+let _nf2, _nf0, _cur, _curShort;
+function buildFormatters() {
+  const l = localeCode();
+  _nf2 = new Intl.NumberFormat(l, { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: true });
+  _nf0 = new Intl.NumberFormat(l, { useGrouping: true });
+  _cur = new Intl.NumberFormat(l, { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: true });
+  _curShort = new Intl.NumberFormat(l, { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0, useGrouping: true });
+}
+buildFormatters();
+
+const decSep = () => (lang === 'en' ? '.' : ',');
+const eur = v => _cur.format(v);
 const eurShort = v => Math.abs(v) >= 10000
-  ? nf0.format(Math.round(v / 1000)) + ' mil €'
-  : (Number.isInteger(v) ? nf0.format(v) : nf2.format(v)) + ' €';
-const pct1 = v => Math.abs(v).toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
+  ? (lang === 'en' ? '€' + _nf0.format(Math.round(v / 1000)) + 'k' : _nf0.format(Math.round(v / 1000)) + ' mil €')
+  : (Number.isInteger(v) ? _curShort.format(v) : _cur.format(v));
+const pct1 = v => Math.abs(v).toLocaleString(localeCode(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
 
-// Fecha en DD/MM/YYYY. Se formatea desde la cadena ISO (sin new Date) para evitar
-// desfases de zona horaria en fechas sin hora.
+// Fecha en DD/MM/YYYY (misma en ambos idiomas, por preferencia). Formateada desde la
+// cadena ISO sin new Date para evitar desfases de zona horaria.
 const dMed = iso => {
   const [y, m, d] = String(iso).slice(0, 10).split('-');
   return `${d}/${m}/${y}`;
 };
+const shortMonth = dt => cap(new Intl.DateTimeFormat(localeCode(), { month: 'short' }).format(dt).replace('.', ''));
+const monthYearLabel = iso => cap(new Intl.DateTimeFormat(localeCode(), { month: 'long', year: 'numeric' }).format(new Date(String(iso).slice(0, 10) + 'T00:00:00')));
+
 const todayISO = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -31,46 +141,62 @@ function tint(hex, alpha) {
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
 }
 
+// Aplica las traducciones a los textos estáticos del HTML.
+function applyStaticI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.dataset.i18nTitle); });
+  document.documentElement.lang = lang;
+}
+
+function setLang(l) {
+  lang = l;
+  localStorage.setItem('nomos-lang', l);
+  buildFormatters();
+  applyStaticI18n();
+  if (me) refreshCurrent();
+}
+
 // ---------- Icono automático de categoría (espejo de Nomos.Application/Common/CategoryIcon.cs) ----------
 const ICON_FALLBACK = '🏷️';
 const ICON_RULES = [
   ['🍽️', ['restaurante', 'restaurant', 'cena', 'bar', 'tapas', 'menu']],
-  ['🛒', ['mercadona', 'carrefour', 'lidl', 'aldi', 'dia', 'super', 'compra', 'alimentacion']],
-  ['☕', ['cafe', 'cafeteria', 'starbucks']],
-  ['🍔', ['burger', 'hamburguesa', 'pizza', 'kebab', 'mcdonald', 'telepizza', 'comida rapida']],
-  ['🍱', ['comida', 'almuerzo', 'desayuno', 'food']],
-  ['⛽', ['gasolina', 'combustible', 'diesel', 'repsol', 'cepsa', 'gasolinera']],
-  ['🚇', ['metro']],
+  ['🛒', ['mercadona', 'carrefour', 'lidl', 'aldi', 'dia', 'super', 'compra', 'alimentacion', 'grocery']],
+  ['☕', ['cafe', 'cafeteria', 'starbucks', 'coffee']],
+  ['🍔', ['burger', 'hamburguesa', 'pizza', 'kebab', 'mcdonald', 'telepizza', 'comida rapida', 'fast food']],
+  ['🍱', ['comida', 'almuerzo', 'desayuno', 'food', 'lunch', 'dinner']],
+  ['⛽', ['gasolina', 'combustible', 'diesel', 'repsol', 'cepsa', 'gasolinera', 'fuel', 'gas station', 'petrol']],
+  ['🚇', ['metro', 'subway']],
   ['🚌', ['bus', 'autobus', 'abono', 'emt']],
-  ['🚆', ['tren', 'renfe', 'ave']],
+  ['🚆', ['tren', 'renfe', 'ave', 'train']],
   ['🚕', ['taxi', 'uber', 'cabify', 'bolt']],
-  ['✈️', ['vuelo', 'avion', 'viaje', 'vacaciones', 'hotel', 'airbnb', 'booking']],
-  ['🚗', ['coche', 'auto', 'parking', 'peaje', 'itv', 'taller', 'transporte']],
-  ['🏠', ['alquiler', 'hipoteca', 'casa', 'vivienda', 'piso', 'comunidad', 'renta']],
-  ['💡', ['luz', 'electricidad', 'endesa', 'iberdrola']],
-  ['💧', ['agua', 'canal']],
-  ['🔥', ['gas', 'calefaccion', 'naturgy']],
-  ['📶', ['internet', 'fibra', 'wifi', 'movil', 'telefono', 'movistar', 'vodafone', 'orange', 'yoigo']],
-  ['💊', ['farmacia', 'medicina', 'medicamento']],
-  ['🏥', ['medico', 'hospital', 'dentista', 'clinica']],
-  ['🏋️', ['gimnasio', 'gym', 'fitness', 'padel', 'deporte', 'crossfit']],
-  ['🎬', ['cine', 'netflix', 'hbo', 'disney', 'teatro', 'pelicula']],
-  ['🎵', ['spotify', 'musica', 'concierto', 'apple music']],
-  ['🎮', ['juego', 'videojuego', 'gaming', 'steam', 'playstation', 'xbox', 'nintendo', 'ocio']],
-  ['📚', ['libro', 'libreria', 'curso', 'universidad', 'upv', 'matricula', 'educacion', 'estudios', 'formacion']],
-  ['👕', ['ropa', 'moda', 'zara', 'camiseta', 'zapatos', 'calzado', 'vestir']],
-  ['💻', ['ordenador', 'portatil', 'pc', 'software', 'tecnologia', 'gadget']],
+  ['✈️', ['vuelo', 'avion', 'viaje', 'vacaciones', 'hotel', 'airbnb', 'booking', 'flight', 'travel', 'holiday']],
+  ['🚗', ['coche', 'auto', 'parking', 'peaje', 'itv', 'taller', 'transporte', 'car', 'transport']],
+  ['🏠', ['alquiler', 'hipoteca', 'casa', 'vivienda', 'piso', 'comunidad', 'renta', 'rent', 'mortgage', 'home', 'housing']],
+  ['💡', ['luz', 'electricidad', 'endesa', 'iberdrola', 'electricity', 'power']],
+  ['💧', ['agua', 'canal', 'water']],
+  ['🔥', ['gas', 'calefaccion', 'naturgy', 'heating']],
+  ['📶', ['internet', 'fibra', 'wifi', 'movil', 'telefono', 'movistar', 'vodafone', 'orange', 'yoigo', 'phone', 'mobile']],
+  ['💊', ['farmacia', 'medicina', 'medicamento', 'pharmacy', 'medicine']],
+  ['🏥', ['medico', 'hospital', 'dentista', 'clinica', 'doctor', 'dentist']],
+  ['🏋️', ['gimnasio', 'gym', 'fitness', 'padel', 'deporte', 'crossfit', 'sport']],
+  ['🎬', ['cine', 'netflix', 'hbo', 'disney', 'teatro', 'pelicula', 'cinema', 'movie']],
+  ['🎵', ['spotify', 'musica', 'concierto', 'apple music', 'music', 'concert']],
+  ['🎮', ['juego', 'videojuego', 'gaming', 'steam', 'playstation', 'xbox', 'nintendo', 'ocio', 'game', 'leisure']],
+  ['📚', ['libro', 'libreria', 'curso', 'universidad', 'upv', 'matricula', 'educacion', 'estudios', 'formacion', 'book', 'course', 'university', 'education']],
+  ['👕', ['ropa', 'moda', 'zara', 'camiseta', 'zapatos', 'calzado', 'vestir', 'clothes', 'fashion']],
+  ['💻', ['ordenador', 'portatil', 'pc', 'software', 'tecnologia', 'gadget', 'laptop', 'tech']],
   ['📱', ['iphone', 'smartphone', 'android']],
-  ['🎁', ['regalo', 'cumpleanos', 'navidad']],
-  ['🐶', ['mascota', 'perro', 'gato', 'veterinario', 'pienso']],
-  ['💄', ['belleza', 'peluqueria', 'cosmetica', 'maquillaje']],
-  ['💰', ['ahorro', 'inversion', 'nomina', 'sueldo', 'salario']],
-  ['🏦', ['banco', 'comision', 'hucha']],
-  ['🍺', ['cerveza', 'alcohol', 'copas', 'bebida']],
-  ['🧾', ['impuesto', 'hacienda', 'irpf', 'iva', 'multa']],
-  ['❤️', ['salud']],
-  ['🛠️', ['reparacion', 'herramienta', 'ferreteria', 'hogar']],
-  ['✂️', ['barberia', 'corte']],
+  ['🎁', ['regalo', 'cumpleanos', 'navidad', 'gift', 'birthday', 'christmas']],
+  ['🐶', ['mascota', 'perro', 'gato', 'veterinario', 'pienso', 'pet', 'dog', 'cat', 'vet']],
+  ['💄', ['belleza', 'peluqueria', 'cosmetica', 'maquillaje', 'beauty', 'makeup']],
+  ['💰', ['ahorro', 'inversion', 'nomina', 'sueldo', 'salario', 'savings', 'salary', 'investment']],
+  ['🏦', ['banco', 'comision', 'hucha', 'bank']],
+  ['🍺', ['cerveza', 'alcohol', 'copas', 'bebida', 'beer', 'drink']],
+  ['🧾', ['impuesto', 'hacienda', 'irpf', 'iva', 'multa', 'tax', 'fine']],
+  ['❤️', ['salud', 'health']],
+  ['🛠️', ['reparacion', 'herramienta', 'ferreteria', 'hogar', 'repair', 'tools']],
+  ['✂️', ['barberia', 'corte', 'barber', 'haircut']],
 ];
 const CAT_PALETTE = ['#1e7ce8', '#34c759', '#f5a623', '#8e5be8', '#ff3b30', '#00b8a3', '#ff8a3d', '#e254a0', '#5a6b7b', '#c0392b'];
 
@@ -88,12 +214,12 @@ function categoryIcon(name) {
 async function parseError(res) {
   let msg = await res.text();
   try { msg = JSON.parse(msg); } catch { /* plain text */ }
-  return typeof msg === 'string' && msg ? msg : 'Ha ocurrido un error';
+  return typeof msg === 'string' && msg ? msg : t('error_generic');
 }
 
 async function getJSON(url) {
   const res = await fetch(url);
-  if (res.status === 401) { showAuth(); throw new Error('Inicia sesión para continuar'); }
+  if (res.status === 401) { showAuth(); throw new Error(t('login_required')); }
   if (!res.ok) throw new Error(await parseError(res));
   return res.json();
 }
@@ -142,7 +268,7 @@ function smoothPath(pts) {
 }
 
 function renderLineChart(el, points, { id, color, xFmt, yFmt }) {
-  if (!points.length) { el.innerHTML = '<p class="tx-sub">Sin datos todavía.</p>'; return; }
+  if (!points.length) { el.innerHTML = `<p class="tx-sub">${t('no_data')}</p>`; return; }
   const W = 600, H = 230, L = 46, R = 10, T = 12, B = 26;
   const iw = W - L - R, ih = H - T - B;
   const ymax = niceMax(Math.max(...points.map(p => p.y)));
@@ -196,7 +322,7 @@ let me = null;             // usuario autenticado {id, username, photoDataUrl}
 let currentView = 'gastos';
 let days = 30;
 let categories = [];
-let recentCache = [];      // TransactionDto[] mostrados en Recientes
+let recentCache = [];
 let accountsCache = [];
 let lastBalance = 0;       // último saldo disponible recibido (para prefijar "Ajustar saldo")
 
@@ -232,7 +358,7 @@ function resizeImage(file, size = 256) {
       } catch (e) { reject(e); }
       finally { URL.revokeObjectURL(img.src); }
     };
-    img.onerror = () => { URL.revokeObjectURL(img.src); reject(new Error('No se pudo leer la imagen')); };
+    img.onerror = () => { URL.revokeObjectURL(img.src); reject(new Error(t('photo_error'))); };
     img.src = URL.createObjectURL(file);
   });
 }
@@ -247,41 +373,41 @@ async function loadGastos() {
   balanceEl.textContent = eur(d.balance);
   balanceEl.classList.toggle('red', d.balance < 0);
 
-  let summary = `${d.monthLabel} · <span class="sum-out">Gastos ${eur(d.monthTotal)}</span>`;
-  if (d.monthIncome > 0) summary += ` · <span class="sum-in">Ingresos +${eur(d.monthIncome)}</span>`;
+  let summary = `${monthYearLabel(d.monthDate)} · <span class="sum-out">${t('summary_expenses')} ${eur(d.monthTotal)}</span>`;
+  if (d.monthIncome > 0) summary += ` · <span class="sum-in">${t('summary_income')} +${eur(d.monthIncome)}</span>`;
   $('gMonthSummary').innerHTML = summary;
 
   renderLineChart($('gChart'), d.series.map(p => ({ x: p.date, y: p.value })), {
     id: 'grad-gastos',
     color: cssVar('--accent'),
-    xFmt: iso => { const dt = new Date(iso); return dt.getDate() + ' ' + cap(MESES[dt.getMonth()]); },
-    yFmt: v => nf0.format(Math.round(v))
+    xFmt: iso => { const dt = new Date(iso); return dt.getDate() + ' ' + shortMonth(dt); },
+    yFmt: v => _nf0.format(Math.round(v))
   });
 
   renderDonut($('gDonut'), d.byCategory.map(c => ({ color: c.category.color, value: c.total })));
   $('gCatList').innerHTML = d.byCategory.map(c => `
     <li><span class="dot" style="background:${c.category.color}"></span>
       ${esc(c.category.name)}<span class="amount">${eur(c.total)}</span></li>`).join('')
-    || '<li class="tx-sub">Sin gastos en este periodo.</li>';
+    || `<li class="tx-sub">${t('no_expenses_period')}</li>`;
 
   recentCache = d.recent;
-  $('gRecent').innerHTML = d.recent.map((t, i) => txRow(t, i)).join('')
-    || '<li class="tx-sub">Aún no hay movimientos. Añade uno con el botón +.</li>';
+  $('gRecent').innerHTML = d.recent.map((tx, i) => txRow(tx, i)).join('')
+    || `<li class="tx-sub">${t('no_movements_yet')}</li>`;
   bindTxRows($('gRecent'), recentCache);
 }
 
-function txRow(t, index) {
-  const isIncome = t.kind === 'income';
-  const icon = isIncome ? '💶' : t.category.icon;
-  const bg = isIncome ? tint('#34c759', .16) : tint(t.category.color, .16);
-  const sub = (isIncome ? 'Ingreso' : t.category.name) + ' · ' + dMed(t.date);
+function txRow(tx, index) {
+  const isIncome = tx.kind === 'income';
+  const icon = isIncome ? '💶' : tx.category.icon;
+  const bg = isIncome ? tint('#34c759', .16) : tint(tx.category.color, .16);
+  const sub = (isIncome ? t('income_word') : tx.category.name) + ' · ' + dMed(tx.date);
   const amount = isIncome
-    ? `<span class="tx-amount green">+${eur(t.amount)}</span>`
-    : `<span class="tx-amount">−${eur(t.amount)}</span>`;
-  return `<li class="clickable" data-i="${index}" title="Editar">
+    ? `<span class="tx-amount green">+${eur(tx.amount)}</span>`
+    : `<span class="tx-amount">−${eur(tx.amount)}</span>`;
+  return `<li class="clickable" data-i="${index}" data-i18n-title="edit" title="${t('edit')}">
     <span class="tx-icon" style="background:${bg}">${icon}</span>
     <span class="tx-main">
-      <span class="tx-title">${esc(t.description)}</span>
+      <span class="tx-title">${esc(tx.description)}</span>
       <div class="tx-sub">${esc(sub)}</div>
     </span>
     ${amount}
@@ -294,12 +420,8 @@ function bindTxRows(listEl, cache) {
 }
 
 // ---------- Vista Patrimonio ----------
-const TYPE_META = {
-  Cash: { section: 'Cuentas y efectivo', icon: '🏦' },
-  Investment: { section: 'Inversiones', icon: '📈' },
-  Other: { section: 'Otros activos', icon: '📦' },
-  Liability: { section: 'Pasivos', icon: '💳' }
-};
+const TYPE_ICON = { Cash: '🏦', Investment: '📈', Other: '📦', Liability: '💳' };
+const TYPE_KEY = { Cash: 'section_cash', Investment: 'section_investment', Other: 'section_other', Liability: 'section_liability' };
 
 async function loadPatrimonio() {
   const d = await getJSON('/api/networth');
@@ -309,10 +431,10 @@ async function loadPatrimonio() {
   const deltaEl = $('nwDelta');
   deltaEl.classList.add('invert');
   if (d.yearDeltaPct === null || d.yearDeltaPct === undefined) {
-    deltaEl.innerHTML = '<span class="tx-sub">sin histórico este año</span>';
+    deltaEl.innerHTML = `<span class="tx-sub">${t('no_history_year')}</span>`;
   } else {
     const up = d.yearDeltaPct >= 0;
-    deltaEl.innerHTML = `<span class="${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${pct1(d.yearDeltaPct)}</span> este año`;
+    deltaEl.innerHTML = `<span class="${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${pct1(d.yearDeltaPct)}</span> ${t('this_year')}`;
   }
 
   $('nwAssets').textContent = eurShort(d.assets);
@@ -321,30 +443,37 @@ async function loadPatrimonio() {
   renderLineChart($('nwChart'), d.series.map(p => ({ x: p.date, y: p.value })), {
     id: 'grad-nw',
     color: cssVar('--green'),
-    xFmt: iso => cap(MESES[new Date(iso).getMonth()]),
-    yFmt: v => v >= 1000 ? nf0.format(Math.round(v / 1000)) + 'k' : nf0.format(Math.round(v))
+    xFmt: iso => shortMonth(new Date(iso)),
+    yFmt: v => v >= 1000 ? _nf0.format(Math.round(v / 1000)) + 'k' : _nf0.format(Math.round(v))
   });
 
-  const sections = ['Cash', 'Investment', 'Other', 'Liability']
-    .map(type => {
-      const accs = d.accounts.filter(a => a.type === type);
-      if (!accs.length) return '';
-      return `<p class="section-title">${TYPE_META[type].section}</p>
-        <ul class="acc-list">${accs.map(accRow).join('')}</ul>`;
-    }).join('');
-  $('nwSections').innerHTML = sections || '<p class="tx-sub">Añade tu primera cuenta con el botón +.</p>';
+  // El saldo disponible (de Gastos) cuenta como efectivo: primera fila de "Cuentas y efectivo".
+  const balanceRow = `<li class="clickable acc-balance-row" data-action="balance">
+    <span class="tx-icon" style="background:${tint('#34c759', .16)}">💶</span>
+    <span class="tx-main"><span class="tx-title">${t('available_balance_row')}</span><div class="tx-sub">${t('from_expenses')}</div></span>
+    <span class="tx-amount">${eurShort(d.availableBalance)}</span>
+  </li>`;
+
+  let html = `<p class="section-title">${t('section_cash')}</p><ul class="acc-list">${balanceRow}` +
+    d.accounts.filter(a => a.type === 'Cash').map(accRow).join('') + '</ul>';
+  ['Investment', 'Other', 'Liability'].forEach(type => {
+    const accs = d.accounts.filter(a => a.type === type);
+    if (accs.length) html += `<p class="section-title">${t(TYPE_KEY[type])}</p><ul class="acc-list">${accs.map(accRow).join('')}</ul>`;
+  });
+  $('nwSections').innerHTML = html;
 
   document.querySelectorAll('#nwSections li[data-acc]').forEach(li =>
     li.addEventListener('click', () => openAccountEditSheet(+li.dataset.acc)));
+  document.querySelector('#nwSections .acc-balance-row')?.addEventListener('click', openBalanceSheet);
 }
 
 function accRow(a) {
   const isLiab = a.type === 'Liability';
   return `<li data-acc="${a.id}" class="clickable">
-    <span class="tx-icon" style="background:${tint(isLiab ? '#e8332a' : '#34c759', .14)}">${TYPE_META[a.type].icon}</span>
+    <span class="tx-icon" style="background:${tint(isLiab ? '#e8332a' : '#34c759', .14)}">${TYPE_ICON[a.type]}</span>
     <span class="tx-main">
       <span class="tx-title">${esc(a.name)}</span>
-      <div class="tx-sub">Act. ${dMed(a.updatedAt)}</div>
+      <div class="tx-sub">${t('updated_prefix')} ${dMed(a.updatedAt)}</div>
     </span>
     <span class="tx-amount ${isLiab ? 'red' : ''}">${eurShort(a.balance)}</span>
     <span class="acc-chevron">›</span>
@@ -414,7 +543,7 @@ function paintAmount() {
   const el = $('amountText');
   if (!el) return;
   const [i, dPart] = amountStr.split('.');
-  el.textContent = dPart === undefined ? nf0.format(Number(i || 0)) : nf0.format(Number(i || 0)) + ',' + dPart;
+  el.textContent = dPart === undefined ? _nf0.format(Number(i || 0)) : _nf0.format(Number(i || 0)) + decSep() + dPart;
 }
 
 function pressKey(k) {
@@ -445,7 +574,9 @@ async function openTxSheet(existing = null, draft = null) {
   setAmount(existing ? existing.amount : (draft?.amount || 0));
   const startDesc = existing ? existing.description : (draft?.description || '');
 
-  const titleFor = () => (isEdit ? 'Editar ' : 'Nuevo ') + (kind === 'income' ? 'ingreso' : 'gasto');
+  const titleFor = () => t(isEdit
+    ? (kind === 'income' ? 'edit_income' : 'edit_expense')
+    : (kind === 'income' ? 'new_income' : 'new_expense'));
 
   openSheet({
     title: titleFor(),
@@ -453,17 +584,17 @@ async function openTxSheet(existing = null, draft = null) {
     build(body) {
       body.innerHTML = `
         ${isEdit ? '' : `<div class="kind-toggle">
-          <button class="pill" data-kind="expense">💸 Gasto</button>
-          <button class="pill" data-kind="income">💶 Ingreso</button>
+          <button class="pill" data-kind="expense">${t('kind_expense')}</button>
+          <button class="pill" data-kind="income">${t('kind_income')}</button>
         </div>`}
-        ${amountBlock('Monto')}
+        ${amountBlock(t('amount'))}
         <div class="chips" id="catChips">${categories.map(c =>
           `<button class="chip" data-cat="${c.id}">${c.icon} ${esc(c.name)}</button>`).join('')}
-          ${isEdit ? '' : '<button class="chip chip-add" id="addCatChip">＋ categoría</button>'}</div>
-        <input id="descField" class="text-field" placeholder="Descripción (opcional)" maxlength="120" value="${esc(startDesc)}">
+          ${isEdit ? '' : `<button class="chip chip-add" id="addCatChip">${t('add_category_chip')}</button>`}</div>
+        <input id="descField" class="text-field" placeholder="${t('description_optional')}" maxlength="120" value="${esc(startDesc)}">
         <input id="dateField" class="text-field" type="date" value="${existing ? existing.date : (draft?.date || todayISO())}">
         ${keypadHtml()}
-        ${isEdit ? `<button id="deleteTx" class="danger-btn">Eliminar ${kind === 'income' ? 'ingreso' : 'gasto'}</button>` : ''}`;
+        ${isEdit ? `<button id="deleteTx" class="danger-btn">${t(kind === 'income' ? 'delete_income' : 'delete_expense')}</button>` : ''}`;
       paintAmount();
       bindKeypad(body);
 
@@ -489,6 +620,8 @@ async function openTxSheet(existing = null, draft = null) {
       const paintKind = () => {
         sheetTitle.textContent = titleFor();
         body.querySelectorAll('[data-kind]').forEach(p => p.classList.toggle('active', p.dataset.kind === kind));
+        const del = $('deleteTx');
+        if (del) del.textContent = t(kind === 'income' ? 'delete_income' : 'delete_expense');
         paintChips();
       };
       body.querySelectorAll('[data-kind]').forEach(p =>
@@ -497,12 +630,12 @@ async function openTxSheet(existing = null, draft = null) {
 
       if (isEdit) {
         $('deleteTx').addEventListener('click', async () => {
-          if (!confirm(`¿Eliminar "${existing.description}"?`)) return;
+          if (!confirm(t('confirm_delete', existing.description))) return;
           try {
             await sendJSON(`/api/${kind === 'income' ? 'incomes' : 'expenses'}/${existing.id}`, 'DELETE');
             closeSheet();
             await refreshCurrent();
-            toast(kind === 'income' ? 'Ingreso eliminado' : 'Gasto eliminado');
+            toast(t(kind === 'income' ? 'income_deleted' : 'expense_deleted'));
           } catch (e) { toast(e.message); }
         });
       }
@@ -519,7 +652,7 @@ async function openTxSheet(existing = null, draft = null) {
         if (isEdit) await sendJSON(`/api/expenses/${existing.id}`, 'PUT', payload);
         else await sendJSON('/api/expenses', 'POST', payload);
       }
-      toast(isEdit ? 'Movimiento actualizado' : (kind === 'income' ? 'Ingreso guardado' : 'Gasto guardado'));
+      toast(t(isEdit ? 'movement_updated' : (kind === 'income' ? 'income_saved' : 'expense_saved')));
     }
   });
 }
@@ -528,10 +661,10 @@ async function openTxSheet(existing = null, draft = null) {
 async function openAllTxSheet() {
   const items = await getJSON('/api/transactions');
   openSheet({
-    title: 'Todos los movimientos',
+    title: t('all_movements'),
     build(body) {
-      body.innerHTML = `<ul class="sheet-list tx-list">${items.map((t, i) => txRow(t, i)).join('')
-        || '<li class="tx-sub">Aún no hay movimientos.</li>'}</ul>`;
+      body.innerHTML = `<ul class="sheet-list tx-list">${items.map((tx, i) => txRow(tx, i)).join('')
+        || `<li class="tx-sub">${t('no_movements')}</li>`}</ul>`;
       bindTxRows(body, items);
     }
   });
@@ -541,18 +674,18 @@ async function openAllTxSheet() {
 function openBalanceSheet() {
   setAmount(lastBalance > 0 ? lastBalance : 0);
   openSheet({
-    title: 'Ajustar saldo',
+    title: t('adjust_balance'),
     canSave: () => true,
     build(body) {
-      body.innerHTML = amountBlock('¿Cuánto dinero tienes ahora?') +
-        '<p class="tx-sub cat-hint">A partir de aquí, el saldo baja con cada gasto y sube con cada ingreso.</p>' +
+      body.innerHTML = amountBlock(t('how_much_now')) +
+        `<p class="tx-sub cat-hint">${t('balance_hint')}</p>` +
         keypadHtml();
       paintAmount();
       bindKeypad(body);
     },
     async onSave() {
       await sendJSON('/api/balance', 'PUT', { amount: amountValue() });
-      toast('Saldo actualizado');
+      toast(t('balance_updated'));
     }
   });
 }
@@ -561,7 +694,7 @@ function openBalanceSheet() {
 async function openCategoriesSheet() {
   await ensureCategoriesFresh();
   openSheet({
-    title: 'Categorías',
+    title: t('categories'),
     build(body) {
       body.innerHTML = `<ul class="sheet-list cat-manage">${categories.map(c => `
         <li class="clickable" data-cat="${c.id}">
@@ -569,7 +702,7 @@ async function openCategoriesSheet() {
           <span class="tx-main"><span class="tx-title">${esc(c.name)}</span></span>
           <span class="acc-chevron">›</span>
         </li>`).join('')}</ul>
-        <button id="addCat" class="inline-btn">＋ Añadir categoría</button>`;
+        <button id="addCat" class="inline-btn">${t('add_category')}</button>`;
       body.querySelectorAll('li[data-cat]').forEach(li =>
         li.addEventListener('click', () => {
           const c = categories.find(x => x.id === +li.dataset.cat);
@@ -587,19 +720,19 @@ function openCategoryEditSheet(cat = null, onDone = null) {
   let saved = null;
 
   openSheet({
-    title: isEdit ? 'Editar categoría' : 'Nueva categoría',
+    title: t(isEdit ? 'edit_category' : 'new_category'),
     canSave: () => $('catName')?.value.trim().length > 0,
     build(body) {
       body.innerHTML = `
         <div class="cat-editor">
           <div class="cat-icon-preview" id="catIconPreview">${cat ? cat.icon : ICON_FALLBACK}</div>
-          <p class="tx-sub cat-hint">El icono se elige solo según el nombre</p>
-          <input id="catName" class="text-field" placeholder="Nombre (p. ej. Gasolina, Gimnasio…)" maxlength="40" value="${cat ? esc(cat.name) : ''}">
-          <p class="muted-label">Color</p>
+          <p class="tx-sub cat-hint">${t('icon_auto_hint')}</p>
+          <input id="catName" class="text-field" placeholder="${t('category_name_ph')}" maxlength="40" value="${cat ? esc(cat.name) : ''}">
+          <p class="muted-label">${t('color')}</p>
           <div class="swatches" id="catSwatches">${CAT_PALETTE.map(c =>
             `<button class="swatch" data-color="${c}" style="background:${c}"></button>`).join('')}</div>
         </div>
-        ${isEdit ? '<button id="deleteCat" class="danger-btn">Eliminar categoría</button>' : ''}`;
+        ${isEdit ? `<button id="deleteCat" class="danger-btn">${t('delete_category')}</button>` : ''}`;
 
       const nameEl = $('catName'), preview = $('catIconPreview');
       const paintIcon = () => { preview.textContent = categoryIcon(nameEl.value); };
@@ -614,13 +747,13 @@ function openCategoryEditSheet(cat = null, onDone = null) {
 
       if (isEdit) {
         $('deleteCat').addEventListener('click', async () => {
-          if (!confirm(`¿Eliminar la categoría "${cat.name}"?`)) return;
+          if (!confirm(t('confirm_delete_category', cat.name))) return;
           try {
             await sendJSON(`/api/categories/${cat.id}`, 'DELETE');
             await ensureCategoriesFresh();
             closeSheet();
             await refreshCurrent();
-            toast('Categoría eliminada');
+            toast(t('category_deleted'));
             onDone?.(null);
           } catch (e) { toast(e.message); }
         });
@@ -632,7 +765,7 @@ function openCategoryEditSheet(cat = null, onDone = null) {
         ? await sendJSON(`/api/categories/${cat.id}`, 'PUT', payload)
         : await sendJSON('/api/categories', 'POST', payload);
       await ensureCategoriesFresh();
-      toast(isEdit ? 'Categoría actualizada' : 'Categoría creada');
+      toast(t(isEdit ? 'category_updated' : 'category_created'));
     },
     afterSave() { onDone?.(saved); }
   });
@@ -642,16 +775,15 @@ function openCategoryEditSheet(cat = null, onDone = null) {
 function openAccountSheet() {
   setAmount(0);
   let selectedType = 'Cash';
-  const types = Object.entries(TYPE_META);
 
   openSheet({
-    title: 'Nueva cuenta',
+    title: t('new_account'),
     canSave: () => $('nameField')?.value.trim().length > 0,
     build(body) {
-      body.innerHTML = amountBlock('Saldo actual') + `
-        <div class="chips">${types.map(([t, m]) =>
-          `<button class="chip" data-type="${t}">${m.icon} ${m.section}</button>`).join('')}</div>
-        <input id="nameField" class="text-field" placeholder="Nombre (p. ej. BBVA Cuenta Corriente)" maxlength="80">
+      body.innerHTML = amountBlock(t('current_balance')) + `
+        <div class="chips">${Object.keys(TYPE_ICON).map(type =>
+          `<button class="chip" data-type="${type}">${TYPE_ICON[type]} ${t(TYPE_KEY[type])}</button>`).join('')}</div>
+        <input id="nameField" class="text-field" placeholder="${t('account_name_ph')}" maxlength="80">
         ${keypadHtml()}`;
       paintAmount();
       bindKeypad(body);
@@ -672,7 +804,7 @@ function openAccountSheet() {
         type: selectedType,
         balance: amountValue()
       });
-      toast('Cuenta creada');
+      toast(t('account_created'));
     }
   });
 }
@@ -687,20 +819,20 @@ function openAccountEditSheet(id) {
     title: acc.name,
     canSave: () => $('nameField')?.value.trim().length > 0,
     build(body) {
-      body.innerHTML = amountBlock('Saldo actual') + `
+      body.innerHTML = amountBlock(t('current_balance')) + `
         <input id="nameField" class="text-field" maxlength="80" value="${esc(acc.name)}">
         ${keypadHtml()}
-        <button id="deleteAcc" class="danger-btn">Eliminar cuenta</button>`;
+        <button id="deleteAcc" class="danger-btn">${t('delete_account')}</button>`;
       paintAmount();
       bindKeypad(body);
       $('nameField').addEventListener('input', refreshSaveState);
       $('deleteAcc').addEventListener('click', async () => {
-        if (!confirm(`¿Eliminar "${acc.name}"?`)) return;
+        if (!confirm(t('confirm_delete', acc.name))) return;
         try {
           await sendJSON(`/api/accounts/${acc.id}`, 'DELETE');
           closeSheet();
           await refreshCurrent();
-          toast('Cuenta eliminada');
+          toast(t('account_deleted'));
         } catch (e) { toast(e.message); }
       });
     },
@@ -709,7 +841,7 @@ function openAccountEditSheet(id) {
         name: $('nameField').value,
         balance: amountValue()
       });
-      toast('Saldo actualizado');
+      toast(t('balance_updated'));
     }
   });
 }
@@ -719,28 +851,44 @@ function openProfileSheet() {
   let newPhoto = null; // solo se envía si el usuario elige una nueva
 
   openSheet({
-    title: 'Perfil',
+    title: t('profile'),
     canSave: () => $('profUsername')?.value.trim().length > 0,
     build(body) {
       body.innerHTML = `
         <div class="profile-photo-wrap">
-          <label class="avatar-pick filled" for="profPhotoInput" id="profAvatar" title="Cambiar foto">${avatarHtml(me)}</label>
+          <label class="avatar-pick filled" for="profPhotoInput" id="profAvatar" title="${t('change_photo')}">${avatarHtml(me)}</label>
           <input id="profPhotoInput" type="file" accept="image/*" hidden>
-          <label class="link" for="profPhotoInput">Cambiar foto</label>
+          <label class="link" for="profPhotoInput">${t('change_photo')}</label>
         </div>
-        <p class="muted-label">Nombre de usuario</p>
+        <p class="muted-label">${t('username')}</p>
         <input id="profUsername" class="text-field" maxlength="30" value="${esc(me.username)}">
         <div class="divider"></div>
-        <button id="manageCatsBtn" class="inline-btn">🏷️ Gestionar categorías</button>
+        <p class="muted-label">${t('language')}</p>
+        <div class="chips lang-chips">
+          <button class="chip" data-lang="es">🇪🇸 Español</button>
+          <button class="chip" data-lang="en">🇬🇧 English</button>
+        </div>
         <div class="divider"></div>
-        <p class="muted-label">Cambiar contraseña</p>
-        <input id="profCurPass" class="text-field" type="password" placeholder="Contraseña actual" maxlength="128" autocomplete="current-password">
-        <input id="profNewPass" class="text-field" type="password" placeholder="Nueva contraseña (mín. 6 caracteres)" maxlength="128" autocomplete="new-password">
-        <button id="changePassBtn" class="inline-btn">Actualizar contraseña</button>
+        <button id="manageCatsBtn" class="inline-btn">${t('manage_categories')}</button>
         <div class="divider"></div>
-        <button id="logoutBtn" class="danger-btn">Cerrar sesión</button>`;
+        <p class="muted-label">${t('change_password')}</p>
+        <input id="profCurPass" class="text-field" type="password" placeholder="${t('current_password')}" maxlength="128" autocomplete="current-password">
+        <input id="profNewPass" class="text-field" type="password" placeholder="${t('new_password_ph')}" maxlength="128" autocomplete="new-password">
+        <button id="changePassBtn" class="inline-btn">${t('update_password')}</button>
+        <div class="divider"></div>
+        <button id="logoutBtn" class="danger-btn">${t('logout')}</button>`;
 
       $('profUsername').addEventListener('input', refreshSaveState);
+
+      const paintLang = () => body.querySelectorAll('.lang-chips .chip').forEach(ch => {
+        const sel = ch.dataset.lang === lang;
+        ch.classList.toggle('selected', sel);
+        ch.style.background = sel ? 'var(--accent-soft)' : '';
+        ch.style.color = sel ? 'var(--accent)' : '';
+      });
+      body.querySelectorAll('.lang-chips .chip').forEach(ch =>
+        ch.addEventListener('click', () => { if (ch.dataset.lang !== lang) { setLang(ch.dataset.lang); openProfileSheet(); } }));
+      paintLang();
 
       $('profPhotoInput').addEventListener('change', async e => {
         const file = e.target.files[0];
@@ -748,7 +896,7 @@ function openProfileSheet() {
         try {
           newPhoto = await resizeImage(file);
           $('profAvatar').innerHTML = `<img src="${newPhoto}" alt="">`;
-        } catch { toast('No se pudo leer la imagen'); }
+        } catch { toast(t('photo_error')); }
       });
 
       $('manageCatsBtn').addEventListener('click', () => openCategoriesSheet());
@@ -761,7 +909,7 @@ function openProfileSheet() {
           });
           $('profCurPass').value = '';
           $('profNewPass').value = '';
-          toast('Contraseña actualizada');
+          toast(t('password_updated'));
         } catch (e) { toast(e.message); }
       });
 
@@ -777,7 +925,7 @@ function openProfileSheet() {
         photoDataUrl: newPhoto
       });
       renderTopAvatar();
-      toast('Perfil actualizado');
+      toast(t('profile_updated'));
     }
   });
 }
@@ -790,9 +938,9 @@ let authPhoto = null;
 function setAuthMode(mode) {
   authMode = mode;
   const isRegister = mode === 'register';
-  $('authTitle').textContent = isRegister ? 'Crear cuenta' : 'Iniciar sesión';
-  $('authSubmit').textContent = isRegister ? 'Registrarse' : 'Entrar';
-  $('authToggle').textContent = isRegister ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate';
+  $('authTitle').textContent = t(isRegister ? 'create_account' : 'sign_in');
+  $('authSubmit').textContent = t(isRegister ? 'register' : 'enter');
+  $('authToggle').textContent = t(isRegister ? 'have_account' : 'no_account');
   $('authPass2').classList.toggle('hidden', !isRegister);
   $('authPhotoPick').classList.toggle('hidden', !isRegister);
   $('authPass').autocomplete = isRegister ? 'new-password' : 'current-password';
@@ -831,7 +979,7 @@ $('authPhotoInput').addEventListener('change', async e => {
     const pick = $('authPhotoPick');
     pick.classList.add('filled');
     pick.innerHTML = `<img src="${authPhoto}" alt="">`;
-  } catch { $('authError').textContent = 'No se pudo leer la imagen'; }
+  } catch { $('authError').textContent = t('photo_error'); }
 });
 
 async function submitAuth() {
@@ -840,9 +988,9 @@ async function submitAuth() {
   const errorEl = $('authError');
   errorEl.textContent = '';
 
-  if (!username || !password) { errorEl.textContent = 'Rellena usuario y contraseña.'; return; }
+  if (!username || !password) { errorEl.textContent = t('fill_user_pass'); return; }
   if (authMode === 'register' && password !== $('authPass2').value) {
-    errorEl.textContent = 'Las contraseñas no coinciden.';
+    errorEl.textContent = t('passwords_no_match');
     return;
   }
 
@@ -873,7 +1021,7 @@ function refreshCurrent() {
 document.querySelectorAll('.tab').forEach(tab =>
   tab.addEventListener('click', () => {
     currentView = tab.dataset.view;
-    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === tab));
+    document.querySelectorAll('.tab').forEach(t2 => t2.classList.toggle('active', t2 === tab));
     $('view-gastos').classList.toggle('hidden', currentView !== 'gastos');
     $('view-patrimonio').classList.toggle('hidden', currentView !== 'patrimonio');
     refreshCurrent();
@@ -904,6 +1052,7 @@ themeBtn.addEventListener('click', () => {
   refreshCurrent(); // los gráficos SVG toman los colores del tema
 });
 applyTheme(localStorage.getItem('nomos-theme') || 'light');
+applyStaticI18n();
 
 // Los datos viven en la base de datos: refresca al volver a la pestaña y cada 20 s.
 window.addEventListener('focus', () => { if (!sheetCtx && me) refreshCurrent(); });

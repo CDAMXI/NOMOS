@@ -27,6 +27,7 @@ public record CategoryTotalDto(CategoryDto Category, decimal Total);
 
 public record ExpensesDashboardDto(
     decimal Balance,
+    DateOnly MonthDate,
     string MonthLabel,
     string PrevMonthLabel,
     decimal MonthTotal,
@@ -49,6 +50,7 @@ public record NetWorthDto(
     decimal Net,
     decimal Assets,
     decimal Liabilities,
+    decimal AvailableBalance,
     double? YearDeltaPct,
     List<SeriesPointDto> Series,
     List<AccountDto> Accounts);

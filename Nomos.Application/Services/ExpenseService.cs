@@ -17,6 +17,13 @@ public class ExpenseService(IExpenseRepository expenses, IIncomeRepository incom
     private async Task<decimal> ComputeBalanceAsync(int userId, decimal initialBalance) =>
         initialBalance + await incomes.SumAllAsync(userId) - await expenses.SumAllAsync(userId);
 
+    /// <summary>The user's current available balance (also used as an asset in net worth).</summary>
+    public async Task<decimal> GetBalanceAsync(int userId)
+    {
+        var user = await users.GetByIdAsync(userId);
+        return await ComputeBalanceAsync(userId, user?.InitialBalance ?? 0m);
+    }
+
     /// <summary>Sets the baseline so the displayed balance becomes <paramref name="amount"/> right now.</summary>
     public async Task SetBalanceAsync(int userId, decimal amount)
     {
@@ -125,6 +132,7 @@ public class ExpenseService(IExpenseRepository expenses, IIncomeRepository incom
 
         return new ExpensesDashboardDto(
             Balance: balance,
+            MonthDate: monthStart,
             MonthLabel: Capitalize(monthStart.ToString("MMMM yyyy", Spanish)),
             PrevMonthLabel: prevMonthStart.ToString("MMMM", Spanish),
             MonthTotal: monthTotal,

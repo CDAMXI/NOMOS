@@ -4,12 +4,15 @@ using Nomos.Domain.Entities;
 
 namespace Nomos.Application.Services;
 
-public class NetWorthService(IAccountRepository accounts, ISnapshotRepository snapshots)
+public class NetWorthService(IAccountRepository accounts, ISnapshotRepository snapshots, ExpenseService expenseService)
 {
     public async Task<NetWorthDto> GetOverviewAsync(int userId, DateOnly today)
     {
         var all = await accounts.GetAllAsync(userId);
-        var assets = all.Where(a => a.Type != AccountType.Liability).Sum(a => a.Balance);
+        // The Gastos available balance counts as liquid cash, so it folds into assets/net worth.
+        var availableBalance = await expenseService.GetBalanceAsync(userId);
+        var accountAssets = all.Where(a => a.Type != AccountType.Liability).Sum(a => a.Balance);
+        var assets = accountAssets + availableBalance;
         var liabilities = all.Where(a => a.Type == AccountType.Liability).Sum(a => a.Balance);
         var net = assets - liabilities;
 
@@ -34,7 +37,7 @@ public class NetWorthService(IAccountRepository accounts, ISnapshotRepository sn
             .OrderBy(a => a.Type).ThenBy(a => a.Id)
             .Select(ToDto).ToList();
 
-        return new NetWorthDto(net, assets, liabilities, yearDeltaPct, series, accountDtos);
+        return new NetWorthDto(net, assets, liabilities, availableBalance, yearDeltaPct, series, accountDtos);
     }
 
     public async Task<AccountDto> CreateAsync(int userId, CreateAccountRequest request, DateOnly today)

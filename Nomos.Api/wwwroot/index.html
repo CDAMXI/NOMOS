@@ -9,15 +9,15 @@
 </head>
 <body>
   <header class="topbar">
-    <button id="profileBtn" class="icon-btn avatar-btn hidden" title="Perfil"></button>
+    <button id="profileBtn" class="icon-btn avatar-btn hidden" data-i18n-title="profile" title="Perfil"></button>
     <span class="brand">N&thinsp;O&thinsp;M&thinsp;O&thinsp;S</span>
-    <button id="themeBtn" class="icon-btn" title="Cambiar tema">🌙</button>
+    <button id="themeBtn" class="icon-btn" data-i18n-title="theme_toggle" title="Cambiar tema">🌙</button>
   </header>
 
   <!-- ===== Vista Gastos ===== -->
   <main id="view-gastos" class="view">
     <section class="hero">
-      <p class="hero-label">Saldo disponible <button id="adjustBalanceBtn" class="link hero-adjust">Ajustar</button></p>
+      <p class="hero-label"><span data-i18n="balance_label">Saldo disponible</span> <button id="adjustBalanceBtn" class="link hero-adjust" data-i18n="adjust">Ajustar</button></p>
       <h1 class="hero-amount" id="gBalance">&nbsp;</h1>
       <p class="hero-sub" id="gMonthSummary"></p>
     </section>
@@ -26,7 +26,7 @@
       <div class="col">
         <section class="card">
           <div class="card-head">
-            <h3>Evolución</h3>
+            <h3 data-i18n="evolution">Evolución</h3>
             <div class="pills">
               <button class="pill active" data-days="30">30d</button>
               <button class="pill" data-days="90">90d</button>
@@ -36,7 +36,7 @@
         </section>
 
         <section class="card">
-          <h3>Por categoría</h3>
+          <h3 data-i18n="category_breakdown">Por categoría</h3>
           <div class="cat-wrap">
             <div id="gDonut" class="donut"></div>
             <ul id="gCatList" class="cat-list"></ul>
@@ -47,8 +47,8 @@
       <div class="col">
         <section class="card">
           <div class="card-head">
-            <h3>Recientes</h3>
-            <button id="verTodoBtn" class="link">Ver todo</button>
+            <h3 data-i18n="recent">Recientes</h3>
+            <button id="verTodoBtn" class="link" data-i18n="see_all">Ver todo</button>
           </div>
           <ul id="gRecent" class="tx-list"></ul>
         </section>
@@ -59,37 +59,37 @@
   <!-- ===== Vista Patrimonio ===== -->
   <main id="view-patrimonio" class="view hidden">
     <section class="nw-hero">
-      <p class="eyebrow">Patrimonio neto</p>
+      <p class="eyebrow" data-i18n="net_worth">Patrimonio neto</p>
       <h1 class="hero-amount" id="nwTotal">&nbsp;</h1>
       <p class="hero-delta" id="nwDelta"></p>
     </section>
 
     <div class="two-cards">
-      <section class="card"><p class="muted-label">Activos</p><p id="nwAssets" class="big-figure green"></p></section>
-      <section class="card"><p class="muted-label">Pasivos</p><p id="nwLiab" class="big-figure red"></p></section>
+      <section class="card"><p class="muted-label" data-i18n="assets">Activos</p><p id="nwAssets" class="big-figure green"></p></section>
+      <section class="card"><p class="muted-label" data-i18n="liabilities">Pasivos</p><p id="nwLiab" class="big-figure red"></p></section>
     </div>
 
     <section class="card">
-      <h3>Evolución anual</h3>
+      <h3 data-i18n="annual_evolution">Evolución anual</h3>
       <div id="nwChart" class="chart"></div>
     </section>
 
     <div id="nwSections"></div>
   </main>
 
-  <button id="fab" class="hidden" title="Añadir">+</button>
+  <button id="fab" class="hidden" data-i18n-title="add" title="Añadir">+</button>
 
   <nav class="tabbar">
-    <button class="tab active" data-view="gastos">💎 Gastos</button>
-    <button class="tab" data-view="patrimonio">📊 Patrimonio</button>
+    <button class="tab active" data-view="gastos">💎 <span data-i18n="tab_gastos">Gastos</span></button>
+    <button class="tab" data-view="patrimonio">📊 <span data-i18n="tab_patrimonio">Patrimonio</span></button>
   </nav>
 
   <!-- ===== Hoja modal (movimientos / cuentas / perfil / ver todo) ===== -->
   <div id="sheet" class="sheet hidden">
     <div class="sheet-bar">
-      <button id="sheetCancel" class="link">Cancelar</button>
+      <button id="sheetCancel" class="link" data-i18n="cancel">Cancelar</button>
       <span id="sheetTitle" class="sheet-title"></span>
-      <button id="sheetSave" class="link save" disabled>Guardar</button>
+      <button id="sheetSave" class="link save" data-i18n="save" disabled>Guardar</button>
     </div>
     <div id="sheetBody" class="sheet-body"></div>
   </div>
@@ -100,12 +100,12 @@
       <p class="auth-brand">N&thinsp;O&thinsp;M&thinsp;O&thinsp;S</p>
       <h2 id="authTitle" class="auth-title">Iniciar sesión</h2>
 
-      <label id="authPhotoPick" class="avatar-pick hidden" for="authPhotoInput" title="Elegir foto de perfil">📷</label>
+      <label id="authPhotoPick" class="avatar-pick hidden" for="authPhotoInput" data-i18n-title="choose_photo" title="Elegir foto de perfil">📷</label>
       <input id="authPhotoInput" type="file" accept="image/*" hidden>
 
-      <input id="authUser" class="text-field" placeholder="Nombre de usuario" maxlength="30" autocomplete="username">
-      <input id="authPass" class="text-field" type="password" placeholder="Contraseña" maxlength="128" autocomplete="current-password">
-      <input id="authPass2" class="text-field hidden" type="password" placeholder="Repite la contraseña" maxlength="128" autocomplete="new-password">
+      <input id="authUser" class="text-field" data-i18n-ph="username_ph" placeholder="Nombre de usuario" maxlength="30" autocomplete="username">
+      <input id="authPass" class="text-field" type="password" data-i18n-ph="password_ph" placeholder="Contraseña" maxlength="128" autocomplete="current-password">
+      <input id="authPass2" class="text-field hidden" type="password" data-i18n-ph="repeat_password_ph" placeholder="Repite la contraseña" maxlength="128" autocomplete="new-password">
 
       <p id="authError" class="auth-error"></p>
       <button id="authSubmit" class="primary-btn">Entrar</button>
