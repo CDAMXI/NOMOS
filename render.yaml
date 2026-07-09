@@ -1,0 +1,13 @@
+# Render Blueprint. On render.com: New → Blueprint → pick this repo.
+# You still set the secret connection string (ConnectionStrings__Nomos) in the dashboard.
+services:
+  - type: web
+    name: nomos
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__Nomos
+        sync: false # set this to the Supabase session-pooler connection string (with the DB password)

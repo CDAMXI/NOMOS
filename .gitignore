@@ -1,0 +1,9 @@
+bin/
+obj/
+*.user
+.vs/
+*.db
+*.db-shm
+*.db-wal
+# Contains the Supabase database password — keep out of version control.
+appsettings.Development.json

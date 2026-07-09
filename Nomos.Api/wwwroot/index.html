@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NOMOS</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💠</text></svg>">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <button id="profileBtn" class="icon-btn avatar-btn hidden" title="Perfil"></button>
+    <span class="brand">N&thinsp;O&thinsp;M&thinsp;O&thinsp;S</span>
+    <button id="themeBtn" class="icon-btn" title="Cambiar tema">🌙</button>
+  </header>
+
+  <!-- ===== Vista Gastos ===== -->
+  <main id="view-gastos" class="view">
+    <section class="hero">
+      <p class="hero-label" id="gMonthLabel"></p>
+      <h1 class="hero-amount" id="gMonthTotal">&nbsp;</h1>
+      <p class="hero-delta" id="gDelta"></p>
+      <p class="hero-sub hidden" id="gIncomeLine"></p>
+    </section>
+
+    <div class="grid">
+      <div class="col">
+        <section class="card">
+          <div class="card-head">
+            <h3>Evolución</h3>
+            <div class="pills">
+              <button class="pill active" data-days="30">30d</button>
+              <button class="pill" data-days="90">90d</button>
+            </div>
+          </div>
+          <div id="gChart" class="chart"></div>
+        </section>
+
+        <section class="card">
+          <h3>Por categoría</h3>
+          <div class="cat-wrap">
+            <div id="gDonut" class="donut"></div>
+            <ul id="gCatList" class="cat-list"></ul>
+          </div>
+        </section>
+      </div>
+
+      <div class="col">
+        <section class="card">
+          <div class="card-head">
+            <h3>Recientes</h3>
+            <button id="verTodoBtn" class="link">Ver todo</button>
+          </div>
+          <ul id="gRecent" class="tx-list"></ul>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===== Vista Patrimonio ===== -->
+  <main id="view-patrimonio" class="view hidden">
+    <section class="nw-hero">
+      <p class="eyebrow">Patrimonio neto</p>
+      <h1 class="hero-amount" id="nwTotal">&nbsp;</h1>
+      <p class="hero-delta" id="nwDelta"></p>
+    </section>
+
+    <div class="two-cards">
+      <section class="card"><p class="muted-label">Activos</p><p id="nwAssets" class="big-figure green"></p></section>
+      <section class="card"><p class="muted-label">Pasivos</p><p id="nwLiab" class="big-figure red"></p></section>
+    </div>
+
+    <section class="card">
+      <h3>Evolución anual</h3>
+      <div id="nwChart" class="chart"></div>
+    </section>
+
+    <div id="nwSections"></div>
+  </main>
+
+  <button id="fab" class="hidden" title="Añadir">+</button>
+
+  <nav class="tabbar">
+    <button class="tab active" data-view="gastos">💎 Gastos</button>
+    <button class="tab" data-view="patrimonio">📊 Patrimonio</button>
+  </nav>
+
+  <!-- ===== Hoja modal (movimientos / cuentas / perfil / ver todo) ===== -->
+  <div id="sheet" class="sheet hidden">
+    <div class="sheet-bar">
+      <button id="sheetCancel" class="link">Cancelar</button>
+      <span id="sheetTitle" class="sheet-title"></span>
+      <button id="sheetSave" class="link save" disabled>Guardar</button>
+    </div>
+    <div id="sheetBody" class="sheet-body"></div>
+  </div>
+
+  <!-- ===== Pantalla de acceso ===== -->
+  <div id="authScreen" class="auth-screen hidden">
+    <div class="auth-card">
+      <p class="auth-brand">N&thinsp;O&thinsp;M&thinsp;O&thinsp;S</p>
+      <h2 id="authTitle" class="auth-title">Iniciar sesión</h2>
+
+      <label id="authPhotoPick" class="avatar-pick hidden" for="authPhotoInput" title="Elegir foto de perfil">📷</label>
+      <input id="authPhotoInput" type="file" accept="image/*" hidden>
+
+      <input id="authUser" class="text-field" placeholder="Nombre de usuario" maxlength="30" autocomplete="username">
+      <input id="authPass" class="text-field" type="password" placeholder="Contraseña" maxlength="128" autocomplete="current-password">
+      <input id="authPass2" class="text-field hidden" type="password" placeholder="Repite la contraseña" maxlength="128" autocomplete="new-password">
+
+      <p id="authError" class="auth-error"></p>
+      <button id="authSubmit" class="primary-btn">Entrar</button>
+      <button id="authToggle" class="link auth-toggle">¿No tienes cuenta? Regístrate</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
