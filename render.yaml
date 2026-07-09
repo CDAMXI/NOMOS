@@ -1,5 +1,7 @@
-# Render Blueprint. On render.com: New → Blueprint → pick this repo.
-# You still set the secret connection string (ConnectionStrings__Nomos) in the dashboard.
+# Render Blueprint. On render.com: New → Blueprint → pick this repo → Apply.
+# Deploys with zero config (uses a local SQLite DB out of the box).
+# For a PERSISTENT database, add an env var in the Render dashboard:
+#   ConnectionStrings__Nomos = <your Supabase session-pooler connection string>
 services:
   - type: web
     name: nomos
@@ -9,5 +11,3 @@ services:
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
-      - key: ConnectionStrings__Nomos
-        sync: false # set this to the Supabase session-pooler connection string (with the DB password)

@@ -16,10 +16,11 @@ var port = Environment.GetEnvironmentVariable("PORT");
 if (!string.IsNullOrWhiteSpace(port))
     builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
+// Falls back to a local SQLite file when no connection string is configured, so the app runs
+// anywhere with zero setup. Set ConnectionStrings__Nomos to a PostgreSQL/Supabase string for
+// a persistent, production database.
 var connectionString = builder.Configuration.GetConnectionString("Nomos")
-    ?? throw new InvalidOperationException(
-        "Falta la cadena de conexión 'Nomos' (PostgreSQL/Supabase). Añádela en appsettings.Development.json " +
-        "o en la variable de entorno ConnectionStrings__Nomos.");
+    ?? "Data Source=nomos_local.db";
 builder.Services.AddNomos(connectionString);
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
