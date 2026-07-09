@@ -10,7 +10,8 @@ public partial class AuthService(IUserRepository users)
 {
     private const int MaxPhotoLength = 500_000; // ~366 KB decoded; avatars are resized client-side
 
-    [GeneratedRegex("^[a-zA-Z0-9._-]{3,30}$")]
+    // Letters (incl. accents/ñ via \p{L}), digits, spaces and . _ - ; 3–30 chars.
+    [GeneratedRegex(@"^[\p{L}\p{N} ._-]{3,30}$")]
     private static partial Regex UsernamePattern();
 
     // A strict data-URL shape: only base64 image payloads, no quotes/brackets that could break
@@ -89,7 +90,7 @@ public partial class AuthService(IUserRepository users)
     {
         var trimmed = username?.Trim() ?? "";
         if (!UsernamePattern().IsMatch(trimmed))
-            throw new ArgumentException("El nombre de usuario debe tener de 3 a 30 caracteres (letras, números, punto, guion o guion bajo).");
+            throw new ArgumentException("El nombre de usuario debe tener entre 3 y 30 caracteres (letras, números, espacios, punto, guion o guion bajo).");
         return trimmed;
     }
 
