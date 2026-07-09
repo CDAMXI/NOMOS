@@ -5,13 +5,27 @@ using Nomos.Domain.Entities;
 
 namespace Nomos.Application.Services;
 
-public class ExpenseService(IExpenseRepository expenses, IIncomeRepository incomes, ICategoryRepository categories)
+public class ExpenseService(IExpenseRepository expenses, IIncomeRepository incomes, ICategoryRepository categories, IUserRepository users)
 {
     internal const int MaxDescriptionLength = 120;
     private static readonly CultureInfo Spanish = CultureInfo.GetCultureInfo("es-ES");
 
     public async Task<List<CategoryDto>> GetCategoriesAsync(int userId) =>
         (await categories.GetAllAsync(userId)).Select(ToDto).ToList();
+
+    /// <summary>Available balance = user's baseline + all incomes − all expenses.</summary>
+    private async Task<decimal> ComputeBalanceAsync(int userId, decimal initialBalance) =>
+        initialBalance + await incomes.SumAllAsync(userId) - await expenses.SumAllAsync(userId);
+
+    /// <summary>Sets the baseline so the displayed balance becomes <paramref name="amount"/> right now.</summary>
+    public async Task SetBalanceAsync(int userId, decimal amount)
+    {
+        var user = await users.GetByIdAsync(userId)
+            ?? throw new ArgumentException("Usuario no encontrado.");
+        var flow = await incomes.SumAllAsync(userId) - await expenses.SumAllAsync(userId);
+        user.InitialBalance = decimal.Round(amount, 2) - flow;
+        await users.UpdateAsync(user);
+    }
 
     /// <summary>All the user's movements (expenses + incomes) merged, newest first.</summary>
     public async Task<List<TransactionDto>> GetTransactionsAsync(int userId)
@@ -83,6 +97,9 @@ public class ExpenseService(IExpenseRepository expenses, IIncomeRepository incom
 
         var monthIncome = incomeItems.Where(i => i.Date >= monthStart).Sum(i => i.Amount);
 
+        var user = await users.GetByIdAsync(userId);
+        var balance = await ComputeBalanceAsync(userId, user?.InitialBalance ?? 0m);
+
         var inWindow = items.Where(e => e.Date >= windowStart).ToList();
 
         // Cumulative daily spend across the window (what the evolution chart plots).
@@ -107,6 +124,7 @@ public class ExpenseService(IExpenseRepository expenses, IIncomeRepository incom
             .Take(8).ToList();
 
         return new ExpensesDashboardDto(
+            Balance: balance,
             MonthLabel: Capitalize(monthStart.ToString("MMMM yyyy", Spanish)),
             PrevMonthLabel: prevMonthStart.ToString("MMMM", Spanish),
             MonthTotal: monthTotal,

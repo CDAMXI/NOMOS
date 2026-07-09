@@ -178,6 +178,20 @@ api.MapGet("/transactions", (ClaimsPrincipal principal, ExpenseService service) 
 api.MapGet("/expenses/dashboard", (ClaimsPrincipal principal, ExpenseService service, int days = 30) =>
     service.GetDashboardAsync(UserId(principal), Math.Clamp(days, 7, 365), Today()));
 
+api.MapPut("/balance", async Task<Results<NoContent, BadRequest<string>>>
+    (SetBalanceRequest request, ClaimsPrincipal principal, ExpenseService service) =>
+{
+    try
+    {
+        await service.SetBalanceAsync(UserId(principal), request.Amount);
+        return TypedResults.NoContent();
+    }
+    catch (ArgumentException ex)
+    {
+        return TypedResults.BadRequest(ex.Message);
+    }
+});
+
 api.MapPost("/expenses", async Task<Results<Created<ExpenseDto>, BadRequest<string>>>
     (CreateExpenseRequest request, ClaimsPrincipal principal, ExpenseService service) =>
 {

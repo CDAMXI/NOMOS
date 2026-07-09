@@ -198,6 +198,7 @@ let days = 30;
 let categories = [];
 let recentCache = [];      // TransactionDto[] mostrados en Recientes
 let accountsCache = [];
+let lastBalance = 0;       // último saldo disponible recibido (para prefijar "Ajustar saldo")
 
 async function ensureCategoriesFresh() {
   categories = await getJSON('/api/categories');
@@ -240,25 +241,15 @@ function resizeImage(file, size = 256) {
 async function loadGastos() {
   const d = await getJSON(`/api/expenses/dashboard?days=${days}`);
 
-  $('gMonthLabel').textContent = d.monthLabel;
-  $('gMonthTotal').textContent = eur(d.monthTotal);
+  // Hero: running available balance (baseline + incomes − expenses).
+  lastBalance = d.balance;
+  const balanceEl = $('gBalance');
+  balanceEl.textContent = eur(d.balance);
+  balanceEl.classList.toggle('red', d.balance < 0);
 
-  const deltaEl = $('gDelta');
-  if (d.deltaPct === null || d.deltaPct === undefined) {
-    deltaEl.innerHTML = '<span class="tx-sub">sin datos del mes anterior</span>';
-  } else {
-    const up = d.deltaPct >= 0;
-    deltaEl.innerHTML =
-      `<span class="${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${pct1(d.deltaPct)}</span> respecto a ${d.prevMonthLabel}`;
-  }
-
-  const incomeLine = $('gIncomeLine');
-  if (d.monthIncome > 0) {
-    incomeLine.innerHTML = `Ingresos del mes: <b>+${eur(d.monthIncome)}</b>`;
-    incomeLine.classList.remove('hidden');
-  } else {
-    incomeLine.classList.add('hidden');
-  }
+  let summary = `${d.monthLabel} · <span class="sum-out">Gastos ${eur(d.monthTotal)}</span>`;
+  if (d.monthIncome > 0) summary += ` · <span class="sum-in">Ingresos +${eur(d.monthIncome)}</span>`;
+  $('gMonthSummary').innerHTML = summary;
 
   renderLineChart($('gChart'), d.series.map(p => ({ x: p.date, y: p.value })), {
     id: 'grad-gastos',
@@ -542,6 +533,26 @@ async function openAllTxSheet() {
       body.innerHTML = `<ul class="sheet-list tx-list">${items.map((t, i) => txRow(t, i)).join('')
         || '<li class="tx-sub">Aún no hay movimientos.</li>'}</ul>`;
       bindTxRows(body, items);
+    }
+  });
+}
+
+// --- Ajustar saldo disponible ---
+function openBalanceSheet() {
+  setAmount(lastBalance > 0 ? lastBalance : 0);
+  openSheet({
+    title: 'Ajustar saldo',
+    canSave: () => true,
+    build(body) {
+      body.innerHTML = amountBlock('¿Cuánto dinero tienes ahora?') +
+        '<p class="tx-sub cat-hint">A partir de aquí, el saldo baja con cada gasto y sube con cada ingreso.</p>' +
+        keypadHtml();
+      paintAmount();
+      bindKeypad(body);
+    },
+    async onSave() {
+      await sendJSON('/api/balance', 'PUT', { amount: amountValue() });
+      toast('Saldo actualizado');
     }
   });
 }
@@ -879,6 +890,7 @@ $('fab').addEventListener('click', () =>
   currentView === 'gastos' ? openTxSheet().catch(e => toast(e.message)) : openAccountSheet());
 
 $('verTodoBtn').addEventListener('click', () => openAllTxSheet().catch(e => toast(e.message)));
+$('adjustBalanceBtn').addEventListener('click', openBalanceSheet);
 $('profileBtn').addEventListener('click', openProfileSheet);
 
 const themeBtn = $('themeBtn');

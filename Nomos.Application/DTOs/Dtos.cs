@@ -26,6 +26,7 @@ public record SeriesPointDto(DateOnly Date, decimal Value);
 public record CategoryTotalDto(CategoryDto Category, decimal Total);
 
 public record ExpensesDashboardDto(
+    decimal Balance,
     string MonthLabel,
     string PrevMonthLabel,
     decimal MonthTotal,
@@ -35,6 +36,8 @@ public record ExpensesDashboardDto(
     List<SeriesPointDto> Series,
     List<CategoryTotalDto> ByCategory,
     List<TransactionDto> Recent);
+
+public record SetBalanceRequest(decimal Amount);
 
 public record AccountDto(int Id, string Name, string Type, decimal Balance, DateTime UpdatedAt);
 

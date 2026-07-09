@@ -8,5 +8,7 @@ public class User
     public string PasswordHash { get; set; } = string.Empty;
     /// <summary>Small square avatar stored as a data: URL, or null for the default initial.</summary>
     public string? PhotoDataUrl { get; set; }
+    /// <summary>Baseline used for the running balance: available = InitialBalance + incomes − expenses.</summary>
+    public decimal InitialBalance { get; set; }
     public DateTime CreatedAt { get; set; }
 }
