@@ -183,6 +183,7 @@ const ICON_RULES = [
   ['🎬', ['cine', 'netflix', 'hbo', 'disney', 'teatro', 'pelicula', 'cinema', 'movie']],
   ['🎵', ['spotify', 'musica', 'concierto', 'apple music', 'music', 'concert']],
   ['🎮', ['juego', 'videojuego', 'gaming', 'steam', 'playstation', 'xbox', 'nintendo', 'ocio', 'game', 'leisure']],
+  ['🕺', ['baile', 'bailar', 'danza', 'dance', 'salsa', 'bachata', 'zumba', 'discoteca']],
   ['📚', ['libro', 'libreria', 'curso', 'universidad', 'upv', 'matricula', 'educacion', 'estudios', 'formacion', 'book', 'course', 'university', 'education']],
   ['👕', ['ropa', 'moda', 'zara', 'camiseta', 'zapatos', 'calzado', 'vestir', 'clothes', 'fashion']],
   ['💻', ['ordenador', 'portatil', 'pc', 'software', 'tecnologia', 'gadget', 'laptop', 'tech']],
@@ -197,6 +198,7 @@ const ICON_RULES = [
   ['❤️', ['salud', 'health']],
   ['🛠️', ['reparacion', 'herramienta', 'ferreteria', 'hogar', 'repair', 'tools']],
   ['✂️', ['barberia', 'corte', 'barber', 'haircut']],
+  ['📦', ['otros', 'otro', 'other', 'varios', 'misc', 'miscelanea']],
 ];
 const CAT_PALETTE = ['#1e7ce8', '#34c759', '#f5a623', '#8e5be8', '#ff3b30', '#00b8a3', '#ff8a3d', '#e254a0', '#5a6b7b', '#c0392b'];
 

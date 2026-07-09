@@ -37,6 +37,7 @@ public static class CategoryIcon
         ("🎬", ["cine", "netflix", "hbo", "disney", "peliculas", "películas", "teatro"]),
         ("🎵", ["spotify", "musica", "música", "concierto", "apple music"]),
         ("🎮", ["juego", "videojuego", "gaming", "steam", "playstation", "xbox", "nintendo", "ocio"]),
+        ("🕺", ["baile", "bailar", "danza", "dance", "salsa", "bachata", "zumba", "discoteca"]),
         ("📚", ["libro", "libreria", "librería", "curso", "universidad", "upv", "matricula", "matrícula", "educacion", "educación", "estudios", "formacion", "formación"]),
         ("👕", ["ropa", "moda", "zara", "camiseta", "zapatos", "calzado", "vestir"]),
         ("💻", ["ordenador", "portatil", "portátil", "pc", "software", "tecnologia", "tecnología", "gadget"]),
@@ -54,6 +55,7 @@ public static class CategoryIcon
         ("❤️", ["salud"]),
         ("🛠️", ["reparacion", "reparación", "herramienta", "ferreteria", "ferretería", "hogar"]),
         ("✂️", ["barberia", "barbería", "corte"]),
+        ("📦", ["otros", "otro", "other", "varios", "misc", "miscelanea", "miscelánea"]),
     ];
 
     public static string ForName(string? name)
