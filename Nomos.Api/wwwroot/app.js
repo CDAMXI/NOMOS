@@ -1,7 +1,7 @@
 'use strict';
 
-// ---------- Internacionalización (ES / EN) ----------
-let lang = localStorage.getItem('nomos-lang') || 'es';
+// ---------- Idioma (fijo en español; el selector se retiró) ----------
+let lang = 'es';
 const localeCode = () => (lang === 'en' ? 'en-GB' : 'es-ES');
 
 const I18N = {
@@ -894,12 +894,6 @@ function openProfileSheet() {
         <p class="muted-label">${t('username')}</p>
         <input id="profUsername" class="text-field" maxlength="30" value="${esc(me.username)}">
         <div class="divider"></div>
-        <p class="muted-label">${t('language')}</p>
-        <div class="chips lang-chips">
-          <button class="chip" data-lang="es">🇪🇸 Español</button>
-          <button class="chip" data-lang="en">🇬🇧 English</button>
-        </div>
-        <div class="divider"></div>
         <button id="manageCatsBtn" class="inline-btn">${t('manage_categories')}</button>
         <div class="divider"></div>
         <p class="muted-label">${t('change_password')}</p>
@@ -910,16 +904,6 @@ function openProfileSheet() {
         <button id="logoutBtn" class="danger-btn">${t('logout')}</button>`;
 
       $('profUsername').addEventListener('input', refreshSaveState);
-
-      const paintLang = () => body.querySelectorAll('.lang-chips .chip').forEach(ch => {
-        const sel = ch.dataset.lang === lang;
-        ch.classList.toggle('selected', sel);
-        ch.style.background = sel ? 'var(--accent-soft)' : '';
-        ch.style.color = sel ? 'var(--accent)' : '';
-      });
-      body.querySelectorAll('.lang-chips .chip').forEach(ch =>
-        ch.addEventListener('click', () => { if (ch.dataset.lang !== lang) { setLang(ch.dataset.lang); openProfileSheet(); } }));
-      paintLang();
 
       $('profPhotoInput').addEventListener('change', async e => {
         const file = e.target.files[0];
