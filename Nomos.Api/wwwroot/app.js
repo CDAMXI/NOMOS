@@ -37,7 +37,7 @@ const I18N = {
     category_deleted: 'Categoría eliminada', category_created: 'Categoría creada', category_updated: 'Categoría actualizada',
     new_account: 'Nueva cuenta', current_balance: 'Saldo actual', account_name_ph: 'Nombre (p. ej. BBVA Cuenta Corriente)',
     account_created: 'Cuenta creada', delete_account: 'Eliminar cuenta', account_deleted: 'Cuenta eliminada',
-    account_label: 'Cuenta', add_account_chip: '＋ cuenta',
+    account_label: 'Cuenta', add_account_chip: '＋ cuenta', all_accounts: 'Todas',
     profile: 'Perfil', change_photo: 'Cambiar foto', username: 'Nombre de usuario',
     manage_categories: '🏷️ Gestionar categorías', language: 'Idioma',
     change_password: 'Cambiar contraseña', current_password: 'Contraseña actual',
@@ -82,7 +82,7 @@ const I18N = {
     category_deleted: 'Category deleted', category_created: 'Category created', category_updated: 'Category updated',
     new_account: 'New account', current_balance: 'Current balance', account_name_ph: 'Name (e.g. Checking account)',
     account_created: 'Account created', delete_account: 'Delete account', account_deleted: 'Account deleted',
-    account_label: 'Account', add_account_chip: '＋ account',
+    account_label: 'Account', add_account_chip: '＋ account', all_accounts: 'All',
     profile: 'Profile', change_photo: 'Change photo', username: 'Username',
     manage_categories: '🏷️ Manage categories', language: 'Language',
     change_password: 'Change password', current_password: 'Current password',
@@ -366,6 +366,7 @@ let days = 30;
 let categories = [];
 let recentCache = [];
 let accountsCache = [];
+let heroAccountSel;        // qué saldo muestra el hero de Gastos: id de cuenta, 'all', o undefined (→ 1.ª cuenta)
 
 async function ensureCategoriesFresh() {
   categories = await getJSON('/api/categories');
@@ -406,12 +407,13 @@ function resizeImage(file, size = 256) {
 
 // ---------- Vista Gastos ----------
 async function loadGastos() {
-  const d = await getJSON(`/api/expenses/dashboard?days=${days}`);
+  const [d, accounts] = await Promise.all([
+    getJSON(`/api/expenses/dashboard?days=${days}`),
+    getJSON('/api/accounts')
+  ]);
 
-  // Hero: available balance = sum of the live balances of the user's cash accounts.
-  const balanceEl = $('gBalance');
-  balanceEl.textContent = eur(d.balance);
-  balanceEl.classList.toggle('red', d.balance < 0);
+  // Hero: balance of ONE cash account at a time (switchable); d.balance is the all-accounts total.
+  renderHeroBalance(accounts.filter(a => a.type === 'Cash'), d.balance);
 
   let summary = `${monthYearLabel(d.monthDate)} · <span class="sum-out">${t('summary_expenses')} ${eur(d.monthTotal)}</span>`;
   if (d.monthIncome > 0) summary += ` · <span class="sum-in">${t('summary_income')} +${eur(d.monthIncome)}</span>`;
@@ -434,6 +436,44 @@ async function loadGastos() {
   $('gRecent').innerHTML = d.recent.map((tx, i) => txRow(tx, i)).join('')
     || `<li class="tx-sub">${t('no_movements_yet')}</li>`;
   bindTxRows($('gRecent'), recentCache);
+}
+
+// Hero balance: shows the live balance of one cash account at a time, with a chip switcher.
+// 'all' shows the total across cash accounts. The selection survives auto-refresh.
+function renderHeroBalance(cash, total) {
+  const box = $('gBalanceAccounts');
+  const ids = cash.map(a => a.id);
+  // Default to (or repair to) the first account; keep a valid prior choice or 'all'.
+  if (heroAccountSel !== 'all' && !ids.includes(heroAccountSel)) heroAccountSel = ids[0] ?? 'all';
+
+  const paint = () => {
+    const bal = heroAccountSel === 'all'
+      ? total
+      : (cash.find(a => a.id === heroAccountSel)?.balance ?? total);
+    const el = $('gBalance');
+    el.textContent = eur(bal);
+    el.classList.toggle('red', bal < 0);
+    box.querySelectorAll('[data-bal]').forEach(ch =>
+      ch.classList.toggle('selected', ch.dataset.bal === String(heroAccountSel)));
+  };
+
+  // Only offer the switcher when there is more than one cash account.
+  if (cash.length < 2) {
+    box.classList.add('hidden');
+    box.innerHTML = '';
+    paint();
+    return;
+  }
+  box.classList.remove('hidden');
+  box.innerHTML = cash.map(a =>
+    `<button class="chip" data-bal="${a.id}">${TYPE_ICON.Cash} ${esc(a.name)}</button>`).join('')
+    + `<button class="chip" data-bal="all">${t('all_accounts')}</button>`;
+  box.querySelectorAll('[data-bal]').forEach(ch =>
+    ch.addEventListener('click', () => {
+      heroAccountSel = ch.dataset.bal === 'all' ? 'all' : +ch.dataset.bal;
+      paint();
+    }));
+  paint();
 }
 
 function txRow(tx, index) {
