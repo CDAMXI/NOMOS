@@ -37,7 +37,7 @@ const I18N = {
     category_deleted: 'Categoría eliminada', category_created: 'Categoría creada', category_updated: 'Categoría actualizada',
     new_account: 'Nueva cuenta', current_balance: 'Saldo actual', account_name_ph: 'Nombre (p. ej. BBVA Cuenta Corriente)',
     account_created: 'Cuenta creada', delete_account: 'Eliminar cuenta', account_deleted: 'Cuenta eliminada',
-    account_label: 'Cuenta',
+    account_label: 'Cuenta', add_account_chip: '＋ cuenta',
     profile: 'Perfil', change_photo: 'Cambiar foto', username: 'Nombre de usuario',
     manage_categories: '🏷️ Gestionar categorías', language: 'Idioma',
     change_password: 'Cambiar contraseña', current_password: 'Contraseña actual',
@@ -82,7 +82,7 @@ const I18N = {
     category_deleted: 'Category deleted', category_created: 'Category created', category_updated: 'Category updated',
     new_account: 'New account', current_balance: 'Current balance', account_name_ph: 'Name (e.g. Checking account)',
     account_created: 'Account created', delete_account: 'Delete account', account_deleted: 'Account deleted',
-    account_label: 'Account',
+    account_label: 'Account', add_account_chip: '＋ account',
     profile: 'Profile', change_photo: 'Change photo', username: 'Username',
     manage_categories: '🏷️ Manage categories', language: 'Language',
     change_password: 'Change password', current_password: 'Current password',
@@ -608,7 +608,12 @@ async function openTxSheet(existing = null, draft = null) {
   const isEdit = !!existing;
   let kind = existing ? existing.kind : (draft?.kind || 'expense');
   let selectedCat = existing?.category?.id ?? draft?.categoryId ?? categories[0]?.id;
-  let selectedAccount = existing?.accountId ?? draft?.accountId ?? cashAccounts[0]?.id ?? null;
+  // Edits keep exactly the account the movement already had (including "none", so a
+  // previously-unassigned movement is never silently reattached on save); only brand-new
+  // movements default to the first cash account so the user rarely has to pick one.
+  let selectedAccount = existing
+    ? (existing.accountId ?? null)
+    : (draft?.accountId ?? cashAccounts[0]?.id ?? null);
   setAmount(existing ? existing.amount : (draft?.amount || 0));
   const startDesc = existing ? existing.description : (draft?.description || '');
 
@@ -629,9 +634,10 @@ async function openTxSheet(existing = null, draft = null) {
         <div class="chips" id="catChips">${[...categories].sort((a, b) => catName(a.name).localeCompare(catName(b.name), localeCode())).map(c =>
           `<button class="chip" data-cat="${c.id}">${c.icon} ${esc(catName(c.name))}</button>`).join('')}
           ${isEdit ? '' : `<button class="chip chip-add" id="addCatChip">${t('add_category_chip')}</button>`}</div>
-        ${cashAccounts.length >= 2 ? `<p class="tx-sub cat-hint">${t('account_label')}</p>
+        ${(cashAccounts.length >= 1 || !isEdit) ? `<p class="tx-sub cat-hint">${t('account_label')}</p>
         <div class="chips" id="accChips">${cashAccounts.map(a =>
-          `<button class="chip" data-acc="${a.id}">${TYPE_ICON.Cash} ${esc(a.name)}</button>`).join('')}</div>` : ''}
+          `<button class="chip" data-acc="${a.id}">${TYPE_ICON.Cash} ${esc(a.name)}</button>`).join('')}
+          ${isEdit ? '' : `<button class="chip chip-add" id="addAccChip">${t('add_account_chip')}</button>`}</div>` : ''}
         <input id="descField" class="text-field" placeholder="${t('description_optional')}" maxlength="120" value="${esc(startDesc)}">
         <input id="dateField" class="text-field" type="date" value="${existing ? existing.date : (draft?.date || todayISO())}">
         ${keypadHtml()}
@@ -655,7 +661,7 @@ async function openTxSheet(existing = null, draft = null) {
       const addChip = $('addCatChip');
       if (addChip) addChip.addEventListener('click', () => {
         const carry = { kind, amount: amountValue(), description: $('descField').value, date: $('dateField').value, accountId: selectedAccount };
-        openCategoryEditSheet(null, saved => openTxSheet(null, { ...carry, categoryId: saved?.id }));
+        openCategoryEditSheet(null, saved => openTxSheet(null, { ...carry, categoryId: saved?.id }).catch(e => toast(e.message)));
       });
 
       const paintAccChips = () => body.querySelectorAll('.chip[data-acc]').forEach(ch => {
@@ -667,6 +673,12 @@ async function openTxSheet(existing = null, draft = null) {
       body.querySelectorAll('.chip[data-acc]').forEach(ch =>
         ch.addEventListener('click', () => { selectedAccount = +ch.dataset.acc; paintAccChips(); }));
       paintAccChips();
+
+      const addAccChip = $('addAccChip');
+      if (addAccChip) addAccChip.addEventListener('click', () => {
+        const carry = { kind, amount: amountValue(), description: $('descField').value, date: $('dateField').value, categoryId: selectedCat };
+        openAccountSheet(saved => openTxSheet(null, { ...carry, accountId: saved?.id }).catch(e => toast(e.message)), { cashOnly: true });
+      });
 
       const paintKind = () => {
         sheetTitle.textContent = titleFor();
@@ -794,40 +806,46 @@ function openCategoryEditSheet(cat = null, onDone = null) {
 }
 
 // --- Nueva cuenta / activo ---
-function openAccountSheet() {
+// onDone(saved) se llama tras crear (para volver al movimiento). opts.cashOnly = alta rápida
+// de una cuenta de efectivo/banco (sin selector de tipo), p. ej. desde el chip "＋ cuenta".
+function openAccountSheet(onDone = null, opts = {}) {
   setAmount(0);
   let selectedType = 'Cash';
+  let saved = null;
 
   openSheet({
     title: t('new_account'),
     canSave: () => $('nameField')?.value.trim().length > 0,
     build(body) {
       body.innerHTML = amountBlock(t('current_balance')) + `
-        <div class="chips">${Object.keys(TYPE_ICON).map(type =>
-          `<button class="chip" data-type="${type}">${TYPE_ICON[type]} ${t(TYPE_KEY[type])}</button>`).join('')}</div>
-        <input id="nameField" class="text-field" placeholder="${t('account_name_ph')}" maxlength="80">
+        ${opts.cashOnly ? '' : `<div class="chips">${Object.keys(TYPE_ICON).map(type =>
+          `<button class="chip" data-type="${type}">${TYPE_ICON[type]} ${t(TYPE_KEY[type])}</button>`).join('')}</div>`}
+        <input id="nameField" class="text-field" placeholder="${t('account_name_ph')}" maxlength="80" autofocus>
         ${keypadHtml()}`;
       paintAmount();
       bindKeypad(body);
-      const paint = () => body.querySelectorAll('.chip').forEach(ch => {
-        const sel = ch.dataset.type === selectedType;
-        ch.classList.toggle('selected', sel);
-        ch.style.background = sel ? 'var(--accent-soft)' : '';
-        ch.style.color = sel ? 'var(--accent)' : '';
-      });
-      body.querySelectorAll('.chip').forEach(ch =>
-        ch.addEventListener('click', () => { selectedType = ch.dataset.type; paint(); }));
+      if (!opts.cashOnly) {
+        const paint = () => body.querySelectorAll('.chip[data-type]').forEach(ch => {
+          const sel = ch.dataset.type === selectedType;
+          ch.classList.toggle('selected', sel);
+          ch.style.background = sel ? 'var(--accent-soft)' : '';
+          ch.style.color = sel ? 'var(--accent)' : '';
+        });
+        body.querySelectorAll('.chip[data-type]').forEach(ch =>
+          ch.addEventListener('click', () => { selectedType = ch.dataset.type; paint(); }));
+        paint();
+      }
       $('nameField').addEventListener('input', refreshSaveState);
-      paint();
     },
     async onSave() {
-      await sendJSON('/api/accounts', 'POST', {
+      saved = await sendJSON('/api/accounts', 'POST', {
         name: $('nameField').value,
         type: selectedType,
         balance: amountValue()
       });
       toast(t('account_created'));
-    }
+    },
+    afterSave() { onDone?.(saved); }
   });
 }
 
