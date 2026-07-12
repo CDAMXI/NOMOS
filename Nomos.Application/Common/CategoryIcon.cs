@@ -18,6 +18,7 @@ public static class CategoryIcon
         ("🛒", ["mercadona", "carrefour", "lidl", "aldi", "dia", "super", "supermercado", "compra", "alimentacion", "alimentación", "grocery"]),
         ("☕", ["cafe", "café", "cafeteria", "cafetería", "starbucks"]),
         ("🍔", ["comida rapida", "comida rápida", "burger", "hamburguesa", "mcdonald", "kfc", "telepizza", "pizza", "kebab"]),
+        ("🎰", ["expendedora", "vending", "maquina expendedora"]),
         ("🍱", ["comida", "food", "almuerzo", "desayuno"]),
         ("⛽", ["gasolina", "combustible", "diesel", "repsol", "cepsa", "gasolinera"]),
         ("🚇", ["metro", "cercanias", "cercanías"]),

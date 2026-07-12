@@ -166,6 +166,7 @@ const ICON_RULES = [
   ['🛒', ['mercadona', 'carrefour', 'lidl', 'aldi', 'dia', 'super', 'compra', 'alimentacion', 'grocery']],
   ['☕', ['cafe', 'cafeteria', 'starbucks', 'coffee']],
   ['🍔', ['burger', 'hamburguesa', 'pizza', 'kebab', 'mcdonald', 'telepizza', 'comida rapida', 'fast food']],
+  ['🎰', ['expendedora', 'vending', 'maquina expendedora']],
   ['🍱', ['comida', 'almuerzo', 'desayuno', 'food', 'lunch', 'dinner']],
   ['⛽', ['gasolina', 'combustible', 'diesel', 'repsol', 'cepsa', 'gasolinera', 'fuel', 'gas station', 'petrol']],
   ['🚇', ['metro', 'subway']],
