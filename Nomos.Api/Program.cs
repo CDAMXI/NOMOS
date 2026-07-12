@@ -49,6 +49,7 @@ using (var scope = app.Services.CreateScope())
     else
         db.Database.Migrate();
     await DbSeeder.SeedAsync(db);
+    await LegacyBackfill.RunAsync(db); // give pre-account users a default "Efectivo" account (one-time)
 }
 
 app.UseDefaultFiles();
@@ -75,12 +76,13 @@ var api = app.MapGroup("/api").RequireAuthorization();
 // --- Autenticación y perfil ---
 var auth = api.MapGroup("/auth");
 
-auth.MapPost("/register", async (RegisterRequest request, AuthService service, CategoryService categoryService, HttpContext http) =>
+auth.MapPost("/register", async (RegisterRequest request, AuthService service, CategoryService categoryService, NetWorthService netWorthService, HttpContext http) =>
 {
     try
     {
         var user = await service.RegisterAsync(request);
         await categoryService.SeedDefaultsAsync(user.Id); // every new user starts with the default categories
+        await netWorthService.SeedDefaultAccountAsync(user.Id); // …and a default "Efectivo" account to hold movements
         await SignInAsync(http, user);
         return Results.Created("/api/auth/me", user);
     }
@@ -178,20 +180,6 @@ api.MapGet("/transactions", (ClaimsPrincipal principal, ExpenseService service) 
 api.MapGet("/expenses/dashboard", (ClaimsPrincipal principal, ExpenseService service, int days = 30) =>
     service.GetDashboardAsync(UserId(principal), Math.Clamp(days, 7, 365), Today()));
 
-api.MapPut("/balance", async Task<Results<NoContent, BadRequest<string>>>
-    (SetBalanceRequest request, ClaimsPrincipal principal, ExpenseService service) =>
-{
-    try
-    {
-        await service.SetBalanceAsync(UserId(principal), request.Amount);
-        return TypedResults.NoContent();
-    }
-    catch (ArgumentException ex)
-    {
-        return TypedResults.BadRequest(ex.Message);
-    }
-});
-
 api.MapPost("/expenses", async Task<Results<Created<ExpenseDto>, BadRequest<string>>>
     (CreateExpenseRequest request, ClaimsPrincipal principal, ExpenseService service) =>
 {
@@ -259,6 +247,10 @@ api.MapDelete("/incomes/{id:int}", async Task<Results<NoContent, NotFound>>
 // --- Patrimonio ---
 api.MapGet("/networth", (ClaimsPrincipal principal, NetWorthService service) =>
     service.GetOverviewAsync(UserId(principal), Today()));
+
+// Cash/bank accounts a movement can be assigned to (the account picker in the app).
+api.MapGet("/accounts", async (ClaimsPrincipal principal, NetWorthService service) =>
+    (await service.GetOverviewAsync(UserId(principal), Today())).Accounts);
 
 api.MapPost("/accounts", async Task<Results<Created<AccountDto>, BadRequest<string>>>
     (CreateAccountRequest request, ClaimsPrincipal principal, NetWorthService service) =>

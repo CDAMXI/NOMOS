@@ -44,6 +44,10 @@ public class NomosDbContext(DbContextOptions<NomosDbContext> options) : DbContex
              .WithMany()
              .HasForeignKey(x => x.UserId)
              .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Account>()
+             .WithMany()
+             .HasForeignKey(x => x.AccountId)
+             .OnDelete(DeleteBehavior.SetNull);
             e.HasIndex(x => new { x.UserId, x.Date });
         });
 
@@ -54,6 +58,10 @@ public class NomosDbContext(DbContextOptions<NomosDbContext> options) : DbContex
              .WithMany()
              .HasForeignKey(x => x.UserId)
              .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Account>()
+             .WithMany()
+             .HasForeignKey(x => x.AccountId)
+             .OnDelete(DeleteBehavior.SetNull);
             e.HasIndex(x => new { x.UserId, x.Date });
         });
 

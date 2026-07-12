@@ -1,11 +1,14 @@
 using System.Globalization;
+using Nomos.Application.Common;
 using Nomos.Application.DTOs;
 using Nomos.Application.Interfaces;
 using Nomos.Domain.Entities;
 
 namespace Nomos.Application.Services;
 
-public class ExpenseService(IExpenseRepository expenses, IIncomeRepository incomes, ICategoryRepository categories, IUserRepository users)
+public class ExpenseService(
+    IExpenseRepository expenses, IIncomeRepository incomes,
+    ICategoryRepository categories, IAccountRepository accounts)
 {
     internal const int MaxDescriptionLength = 120;
     private static readonly CultureInfo Spanish = CultureInfo.GetCultureInfo("es-ES");
@@ -13,32 +16,20 @@ public class ExpenseService(IExpenseRepository expenses, IIncomeRepository incom
     public async Task<List<CategoryDto>> GetCategoriesAsync(int userId) =>
         (await categories.GetAllAsync(userId)).Select(ToDto).ToList();
 
-    /// <summary>Available balance = user's baseline + all incomes − all expenses.</summary>
-    private async Task<decimal> ComputeBalanceAsync(int userId, decimal initialBalance) =>
-        initialBalance + await incomes.SumAllAsync(userId) - await expenses.SumAllAsync(userId);
-
-    /// <summary>The user's current available balance (also used as an asset in net worth).</summary>
+    /// <summary>Available balance = sum of the live balances of the user's cash (bank) accounts.</summary>
     public async Task<decimal> GetBalanceAsync(int userId)
     {
-        var user = await users.GetByIdAsync(userId);
-        return await ComputeBalanceAsync(userId, user?.InitialBalance ?? 0m);
-    }
-
-    /// <summary>Sets the baseline so the displayed balance becomes <paramref name="amount"/> right now.</summary>
-    public async Task SetBalanceAsync(int userId, decimal amount)
-    {
-        var user = await users.GetByIdAsync(userId)
-            ?? throw new ArgumentException("Usuario no encontrado.");
-        var flow = await incomes.SumAllAsync(userId) - await expenses.SumAllAsync(userId);
-        user.InitialBalance = decimal.Round(amount, 2) - flow;
-        await users.UpdateAsync(user);
+        var accs = await accounts.GetAllAsync(userId);
+        var live = AccountBalances.Live(accs, await expenses.GetAllAsync(userId), await incomes.GetAllAsync(userId));
+        return accs.Where(a => a.Type == AccountType.Cash).Sum(a => live[a.Id]);
     }
 
     /// <summary>All the user's movements (expenses + incomes) merged, newest first.</summary>
     public async Task<List<TransactionDto>> GetTransactionsAsync(int userId)
     {
-        var all = (await expenses.GetAllAsync(userId)).Select(ToTx)
-            .Concat((await incomes.GetAllAsync(userId)).Select(ToTx));
+        var names = await AccountNamesAsync(userId);
+        var all = (await expenses.GetAllAsync(userId)).Select(e => ToTx(e, names))
+            .Concat((await incomes.GetAllAsync(userId)).Select(i => ToTx(i, names)));
         return all.OrderByDescending(t => t.Date).ThenByDescending(t => t.Id).ToList();
     }
 
@@ -47,6 +38,7 @@ public class ExpenseService(IExpenseRepository expenses, IIncomeRepository incom
         ValidateAmount(request.Amount);
         var category = await categories.GetByIdAsync(request.CategoryId, userId)
             ?? throw new ArgumentException("Categoría no encontrada.");
+        var account = await ResolveAccountAsync(userId, request.AccountId);
 
         var expense = await expenses.AddAsync(new Expense
         {
@@ -54,10 +46,11 @@ public class ExpenseService(IExpenseRepository expenses, IIncomeRepository incom
             Amount = decimal.Round(request.Amount, 2),
             CategoryId = category.Id,
             Description = CleanDescription(request.Description, category.Name),
-            Date = ValidateDate(request.Date ?? today)
+            Date = ValidateDate(request.Date ?? today),
+            AccountId = account?.Id
         });
         expense.Category = category;
-        return ToDto(expense);
+        return ToDto(expense, account?.Name);
     }
 
     public async Task<ExpenseDto?> UpdateAsync(int id, int userId, UpdateExpenseRequest request)
@@ -65,17 +58,18 @@ public class ExpenseService(IExpenseRepository expenses, IIncomeRepository incom
         var expense = await expenses.GetByIdAsync(id, userId);
         if (expense is null) return null;
         ValidateAmount(request.Amount);
-
         var category = await categories.GetByIdAsync(request.CategoryId, userId)
             ?? throw new ArgumentException("Categoría no encontrada.");
+        var account = await ResolveAccountAsync(userId, request.AccountId);
 
         expense.Amount = decimal.Round(request.Amount, 2);
         expense.CategoryId = category.Id;
         expense.Description = CleanDescription(request.Description, category.Name);
         expense.Date = ValidateDate(request.Date);
+        expense.AccountId = account?.Id;
         await expenses.UpdateAsync(expense);
         expense.Category = category;
-        return ToDto(expense);
+        return ToDto(expense, account?.Name);
     }
 
     public async Task<bool> DeleteAsync(int id, int userId)
@@ -103,9 +97,7 @@ public class ExpenseService(IExpenseRepository expenses, IIncomeRepository incom
             : null;
 
         var monthIncome = incomeItems.Where(i => i.Date >= monthStart).Sum(i => i.Amount);
-
-        var user = await users.GetByIdAsync(userId);
-        var balance = await ComputeBalanceAsync(userId, user?.InitialBalance ?? 0m);
+        var balance = await GetBalanceAsync(userId);
 
         var inWindow = items.Where(e => e.Date >= windowStart).ToList();
 
@@ -125,8 +117,9 @@ public class ExpenseService(IExpenseRepository expenses, IIncomeRepository incom
             .OrderByDescending(c => c.Total)
             .ToList();
 
-        var recent = items.Select(ToTx)
-            .Concat(incomeItems.Select(ToTx))
+        var names = await AccountNamesAsync(userId);
+        var recent = items.Select(e => ToTx(e, names))
+            .Concat(incomeItems.Select(i => ToTx(i, names)))
             .OrderByDescending(t => t.Date).ThenByDescending(t => t.Id)
             .Take(8).ToList();
 
@@ -143,6 +136,20 @@ public class ExpenseService(IExpenseRepository expenses, IIncomeRepository incom
             ByCategory: byCategory,
             Recent: recent);
     }
+
+    /// <summary>Ensures the account (if any) belongs to the user and is a spendable cash/bank account.</summary>
+    private async Task<Account?> ResolveAccountAsync(int userId, int? accountId)
+    {
+        if (accountId is not int id) return null;
+        var account = await accounts.GetByIdAsync(id, userId)
+            ?? throw new ArgumentException("Cuenta no encontrada.");
+        if (account.Type != AccountType.Cash)
+            throw new ArgumentException("Solo puedes asignar movimientos a cuentas de efectivo o banco.");
+        return account;
+    }
+
+    private async Task<Dictionary<int, string>> AccountNamesAsync(int userId) =>
+        (await accounts.GetAllAsync(userId)).ToDictionary(a => a.Id, a => a.Name);
 
     private static void ValidateAmount(decimal amount)
     {
@@ -170,14 +177,17 @@ public class ExpenseService(IExpenseRepository expenses, IIncomeRepository incom
     private static string Capitalize(string s) =>
         s.Length == 0 ? s : char.ToUpper(s[0], Spanish) + s[1..];
 
+    private static string? NameOf(int? id, Dictionary<int, string> names) =>
+        id is int x && names.TryGetValue(x, out var n) ? n : null;
+
     private static CategoryDto ToDto(Category c) => new(c.Id, c.Name, c.Icon, c.Color);
 
-    private static ExpenseDto ToDto(Expense e) =>
-        new(e.Id, e.Description, e.Amount, e.Date, ToDto(e.Category!));
+    private static ExpenseDto ToDto(Expense e, string? accountName) =>
+        new(e.Id, e.Description, e.Amount, e.Date, ToDto(e.Category!), e.AccountId, accountName);
 
-    private static TransactionDto ToTx(Expense e) =>
-        new(e.Id, "expense", e.Description, e.Amount, e.Date, ToDto(e.Category!));
+    private static TransactionDto ToTx(Expense e, Dictionary<int, string> names) =>
+        new(e.Id, "expense", e.Description, e.Amount, e.Date, ToDto(e.Category!), e.AccountId, NameOf(e.AccountId, names));
 
-    private static TransactionDto ToTx(Income i) =>
-        new(i.Id, "income", i.Description, i.Amount, i.Date, null);
+    private static TransactionDto ToTx(Income i, Dictionary<int, string> names) =>
+        new(i.Id, "income", i.Description, i.Amount, i.Date, null, i.AccountId, NameOf(i.AccountId, names));
 }

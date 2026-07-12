@@ -37,6 +37,7 @@ const I18N = {
     category_deleted: 'Categoría eliminada', category_created: 'Categoría creada', category_updated: 'Categoría actualizada',
     new_account: 'Nueva cuenta', current_balance: 'Saldo actual', account_name_ph: 'Nombre (p. ej. BBVA Cuenta Corriente)',
     account_created: 'Cuenta creada', delete_account: 'Eliminar cuenta', account_deleted: 'Cuenta eliminada',
+    account_label: 'Cuenta',
     profile: 'Perfil', change_photo: 'Cambiar foto', username: 'Nombre de usuario',
     manage_categories: '🏷️ Gestionar categorías', language: 'Idioma',
     change_password: 'Cambiar contraseña', current_password: 'Contraseña actual',
@@ -81,6 +82,7 @@ const I18N = {
     category_deleted: 'Category deleted', category_created: 'Category created', category_updated: 'Category updated',
     new_account: 'New account', current_balance: 'Current balance', account_name_ph: 'Name (e.g. Checking account)',
     account_created: 'Account created', delete_account: 'Delete account', account_deleted: 'Account deleted',
+    account_label: 'Account',
     profile: 'Profile', change_photo: 'Change photo', username: 'Username',
     manage_categories: '🏷️ Manage categories', language: 'Language',
     change_password: 'Change password', current_password: 'Current password',
@@ -364,7 +366,6 @@ let days = 30;
 let categories = [];
 let recentCache = [];
 let accountsCache = [];
-let lastBalance = 0;       // último saldo disponible recibido (para prefijar "Ajustar saldo")
 
 async function ensureCategoriesFresh() {
   categories = await getJSON('/api/categories');
@@ -407,8 +408,7 @@ function resizeImage(file, size = 256) {
 async function loadGastos() {
   const d = await getJSON(`/api/expenses/dashboard?days=${days}`);
 
-  // Hero: running available balance (baseline + incomes − expenses).
-  lastBalance = d.balance;
+  // Hero: available balance = sum of the live balances of the user's cash accounts.
   const balanceEl = $('gBalance');
   balanceEl.textContent = eur(d.balance);
   balanceEl.classList.toggle('red', d.balance < 0);
@@ -440,7 +440,8 @@ function txRow(tx, index) {
   const isIncome = tx.kind === 'income';
   const icon = isIncome ? '💶' : tx.category.icon;
   const bg = isIncome ? tint('#34c759', .16) : tint(tx.category.color, .16);
-  const sub = (isIncome ? t('income_word') : catName(tx.category.name)) + ' · ' + dMed(tx.date);
+  let sub = (isIncome ? t('income_word') : catName(tx.category.name)) + ' · ' + dMed(tx.date);
+  if (tx.accountName) sub += ' · ' + tx.accountName;
   const amount = isIncome
     ? `<span class="tx-amount green">+${eur(tx.amount)}</span>`
     : `<span class="tx-amount">−${eur(tx.amount)}</span>`;
@@ -487,24 +488,19 @@ async function loadPatrimonio() {
     yFmt: v => v >= 1000 ? _nf0.format(Math.round(v / 1000)) + 'k' : _nf0.format(Math.round(v))
   });
 
-  // El saldo disponible (de Gastos) cuenta como efectivo: primera fila de "Cuentas y efectivo".
-  const balanceRow = `<li class="clickable acc-balance-row" data-action="balance">
-    <span class="tx-icon" style="background:${tint('#34c759', .16)}">💶</span>
-    <span class="tx-main"><span class="tx-title">${t('available_balance_row')}</span><div class="tx-sub">${t('from_expenses')}</div></span>
-    <span class="tx-amount">${eurShort(d.availableBalance)}</span>
-  </li>`;
-
-  let html = `<p class="section-title">${t('section_cash')}</p><ul class="acc-list">${balanceRow}` +
-    d.accounts.filter(a => a.type === 'Cash').map(accRow).join('') + '</ul>';
+  // Cada cuenta de efectivo/banco muestra su saldo vivo (base + ingresos − gastos asignados).
+  const cashAccs = d.accounts.filter(a => a.type === 'Cash');
+  let html = cashAccs.length
+    ? `<p class="section-title">${t('section_cash')}</p><ul class="acc-list">${cashAccs.map(accRow).join('')}</ul>`
+    : '';
   ['Investment', 'Other', 'Liability'].forEach(type => {
     const accs = d.accounts.filter(a => a.type === type);
     if (accs.length) html += `<p class="section-title">${t(TYPE_KEY[type])}</p><ul class="acc-list">${accs.map(accRow).join('')}</ul>`;
   });
-  $('nwSections').innerHTML = html;
+  $('nwSections').innerHTML = html || `<p class="tx-sub">${t('add_first_account')}</p>`;
 
   document.querySelectorAll('#nwSections li[data-acc]').forEach(li =>
     li.addEventListener('click', () => openAccountEditSheet(+li.dataset.acc)));
-  document.querySelector('#nwSections .acc-balance-row')?.addEventListener('click', openBalanceSheet);
 }
 
 function accRow(a) {
@@ -608,9 +604,11 @@ function setAmount(v) {
 // --- Nuevo movimiento / editar movimiento (gasto o ingreso) ---
 async function openTxSheet(existing = null, draft = null) {
   await ensureCategoriesFresh();
+  const cashAccounts = (await getJSON('/api/accounts')).filter(a => a.type === 'Cash');
   const isEdit = !!existing;
   let kind = existing ? existing.kind : (draft?.kind || 'expense');
   let selectedCat = existing?.category?.id ?? draft?.categoryId ?? categories[0]?.id;
+  let selectedAccount = existing?.accountId ?? draft?.accountId ?? cashAccounts[0]?.id ?? null;
   setAmount(existing ? existing.amount : (draft?.amount || 0));
   const startDesc = existing ? existing.description : (draft?.description || '');
 
@@ -631,6 +629,9 @@ async function openTxSheet(existing = null, draft = null) {
         <div class="chips" id="catChips">${[...categories].sort((a, b) => catName(a.name).localeCompare(catName(b.name), localeCode())).map(c =>
           `<button class="chip" data-cat="${c.id}">${c.icon} ${esc(catName(c.name))}</button>`).join('')}
           ${isEdit ? '' : `<button class="chip chip-add" id="addCatChip">${t('add_category_chip')}</button>`}</div>
+        ${cashAccounts.length >= 2 ? `<p class="tx-sub cat-hint">${t('account_label')}</p>
+        <div class="chips" id="accChips">${cashAccounts.map(a =>
+          `<button class="chip" data-acc="${a.id}">${TYPE_ICON.Cash} ${esc(a.name)}</button>`).join('')}</div>` : ''}
         <input id="descField" class="text-field" placeholder="${t('description_optional')}" maxlength="120" value="${esc(startDesc)}">
         <input id="dateField" class="text-field" type="date" value="${existing ? existing.date : (draft?.date || todayISO())}">
         ${keypadHtml()}
@@ -653,9 +654,19 @@ async function openTxSheet(existing = null, draft = null) {
 
       const addChip = $('addCatChip');
       if (addChip) addChip.addEventListener('click', () => {
-        const carry = { kind, amount: amountValue(), description: $('descField').value, date: $('dateField').value };
+        const carry = { kind, amount: amountValue(), description: $('descField').value, date: $('dateField').value, accountId: selectedAccount };
         openCategoryEditSheet(null, saved => openTxSheet(null, { ...carry, categoryId: saved?.id }));
       });
+
+      const paintAccChips = () => body.querySelectorAll('.chip[data-acc]').forEach(ch => {
+        const sel = +ch.dataset.acc === selectedAccount;
+        ch.classList.toggle('selected', sel);
+        ch.style.background = sel ? 'var(--accent-soft)' : '';
+        ch.style.color = sel ? 'var(--accent)' : '';
+      });
+      body.querySelectorAll('.chip[data-acc]').forEach(ch =>
+        ch.addEventListener('click', () => { selectedAccount = +ch.dataset.acc; paintAccChips(); }));
+      paintAccChips();
 
       const paintKind = () => {
         sheetTitle.textContent = titleFor();
@@ -684,11 +695,11 @@ async function openTxSheet(existing = null, draft = null) {
       const date = $('dateField').value || todayISO();
       const description = $('descField').value;
       if (kind === 'income') {
-        const payload = { amount: amountValue(), description, date };
+        const payload = { amount: amountValue(), description, date, accountId: selectedAccount };
         if (isEdit) await sendJSON(`/api/incomes/${existing.id}`, 'PUT', payload);
         else await sendJSON('/api/incomes', 'POST', payload);
       } else {
-        const payload = { amount: amountValue(), categoryId: selectedCat, description, date };
+        const payload = { amount: amountValue(), categoryId: selectedCat, description, date, accountId: selectedAccount };
         if (isEdit) await sendJSON(`/api/expenses/${existing.id}`, 'PUT', payload);
         else await sendJSON('/api/expenses', 'POST', payload);
       }
@@ -706,26 +717,6 @@ async function openAllTxSheet() {
       body.innerHTML = `<ul class="sheet-list tx-list">${items.map((tx, i) => txRow(tx, i)).join('')
         || `<li class="tx-sub">${t('no_movements')}</li>`}</ul>`;
       bindTxRows(body, items);
-    }
-  });
-}
-
-// --- Ajustar saldo disponible ---
-function openBalanceSheet() {
-  setAmount(lastBalance > 0 ? lastBalance : 0);
-  openSheet({
-    title: t('adjust_balance'),
-    canSave: () => true,
-    build(body) {
-      body.innerHTML = amountBlock(t('how_much_now')) +
-        `<p class="tx-sub cat-hint">${t('balance_hint')}</p>` +
-        keypadHtml();
-      paintAmount();
-      bindKeypad(body);
-    },
-    async onSave() {
-      await sendJSON('/api/balance', 'PUT', { amount: amountValue() });
-      toast(t('balance_updated'));
     }
   });
 }
@@ -1053,7 +1044,6 @@ $('fab').addEventListener('click', () =>
   currentView === 'gastos' ? openTxSheet().catch(e => toast(e.message)) : openAccountSheet());
 
 $('verTodoBtn').addEventListener('click', () => openAllTxSheet().catch(e => toast(e.message)));
-$('adjustBalanceBtn').addEventListener('click', openBalanceSheet);
 $('profileBtn').addEventListener('click', openProfileSheet);
 
 const themeBtn = $('themeBtn');

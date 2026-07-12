@@ -6,20 +6,20 @@ public record CreateCategoryRequest(string Name, string? Color);
 
 public record UpdateCategoryRequest(string Name, string? Color);
 
-public record ExpenseDto(int Id, string Description, decimal Amount, DateOnly Date, CategoryDto Category);
+public record ExpenseDto(int Id, string Description, decimal Amount, DateOnly Date, CategoryDto Category, int? AccountId, string? AccountName);
 
-public record IncomeDto(int Id, string Description, decimal Amount, DateOnly Date);
+public record IncomeDto(int Id, string Description, decimal Amount, DateOnly Date, int? AccountId, string? AccountName);
 
 /// <summary>Unified movement (expense or income) for lists. Category is null for incomes.</summary>
-public record TransactionDto(int Id, string Kind, string Description, decimal Amount, DateOnly Date, CategoryDto? Category);
+public record TransactionDto(int Id, string Kind, string Description, decimal Amount, DateOnly Date, CategoryDto? Category, int? AccountId, string? AccountName);
 
-public record CreateExpenseRequest(decimal Amount, int CategoryId, string? Description, DateOnly? Date);
+public record CreateExpenseRequest(decimal Amount, int CategoryId, string? Description, DateOnly? Date, int? AccountId);
 
-public record UpdateExpenseRequest(decimal Amount, int CategoryId, string? Description, DateOnly Date);
+public record UpdateExpenseRequest(decimal Amount, int CategoryId, string? Description, DateOnly Date, int? AccountId);
 
-public record CreateIncomeRequest(decimal Amount, string? Description, DateOnly? Date);
+public record CreateIncomeRequest(decimal Amount, string? Description, DateOnly? Date, int? AccountId);
 
-public record UpdateIncomeRequest(decimal Amount, string? Description, DateOnly Date);
+public record UpdateIncomeRequest(decimal Amount, string? Description, DateOnly Date, int? AccountId);
 
 public record SeriesPointDto(DateOnly Date, decimal Value);
 
@@ -38,8 +38,6 @@ public record ExpensesDashboardDto(
     List<CategoryTotalDto> ByCategory,
     List<TransactionDto> Recent);
 
-public record SetBalanceRequest(decimal Amount);
-
 public record AccountDto(int Id, string Name, string Type, decimal Balance, DateTime UpdatedAt);
 
 public record CreateAccountRequest(string Name, string Type, decimal Balance);
@@ -50,7 +48,6 @@ public record NetWorthDto(
     decimal Net,
     decimal Assets,
     decimal Liabilities,
-    decimal AvailableBalance,
     double? YearDeltaPct,
     List<SeriesPointDto> Series,
     List<AccountDto> Accounts);
