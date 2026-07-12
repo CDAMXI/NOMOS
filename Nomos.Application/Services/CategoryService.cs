@@ -37,7 +37,7 @@ public class CategoryService(ICategoryRepository categories, IExpenseRepository 
             UserId = userId,
             Name = name,
             Icon = CategoryIcon.ForName(name),
-            Color = NormalizeColor(request.Color) ?? DefaultCategories.PickColor(existing.Count)
+            Color = PickDistinctColor(existing, NormalizeColor(request.Color))
         });
         return ToDto(category);
     }
@@ -77,6 +77,39 @@ public class CategoryService(ICategoryRepository categories, IExpenseRepository 
         if (trimmed.Length > MaxNameLength)
             throw new ArgumentException($"El nombre no puede superar {MaxNameLength} caracteres.");
         return trimmed;
+    }
+
+    /// <summary>
+    /// Picks a colour the user isn't already using: the preferred one if free, else the first
+    /// unused palette colour, else a fresh hue generated with the golden angle. Guarantees no repeats.
+    /// </summary>
+    private static string PickDistinctColor(List<Category> existing, string? preferred)
+    {
+        var used = existing.Select(c => (c.Color ?? "").ToLowerInvariant()).ToHashSet();
+        if (preferred is not null && !used.Contains(preferred.ToLowerInvariant())) return preferred;
+        foreach (var c in DefaultCategories.Palette)
+            if (!used.Contains(c.ToLowerInvariant())) return c;
+        for (var i = existing.Count; ; i++)
+        {
+            var hex = HslToHex((i * 137) % 360, 62, 55);
+            if (!used.Contains(hex)) return hex;
+        }
+    }
+
+    private static string HslToHex(double h, double s, double l)
+    {
+        s /= 100; l /= 100;
+        var c = (1 - Math.Abs(2 * l - 1)) * s;
+        var x = c * (1 - Math.Abs(h / 60 % 2 - 1));
+        var m = l - c / 2;
+        double r = 0, g = 0, b = 0;
+        if (h < 60) { r = c; g = x; }
+        else if (h < 120) { r = x; g = c; }
+        else if (h < 180) { g = c; b = x; }
+        else if (h < 240) { g = x; b = c; }
+        else if (h < 300) { r = x; b = c; }
+        else { r = c; b = x; }
+        return $"#{(int)Math.Round((r + m) * 255):x2}{(int)Math.Round((g + m) * 255):x2}{(int)Math.Round((b + m) * 255):x2}";
     }
 
     /// <summary>Accepts a #RGB or #RRGGBB hex colour; returns null when nothing usable was provided.</summary>

@@ -202,7 +202,6 @@ const ICON_RULES = [
   ['✂️', ['barberia', 'corte', 'barber', 'haircut']],
   ['📦', ['otros', 'otro', 'other', 'varios', 'misc', 'miscelanea']],
 ];
-const CAT_PALETTE = ['#1e7ce8', '#34c759', '#f5a623', '#8e5be8', '#ff3b30', '#00b8a3', '#ff8a3d', '#e254a0', '#5a6b7b', '#c0392b'];
 
 const stripAccents = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '');
 function categoryIcon(name) {
@@ -720,7 +719,6 @@ async function openCategoriesSheet() {
 // --- Crear / editar una categoría (icono automático según el nombre) ---
 function openCategoryEditSheet(cat = null, onDone = null) {
   const isEdit = !!cat;
-  let color = cat?.color || CAT_PALETTE[0];
   let saved = null;
 
   openSheet({
@@ -732,9 +730,6 @@ function openCategoryEditSheet(cat = null, onDone = null) {
           <div class="cat-icon-preview" id="catIconPreview">${cat ? cat.icon : ICON_FALLBACK}</div>
           <p class="tx-sub cat-hint">${t('icon_auto_hint')}</p>
           <input id="catName" class="text-field" placeholder="${t('category_name_ph')}" maxlength="40" value="${cat ? esc(cat.name) : ''}">
-          <p class="muted-label">${t('color')}</p>
-          <div class="swatches" id="catSwatches">${CAT_PALETTE.map(c =>
-            `<button class="swatch" data-color="${c}" style="background:${c}"></button>`).join('')}</div>
         </div>
         ${isEdit ? `<button id="deleteCat" class="danger-btn">${t('delete_category')}</button>` : ''}`;
 
@@ -742,12 +737,6 @@ function openCategoryEditSheet(cat = null, onDone = null) {
       const paintIcon = () => { preview.textContent = categoryIcon(nameEl.value); };
       nameEl.addEventListener('input', () => { paintIcon(); refreshSaveState(); });
       if (!isEdit) paintIcon();
-
-      const paintSwatches = () => body.querySelectorAll('.swatch').forEach(s =>
-        s.classList.toggle('sel', s.dataset.color === color));
-      body.querySelectorAll('.swatch').forEach(s =>
-        s.addEventListener('click', () => { color = s.dataset.color; paintSwatches(); }));
-      paintSwatches();
 
       if (isEdit) {
         $('deleteCat').addEventListener('click', async () => {
@@ -764,7 +753,7 @@ function openCategoryEditSheet(cat = null, onDone = null) {
       }
     },
     async onSave() {
-      const payload = { name: $('catName').value, color };
+      const payload = { name: $('catName').value };
       saved = isEdit
         ? await sendJSON(`/api/categories/${cat.id}`, 'PUT', payload)
         : await sendJSON('/api/categories', 'POST', payload);
