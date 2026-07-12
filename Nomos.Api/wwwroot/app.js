@@ -8,6 +8,7 @@ const I18N = {
   es: {
     error_generic: 'Ha ocurrido un error', login_required: 'Inicia sesión para continuar',
     no_data: 'Sin datos todavía.', photo_error: 'No se pudo leer la imagen',
+    loading: 'Cargando…', waking_server: 'Despertando el servidor… puede tardar hasta 1 minuto la primera vez.',
     balance_label: 'Saldo disponible', adjust: 'Ajustar', evolution: 'Evolución',
     category_breakdown: 'Por categoría', recent: 'Recientes', see_all: 'Ver todo',
     summary_expenses: 'Gastos', summary_income: 'Ingresos', income_word: 'Ingreso',
@@ -51,6 +52,7 @@ const I18N = {
   en: {
     error_generic: 'Something went wrong', login_required: 'Please sign in to continue',
     no_data: 'No data yet.', photo_error: 'Could not read the image',
+    loading: 'Loading…', waking_server: 'Waking the server… this can take up to a minute the first time.',
     balance_label: 'Available balance', adjust: 'Adjust', evolution: 'Trend',
     category_breakdown: 'By category', recent: 'Recent', see_all: 'See all',
     summary_expenses: 'Spent', summary_income: 'Income', income_word: 'Income',
@@ -1061,13 +1063,21 @@ window.addEventListener('focus', () => { if (!sheetCtx && me) refreshCurrent(); 
 setInterval(() => { if (!sheetCtx && me) refreshCurrent(); }, 20000);
 
 // ---------- Arranque ----------
+// El plan gratuito de Render "duerme" el servidor tras un rato; la primera petición puede
+// tardar ~30-60 s en despertarlo. Reintentamos y mostramos un aviso para que no parezca colgado.
 (async function boot() {
-  try {
-    const res = await fetch('/api/auth/me');
-    if (!res.ok) throw new Error();
-    me = await res.json();
-    enterApp();
-  } catch {
-    showAuth();
+  const slow = setTimeout(() => { const m = $('bootMsg'); if (m) m.textContent = t('waking_server'); }, 5000);
+  let responded = false, user = null;
+  for (let i = 0; i < 3 && !responded; i++) {
+    try {
+      const res = await fetch('/api/auth/me');
+      responded = true;                 // hubo respuesta HTTP → dejamos de reintentar
+      if (res.ok) user = await res.json();
+    } catch {
+      await new Promise(r => setTimeout(r, 3000)); // 502/red mientras despierta → reintento
+    }
   }
+  clearTimeout(slow);
+  if (user) { me = user; enterApp(); } else { showAuth(); }
+  $('bootLoader')?.classList.add('hidden');
 })();
