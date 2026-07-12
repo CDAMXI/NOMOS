@@ -213,6 +213,42 @@ function categoryIcon(name) {
   return ICON_FALLBACK;
 }
 
+// ---------- Traducción de nombres de categorías comunes (en pantalla, según el idioma) ----------
+// Los nombres se guardan tal cual el usuario los escribe; aquí solo se muestran en el idioma
+// activo si coinciden con un término conocido. Los nombres personalizados se muestran igual.
+const CAT_TERMS = [
+  ['Comida', 'Food'], ['Restaurante', 'Restaurant'], ['Restaurantes', 'Restaurants'], ['Café', 'Coffee'],
+  ['Supermercado', 'Groceries'], ['Compra', 'Shopping'], ['Compras', 'Shopping'], ['Bebida', 'Drinks'], ['Bebidas', 'Drinks'],
+  ['Cerveza', 'Beer'], ['Transporte', 'Transport'], ['Gasolina', 'Fuel'], ['Coche', 'Car'], ['Tren', 'Train'],
+  ['Autobús', 'Bus'], ['Taxi', 'Taxi'], ['Metro', 'Metro'], ['Parking', 'Parking'], ['Vuelo', 'Flight'], ['Vuelos', 'Flights'],
+  ['Ocio', 'Leisure'], ['Cine', 'Cinema'], ['Música', 'Music'], ['Juegos', 'Games'], ['Videojuegos', 'Video games'],
+  ['Baile', 'Dance'], ['Fiesta', 'Party'], ['Concierto', 'Concert'], ['Deporte', 'Sport'], ['Deportes', 'Sports'],
+  ['Gimnasio', 'Gym'], ['Vivienda', 'Housing'], ['Alquiler', 'Rent'], ['Hipoteca', 'Mortgage'], ['Hogar', 'Home'],
+  ['Luz', 'Electricity'], ['Agua', 'Water'], ['Gas', 'Gas'], ['Internet', 'Internet'], ['Teléfono', 'Phone'],
+  ['Móvil', 'Mobile'], ['Salud', 'Health'], ['Farmacia', 'Pharmacy'], ['Médico', 'Doctor'], ['Dentista', 'Dentist'],
+  ['Seguro', 'Insurance'], ['Seguros', 'Insurance'], ['Ropa', 'Clothes'], ['Zapatos', 'Shoes'], ['Moda', 'Fashion'],
+  ['Belleza', 'Beauty'], ['Peluquería', 'Hairdresser'], ['Barbería', 'Barber'], ['Educación', 'Education'],
+  ['Universidad', 'University'], ['Estudios', 'Studies'], ['Libros', 'Books'], ['Libro', 'Book'], ['Cursos', 'Courses'],
+  ['Tecnología', 'Technology'], ['Regalos', 'Gifts'], ['Regalo', 'Gift'], ['Mascota', 'Pet'], ['Mascotas', 'Pets'],
+  ['Viaje', 'Travel'], ['Viajes', 'Travel'], ['Vacaciones', 'Holidays'], ['Hotel', 'Hotel'], ['Impuestos', 'Taxes'],
+  ['Impuesto', 'Tax'], ['Multa', 'Fine'], ['Multas', 'Fines'], ['Ahorro', 'Savings'], ['Ahorros', 'Savings'],
+  ['Inversión', 'Investment'], ['Inversiones', 'Investments'], ['Nómina', 'Salary'], ['Sueldo', 'Salary'],
+  ['Salario', 'Salary'], ['Trabajo', 'Work'], ['Suscripciones', 'Subscriptions'], ['Suscripción', 'Subscription'],
+  ['Propina', 'Tip'], ['Donación', 'Donation'], ['Tabaco', 'Tobacco'], ['Reparaciones', 'Repairs'],
+  ['Máquina expendedora', 'Vending machine'], ['Otros', 'Other'], ['Otro', 'Other'], ['Varios', 'Miscellaneous'],
+];
+const TERM_MAP = new Map();
+for (const [es, en] of CAT_TERMS) {
+  const entry = { es, en };
+  TERM_MAP.set(stripAccents(es.toLowerCase()), entry);
+  TERM_MAP.set(stripAccents(en.toLowerCase()), entry);
+}
+/** Muestra el nombre de una categoría en el idioma activo si es un término conocido. */
+function catName(name) {
+  const entry = TERM_MAP.get(stripAccents((name || '').toLowerCase().trim()));
+  return entry ? (lang === 'en' ? entry.en : entry.es) : name;
+}
+
 // ---------- Red ----------
 async function parseError(res) {
   let msg = await res.text();
@@ -390,7 +426,7 @@ async function loadGastos() {
   renderDonut($('gDonut'), d.byCategory.map(c => ({ color: c.category.color, value: c.total })));
   $('gCatList').innerHTML = d.byCategory.map(c => `
     <li><span class="dot" style="background:${c.category.color}"></span>
-      ${esc(c.category.name)}<span class="amount">${eur(c.total)}</span></li>`).join('')
+      ${esc(catName(c.category.name))}<span class="amount">${eur(c.total)}</span></li>`).join('')
     || `<li class="tx-sub">${t('no_expenses_period')}</li>`;
 
   recentCache = d.recent;
@@ -403,7 +439,7 @@ function txRow(tx, index) {
   const isIncome = tx.kind === 'income';
   const icon = isIncome ? '💶' : tx.category.icon;
   const bg = isIncome ? tint('#34c759', .16) : tint(tx.category.color, .16);
-  const sub = (isIncome ? t('income_word') : tx.category.name) + ' · ' + dMed(tx.date);
+  const sub = (isIncome ? t('income_word') : catName(tx.category.name)) + ' · ' + dMed(tx.date);
   const amount = isIncome
     ? `<span class="tx-amount green">+${eur(tx.amount)}</span>`
     : `<span class="tx-amount">−${eur(tx.amount)}</span>`;
@@ -591,8 +627,8 @@ async function openTxSheet(existing = null, draft = null) {
           <button class="pill" data-kind="income">${t('kind_income')}</button>
         </div>`}
         ${amountBlock(t('amount'))}
-        <div class="chips" id="catChips">${categories.map(c =>
-          `<button class="chip" data-cat="${c.id}">${c.icon} ${esc(c.name)}</button>`).join('')}
+        <div class="chips" id="catChips">${[...categories].sort((a, b) => catName(a.name).localeCompare(catName(b.name), localeCode())).map(c =>
+          `<button class="chip" data-cat="${c.id}">${c.icon} ${esc(catName(c.name))}</button>`).join('')}
           ${isEdit ? '' : `<button class="chip chip-add" id="addCatChip">${t('add_category_chip')}</button>`}</div>
         <input id="descField" class="text-field" placeholder="${t('description_optional')}" maxlength="120" value="${esc(startDesc)}">
         <input id="dateField" class="text-field" type="date" value="${existing ? existing.date : (draft?.date || todayISO())}">
@@ -699,10 +735,11 @@ async function openCategoriesSheet() {
   openSheet({
     title: t('categories'),
     build(body) {
-      body.innerHTML = `<ul class="sheet-list cat-manage">${categories.map(c => `
+      const sorted = [...categories].sort((a, b) => catName(a.name).localeCompare(catName(b.name), localeCode()));
+      body.innerHTML = `<ul class="sheet-list cat-manage">${sorted.map(c => `
         <li class="clickable" data-cat="${c.id}">
           <span class="tx-icon" style="background:${tint(c.color, .16)}">${c.icon}</span>
-          <span class="tx-main"><span class="tx-title">${esc(c.name)}</span></span>
+          <span class="tx-main"><span class="tx-title">${esc(catName(c.name))}</span></span>
           <span class="acc-chevron">›</span>
         </li>`).join('')}</ul>
         <button id="addCat" class="inline-btn">${t('add_category')}</button>`;
@@ -729,7 +766,7 @@ function openCategoryEditSheet(cat = null, onDone = null) {
         <div class="cat-editor">
           <div class="cat-icon-preview" id="catIconPreview">${cat ? cat.icon : ICON_FALLBACK}</div>
           <p class="tx-sub cat-hint">${t('icon_auto_hint')}</p>
-          <input id="catName" class="text-field" placeholder="${t('category_name_ph')}" maxlength="40" value="${cat ? esc(cat.name) : ''}">
+          <input id="catName" class="text-field" placeholder="${t('category_name_ph')}" maxlength="40" value="${cat ? esc(catName(cat.name)) : ''}">
         </div>
         ${isEdit ? `<button id="deleteCat" class="danger-btn">${t('delete_category')}</button>` : ''}`;
 
@@ -740,7 +777,7 @@ function openCategoryEditSheet(cat = null, onDone = null) {
 
       if (isEdit) {
         $('deleteCat').addEventListener('click', async () => {
-          if (!confirm(t('confirm_delete_category', cat.name))) return;
+          if (!confirm(t('confirm_delete_category', catName(cat.name)))) return;
           try {
             await sendJSON(`/api/categories/${cat.id}`, 'DELETE');
             await ensureCategoriesFresh();
