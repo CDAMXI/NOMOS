@@ -594,52 +594,54 @@ sheetSave.addEventListener('click', async () => {
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && sheetCtx) closeSheet(); });
 
-// --- Teclado numérico compartido ---
-let amountStr = '';
+// --- Importe: input numérico nativo (abre el teclado numérico del móvil) ---
+let amountSeed = '';   // valor inicial del input; se fija con setAmount antes de abrir la hoja
 
 function amountBlock(label) {
   return `<div class="amount-block">
     <p class="amount-label">${label}</p>
-    <p class="amount-display"><span id="amountText">0</span><span class="cur">€</span></p>
+    <div class="amount-display">
+      <input id="amountInput" class="amount-input" type="text" inputmode="decimal" enterkeyhint="done"
+        autocomplete="off" placeholder="0" aria-label="${label}"
+        value="${esc(amountSeed)}" size="${Math.max(amountSeed.length, 1)}">
+      <span class="cur">€</span>
+    </div>
   </div>`;
 }
 
-function keypadHtml() {
-  const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'back'];
-  return `<div class="keypad">${keys.map(k =>
-    `<button class="key${k === 'back' ? ' alt' : ''}" data-key="${k}">${k === 'back' ? '⌫' : k}</button>`
-  ).join('')}</div>`;
-}
-
-function bindKeypad(container) {
-  container.querySelectorAll('[data-key]').forEach(btn =>
-    btn.addEventListener('click', () => pressKey(btn.dataset.key)));
-}
-
-function paintAmount() {
-  const el = $('amountText');
+// Ajusta el ancho al contenido, mantiene el botón Guardar y (si focus) abre el teclado nativo.
+function bindAmount(container, focus) {
+  const el = (container || document).querySelector('#amountInput');
   if (!el) return;
-  const [i, dPart] = amountStr.split('.');
-  el.textContent = dPart === undefined ? _nf0.format(Number(i || 0)) : _nf0.format(Number(i || 0)) + decSep() + dPart;
-}
-
-function pressKey(k) {
-  if (k === 'back') amountStr = amountStr.slice(0, -1);
-  else if (k === '.') { if (!amountStr.includes('.')) amountStr = amountStr ? amountStr + '.' : '0.'; }
-  else {
-    const [ints, decs] = amountStr.split('.');
-    if (decs !== undefined && decs.length >= 2) return;
-    if (decs === undefined && ints && ints.length >= 7) return;
-    amountStr = amountStr === '0' ? k : amountStr + k;
+  const resize = () => { el.size = Math.max(el.value.length, 1); };
+  resize();
+  el.addEventListener('input', () => { resize(); refreshSaveState(); });
+  if (focus) {
+    // The sheet is still hidden while build() runs; focus once it becomes visible.
+    setTimeout(() => {
+      el.focus();
+      const end = el.value.length;
+      try { el.setSelectionRange(end, end); } catch (_) {}
+    }, 0);
   }
-  paintAmount();
-  refreshSaveState();
 }
 
-const amountValue = () => Math.round((parseFloat(amountStr) || 0) * 100) / 100;
+// Interpreta el importe según el idioma: en es "," es decimal y "." es separador de miles
+// (al revés en en). Quita los miles, conserva el signo y redondea a 2 decimales.
+const amountValue = () => {
+  const el = $('amountInput');
+  const raw = ((el ? el.value : amountSeed) || '').trim();
+  const neg = raw.startsWith('-');
+  const dec = decSep();                 // ',' en español, '.' en inglés
+  const grp = dec === ',' ? '.' : ',';  // el otro es el separador de miles
+  const norm = raw.split(grp).join('').replace(dec, '.').replace(/[^0-9.]/g, '');
+  const n = Math.round((parseFloat(norm) || 0) * 100) / 100;
+  return neg ? -n : n;
+};
 
 function setAmount(v) {
-  amountStr = v ? (Number.isInteger(v) ? String(v) : v.toFixed(2)) : '';
+  if (!v) { amountSeed = ''; return; }
+  amountSeed = (Number.isInteger(v) ? String(v) : v.toFixed(2)).replace('.', decSep());
 }
 
 // --- Nuevo movimiento / editar movimiento (gasto o ingreso) ---
@@ -681,10 +683,8 @@ async function openTxSheet(existing = null, draft = null) {
           ${isEdit ? '' : `<button class="chip chip-add" id="addAccChip">${t('add_account_chip')}</button>`}</div>` : ''}
         <input id="descField" class="text-field" placeholder="${t('description_optional')}" maxlength="120" value="${esc(startDesc)}">
         <input id="dateField" class="text-field" type="date" value="${existing ? existing.date : (draft?.date || todayISO())}">
-        ${keypadHtml()}
         ${isEdit ? `<button id="deleteTx" class="danger-btn">${t(kind === 'income' ? 'delete_income' : 'delete_expense')}</button>` : ''}`;
-      paintAmount();
-      bindKeypad(body);
+      bindAmount(body, true);
 
       const paintChips = () => {
         $('catChips').classList.toggle('hidden', kind === 'income');
@@ -861,10 +861,8 @@ function openAccountSheet(onDone = null, opts = {}) {
       body.innerHTML = amountBlock(t('current_balance')) + `
         ${opts.cashOnly ? '' : `<div class="chips">${Object.keys(TYPE_ICON).map(type =>
           `<button class="chip" data-type="${type}">${TYPE_ICON[type]} ${t(TYPE_KEY[type])}</button>`).join('')}</div>`}
-        <input id="nameField" class="text-field" placeholder="${t('account_name_ph')}" maxlength="80" autofocus>
-        ${keypadHtml()}`;
-      paintAmount();
-      bindKeypad(body);
+        <input id="nameField" class="text-field" placeholder="${t('account_name_ph')}" maxlength="80" autofocus>`;
+      bindAmount(body, false);
       if (!opts.cashOnly) {
         const paint = () => body.querySelectorAll('.chip[data-type]').forEach(ch => {
           const sel = ch.dataset.type === selectedType;
@@ -902,10 +900,8 @@ function openAccountEditSheet(id) {
     build(body) {
       body.innerHTML = amountBlock(t('current_balance')) + `
         <input id="nameField" class="text-field" maxlength="80" value="${esc(acc.name)}">
-        ${keypadHtml()}
         <button id="deleteAcc" class="danger-btn">${t('delete_account')}</button>`;
-      paintAmount();
-      bindKeypad(body);
+      bindAmount(body, false);
       $('nameField').addEventListener('input', refreshSaveState);
       $('deleteAcc').addEventListener('click', async () => {
         if (!confirm(t('confirm_delete', acc.name))) return;
