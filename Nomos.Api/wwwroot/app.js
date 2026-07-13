@@ -348,12 +348,13 @@ function renderDonut(el, items) {
   const total = items.reduce((s, i) => s + i.value, 0);
   if (!total) { el.innerHTML = ''; return; }
   const r = 52, C = 2 * Math.PI * r;
+  // Flat (butt) caps and touching segments render a clean continuous ring instead of rounded pills.
   let off = 0, segs = '';
   for (const it of items) {
     const len = it.value / total * C;
-    segs += `<circle r="${r}" cx="70" cy="70" fill="none" stroke="${it.color}" stroke-width="28"
-      stroke-dasharray="${Math.max(len - 3, .8).toFixed(1)} ${C.toFixed(1)}"
-      stroke-dashoffset="${(-off).toFixed(1)}" stroke-linecap="round"/>`;
+    segs += `<circle r="${r}" cx="70" cy="70" fill="none" stroke="${it.color}" stroke-width="26"
+      stroke-dasharray="${len.toFixed(2)} ${C.toFixed(2)}"
+      stroke-dashoffset="${(-off).toFixed(2)}"/>`;
     off += len;
   }
   el.innerHTML = `<svg viewBox="0 0 140 140" style="transform:rotate(-90deg)">${segs}</svg>`;
