@@ -616,6 +616,8 @@ function bindAmount(container, focus) {
   const resize = () => { el.style.width = Math.max(el.value.length, 1) + 'ch'; };
   resize();
   el.addEventListener('input', () => { resize(); refreshSaveState(); });
+  // El ✓ / Intro del teclado numérico cierra el teclado (un input de texto no lo hace solo).
+  el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } });
   if (focus) {
     // The sheet is still hidden while build() runs; focus once it becomes visible.
     setTimeout(() => {
