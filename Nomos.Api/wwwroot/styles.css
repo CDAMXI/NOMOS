@@ -328,7 +328,7 @@ body {
 .amount-input {
   font: inherit; letter-spacing: inherit; color: var(--text);
   border: none; background: none; outline: none; padding: 0; margin: 0;
-  text-align: center; width: auto; max-width: 78%;
+  text-align: center; box-sizing: content-box; max-width: 82%;
 }
 .amount-input::placeholder { color: var(--muted); }
 .amount-display .cur { color: var(--muted); font-weight: 700; margin-left: 6px; }

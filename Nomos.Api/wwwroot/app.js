@@ -603,7 +603,7 @@ function amountBlock(label) {
     <div class="amount-display">
       <input id="amountInput" class="amount-input" type="text" inputmode="decimal" enterkeyhint="done"
         autocomplete="off" placeholder="0" aria-label="${label}"
-        value="${esc(amountSeed)}" size="${Math.max(amountSeed.length, 1)}">
+        value="${esc(amountSeed)}" style="width:${Math.max(amountSeed.length, 1)}ch">
       <span class="cur">€</span>
     </div>
   </div>`;
@@ -613,7 +613,7 @@ function amountBlock(label) {
 function bindAmount(container, focus) {
   const el = (container || document).querySelector('#amountInput');
   if (!el) return;
-  const resize = () => { el.size = Math.max(el.value.length, 1); };
+  const resize = () => { el.style.width = Math.max(el.value.length, 1) + 'ch'; };
   resize();
   el.addEventListener('input', () => { resize(); refreshSaveState(); });
   if (focus) {
