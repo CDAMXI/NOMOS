@@ -148,7 +148,19 @@ body {
 }
 .pill.active { background: var(--accent-soft); color: var(--accent); }
 
-.chart svg { width: 100%; height: auto; display: block; }
+.chart { position: relative; }
+.chart svg { width: 100%; height: auto; display: block; touch-action: pan-y; }
+.lc-tip {
+  position: absolute; pointer-events: none; z-index: 3;
+  background: var(--card); color: var(--text);
+  border: 1px solid var(--line); border-radius: 8px;
+  padding: 5px 9px; font-size: 13px; line-height: 1.25; text-align: center;
+  white-space: nowrap; box-shadow: var(--shadow);
+  opacity: 0; transition: opacity .08s;
+}
+.lc-tip.show { opacity: 1; }
+.lc-tip b { font-weight: 700; }
+.lc-tip .d { color: var(--muted); font-size: 11px; margin-top: 1px; }
 
 /* ---------- Por categoría ---------- */
 .cat-wrap { display: flex; align-items: center; gap: 22px; }

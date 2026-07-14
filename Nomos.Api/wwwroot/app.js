@@ -118,10 +118,14 @@ function buildFormatters() {
 buildFormatters();
 
 const decSep = () => (lang === 'en' ? '.' : ',');
-const eur = v => _cur.format(v);
+// Separador de miles = espacio, SOLO para mostrar cifras (los inputs no usan esto). Espacio
+// duro (U+00A0) para que la cifra no se parta de línea. Ej.: 1 234 567,89 €.
+const grpSpace = parts => parts.map(p => p.type === 'group' ? ' ' : p.value).join('');
+const eur = v => grpSpace(_cur.formatToParts(v));
+const nf0 = v => grpSpace(_nf0.formatToParts(v));
 const eurShort = v => Math.abs(v) >= 10000
-  ? (lang === 'en' ? '€' + _nf0.format(Math.round(v / 1000)) + 'k' : _nf0.format(Math.round(v / 1000)) + ' mil €')
-  : (Number.isInteger(v) ? _curShort.format(v) : _cur.format(v));
+  ? (lang === 'en' ? '€' + nf0(Math.round(v / 1000)) + 'k' : nf0(Math.round(v / 1000)) + ' mil €')
+  : (Number.isInteger(v) ? grpSpace(_curShort.formatToParts(v)) : eur(v));
 const pct1 = v => Math.abs(v).toLocaleString(localeCode(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
 
 // Fecha en DD/MM/YYYY (misma en ambos idiomas, por preferencia). Formateada desde la
@@ -130,6 +134,8 @@ const dMed = iso => {
   const [y, m, d] = String(iso).slice(0, 10).split('-');
   return `${d}/${m}/${y}`;
 };
+// Interpreta la fecha ISO como medianoche LOCAL (evita el desfase de zona con new Date(iso), que la trata como UTC).
+const localDate = iso => new Date(String(iso).slice(0, 10) + 'T00:00:00');
 const shortMonth = dt => cap(new Intl.DateTimeFormat(localeCode(), { month: 'short' }).format(dt).replace('.', ''));
 const monthYearLabel = iso => cap(new Intl.DateTimeFormat(localeCode(), { month: 'long', year: 'numeric' }).format(new Date(String(iso).slice(0, 10) + 'T00:00:00')));
 
@@ -309,7 +315,7 @@ function smoothPath(pts) {
   return d;
 }
 
-function renderLineChart(el, points, { id, color, xFmt, yFmt }) {
+function renderLineChart(el, points, { id, color, xFmt, yFmt, tip }) {
   if (!points.length) { el.innerHTML = `<p class="tx-sub">${t('no_data')}</p>`; return; }
   const W = 600, H = 230, L = 46, R = 10, T = 12, B = 26;
   const iw = W - L - R, ih = H - T - B;
@@ -333,6 +339,8 @@ function renderLineChart(el, points, { id, color, xFmt, yFmt }) {
 
   const line = smoothPath(xy);
   const area = `${line} L ${xy[xy.length - 1][0]} ${T + ih} L ${xy[0][0]} ${T + ih} Z`;
+  const hover = tip ? `<line class="lc-cross" x1="0" y1="${T}" x2="0" y2="${T + ih}" stroke="${color}" stroke-width="1" stroke-dasharray="4 3" opacity="0"/>
+    <circle class="lc-dot" r="4.5" fill="${color}" stroke="var(--card)" stroke-width="2" opacity="0"/>` : '';
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img">
     <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="${color}" stop-opacity=".26"/>
@@ -341,7 +349,60 @@ function renderLineChart(el, points, { id, color, xFmt, yFmt }) {
     ${axes}
     <path d="${area}" fill="url(#${id})"/>
     <path d="${line}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>
-  </svg>`;
+    ${hover}
+  </svg>${tip ? '<div class="lc-tip"></div>' : ''}`;
+
+  if (tip) bindChartHover(el, points, xy, { W, H, L, iw }, tip);
+}
+
+// mientras se explora una gráfica se pausa el refresco automático para no borrar el tooltip.
+let chartHovering = false;
+
+// Tooltip on hover (ratón) o al arrastrar el dedo en horizontal: resalta el punto más cercano.
+function bindChartHover(el, points, xy, { W, H, L, iw }, tip) {
+  const svg = el.querySelector('svg');
+  const cross = el.querySelector('.lc-cross');
+  const dot = el.querySelector('.lc-dot');
+  const tipEl = el.querySelector('.lc-tip');
+  const step = points.length > 1 ? iw / (points.length - 1) : 0;
+
+  const show = clientX => {
+    const rect = svg.getBoundingClientRect();
+    if (!rect.width) return;
+    const svgX = (clientX - rect.left) / rect.width * W;
+    let idx = step ? Math.round((svgX - L) / step) : 0;
+    idx = Math.max(0, Math.min(points.length - 1, idx));
+    const [px, py] = xy[idx];
+    cross.setAttribute('x1', px); cross.setAttribute('x2', px); cross.setAttribute('opacity', '1');
+    dot.setAttribute('cx', px); dot.setAttribute('cy', py); dot.setAttribute('opacity', '1');
+    tipEl.innerHTML = tip(points[idx], idx, points);
+    const left = Math.max(46, Math.min(rect.width - 46, px * rect.width / W));
+    const top = py * rect.height / H;
+    const below = top < 50; // si el punto está muy arriba, coloca el tooltip debajo para que no se corte
+    tipEl.style.left = left + 'px';
+    tipEl.style.top = (below ? top + 16 : top - 10) + 'px';
+    tipEl.style.transform = below ? 'translate(-50%, 0)' : 'translate(-50%, -100%)';
+    tipEl.classList.add('show');
+  };
+  const hide = () => { chartHovering = false; cross.setAttribute('opacity', '0'); dot.setAttribute('opacity', '0'); tipEl.classList.remove('show'); };
+
+  svg.addEventListener('mousemove', e => { chartHovering = true; show(e.clientX); });
+  svg.addEventListener('mouseleave', hide);
+
+  // Táctil: solo hace scrub cuando el gesto es horizontal; los verticales dejan desplazar la página.
+  let tsx = 0, tsy = 0, scrub = false;
+  svg.addEventListener('touchstart', e => { tsx = e.touches[0].clientX; tsy = e.touches[0].clientY; scrub = false; }, { passive: true });
+  svg.addEventListener('touchmove', e => {
+    const tx = e.touches[0].clientX, ty = e.touches[0].clientY;
+    if (!scrub) {
+      if (Math.abs(tx - tsx) < 8 && Math.abs(ty - tsy) < 8) return;
+      if (Math.abs(tx - tsx) <= Math.abs(ty - tsy)) return; // vertical → dejar hacer scroll
+      scrub = true;
+    }
+    chartHovering = true; show(tx); e.preventDefault();
+  }, { passive: false });
+  svg.addEventListener('touchend', hide);
+  svg.addEventListener('touchcancel', hide);
 }
 
 function renderDonut(el, items) {
@@ -423,8 +484,14 @@ async function loadGastos() {
   renderLineChart($('gChart'), d.series.map(p => ({ x: p.date, y: p.value })), {
     id: 'grad-gastos',
     color: cssVar('--accent'),
-    xFmt: iso => { const dt = new Date(iso); return dt.getDate() + ' ' + shortMonth(dt); },
-    yFmt: v => _nf0.format(Math.round(v))
+    xFmt: iso => { const dt = localDate(iso); return dt.getDate() + ' ' + shortMonth(dt); },
+    yFmt: v => nf0(Math.round(v)),
+    // La serie es acumulada: el gasto de ese día es la diferencia con el punto anterior.
+    tip: (pt, i, pts) => {
+      const daily = i === 0 ? pt.y : pt.y - pts[i - 1].y;
+      const dt = localDate(pt.x);
+      return `<b>${eur(daily)}</b><div class="d">${dt.getDate()} ${shortMonth(dt)}</div>`;
+    }
   });
 
   renderDonut($('gDonut'), d.byCategory.map(c => ({ color: c.category.color, value: c.total })));
@@ -525,8 +592,9 @@ async function loadPatrimonio() {
   renderLineChart($('nwChart'), d.series.map(p => ({ x: p.date, y: p.value })), {
     id: 'grad-nw',
     color: cssVar('--green'),
-    xFmt: iso => shortMonth(new Date(iso)),
-    yFmt: v => v >= 1000 ? _nf0.format(Math.round(v / 1000)) + 'k' : _nf0.format(Math.round(v))
+    xFmt: iso => shortMonth(localDate(iso)),
+    yFmt: v => v >= 1000 ? nf0(Math.round(v / 1000)) + 'k' : nf0(Math.round(v)),
+    tip: pt => `<b>${eur(pt.y)}</b><div class="d">${shortMonth(localDate(pt.x))}</div>`
   });
 
   // Cada cuenta de efectivo/banco muestra su saldo vivo (base + ingresos − gastos asignados).
@@ -1117,8 +1185,8 @@ applyTheme(localStorage.getItem('nomos-theme') || 'light');
 applyStaticI18n();
 
 // Los datos viven en la base de datos: refresca al volver a la pestaña y cada 20 s.
-window.addEventListener('focus', () => { if (!sheetCtx && me) refreshCurrent(); });
-setInterval(() => { if (!sheetCtx && me) refreshCurrent(); }, 20000);
+window.addEventListener('focus', () => { if (!sheetCtx && me && !chartHovering) refreshCurrent(); });
+setInterval(() => { if (!sheetCtx && me && !chartHovering) refreshCurrent(); }, 20000);
 
 // ---------- Arranque ----------
 // El plan gratuito de Render "duerme" el servidor tras un rato; la primera petición puede
