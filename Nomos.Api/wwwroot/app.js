@@ -389,19 +389,23 @@ function bindChartHover(el, points, xy, { W, H, L, iw }, tip) {
   svg.addEventListener('mousemove', e => { chartHovering = true; show(e.clientX); });
   svg.addEventListener('mouseleave', hide);
 
-  // Táctil: solo hace scrub cuando el gesto es horizontal; los verticales dejan desplazar la página.
-  let tsx = 0, tsy = 0, scrub = false;
-  svg.addEventListener('touchstart', e => { tsx = e.touches[0].clientX; tsy = e.touches[0].clientY; scrub = false; }, { passive: true });
+  // Táctil: un toque muestra el punto tocado; arrastrar en horizontal lo desliza; en vertical
+  // deja desplazar la página. Tras soltar, el tooltip se oculta solo pasado un momento.
+  let tsx = 0, tsy = 0, scrubbed = false, movedFar = false, hideTimer = 0;
+  const fadeSoon = () => { clearTimeout(hideTimer); hideTimer = setTimeout(hide, 2500); };
+  svg.addEventListener('touchstart', e => {
+    tsx = e.touches[0].clientX; tsy = e.touches[0].clientY; scrubbed = false; movedFar = false; clearTimeout(hideTimer);
+  }, { passive: true });
   svg.addEventListener('touchmove', e => {
     const tx = e.touches[0].clientX, ty = e.touches[0].clientY;
-    if (!scrub) {
-      if (Math.abs(tx - tsx) < 8 && Math.abs(ty - tsy) < 8) return;
-      if (Math.abs(tx - tsx) <= Math.abs(ty - tsy)) return; // vertical → dejar hacer scroll
-      scrub = true;
-    }
-    chartHovering = true; show(tx); e.preventDefault();
+    if (Math.abs(tx - tsx) > 6 || Math.abs(ty - tsy) > 6) movedFar = true;
+    if (!scrubbed && Math.abs(ty - tsy) > Math.abs(tx - tsx)) return; // vertical → dejar hacer scroll
+    scrubbed = true; chartHovering = true; show(tx); e.preventDefault();
   }, { passive: false });
-  svg.addEventListener('touchend', hide);
+  svg.addEventListener('touchend', () => {
+    if (!movedFar) { chartHovering = true; show(tsx); } // toque simple → muestra el punto tocado
+    fadeSoon();
+  });
   svg.addEventListener('touchcancel', hide);
 }
 
