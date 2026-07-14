@@ -163,6 +163,14 @@ body {
 .lc-tip .d { color: var(--muted); font-size: 11px; margin-top: 1px; }
 
 /* ---------- Por categoría ---------- */
+.cat-accounts {
+  display: flex; gap: 8px; overflow-x: auto;
+  margin: 0 0 14px; padding-bottom: 2px; scrollbar-width: none;
+}
+.cat-accounts::-webkit-scrollbar { display: none; }
+.cat-accounts .chip { padding: 6px 12px; font-size: 13px; white-space: nowrap; flex: 0 0 auto; }
+.cat-accounts .chip.selected { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+.cat-accounts.hidden { display: none; }
 .cat-wrap { display: flex; align-items: center; gap: 22px; }
 .donut { width: 132px; flex-shrink: 0; }
 .donut svg { width: 100%; height: auto; }

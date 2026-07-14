@@ -25,6 +25,9 @@ public record SeriesPointDto(DateOnly Date, decimal Value);
 
 public record CategoryTotalDto(CategoryDto Category, decimal Total);
 
+/// <summary>Category breakdown of the window's expenses assigned to one account.</summary>
+public record AccountBreakdownDto(int AccountId, List<CategoryTotalDto> ByCategory);
+
 public record ExpensesDashboardDto(
     decimal Balance,
     DateOnly MonthDate,
@@ -36,6 +39,7 @@ public record ExpensesDashboardDto(
     decimal MonthIncome,
     List<SeriesPointDto> Series,
     List<CategoryTotalDto> ByCategory,
+    List<AccountBreakdownDto> ByAccount,
     List<TransactionDto> Recent);
 
 public record AccountDto(int Id, string Name, string Type, decimal Balance, DateTime UpdatedAt);

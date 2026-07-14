@@ -117,6 +117,17 @@ public class ExpenseService(
             .OrderByDescending(c => c.Total)
             .ToList();
 
+        // Same breakdown but split per assigned account (for the per-account donut).
+        var byAccount = inWindow
+            .Where(e => e.AccountId != null)
+            .GroupBy(e => e.AccountId!.Value)
+            .Select(g => new AccountBreakdownDto(g.Key, g
+                .GroupBy(e => e.CategoryId)
+                .Select(cg => new CategoryTotalDto(ToDto(cg.First().Category!), cg.Sum(e => e.Amount)))
+                .OrderByDescending(c => c.Total)
+                .ToList()))
+            .ToList();
+
         var names = await AccountNamesAsync(userId);
         var recent = items.Select(e => ToTx(e, names))
             .Concat(incomeItems.Select(i => ToTx(i, names)))
@@ -134,6 +145,7 @@ public class ExpenseService(
             MonthIncome: monthIncome,
             Series: series,
             ByCategory: byCategory,
+            ByAccount: byAccount,
             Recent: recent);
     }
 

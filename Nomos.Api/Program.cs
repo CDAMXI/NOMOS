@@ -53,7 +53,12 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseDefaultFiles();
-app.UseStaticFiles();
+// "no-cache" = el navegador puede guardar pero DEBE revalidar (ETag) antes de usar, así los
+// despliegues de JS/CSS/HTML se recogen sin forzar recarga a mano.
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx => ctx.Context.Response.Headers.CacheControl = "no-cache"
+});
 app.UseAuthentication();
 app.UseAuthorization();
 

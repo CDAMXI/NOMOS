@@ -478,8 +478,9 @@ async function loadGastos() {
     getJSON('/api/accounts')
   ]);
 
+  const cash = accounts.filter(a => a.type === 'Cash');
   // Hero: balance of ONE cash account at a time (switchable); d.balance is the all-accounts total.
-  renderHeroBalance(accounts.filter(a => a.type === 'Cash'), d.balance);
+  renderHeroBalance(cash, d.balance);
 
   let summary = `${monthYearLabel(d.monthDate)} · <span class="sum-out">${t('summary_expenses')} ${eur(d.monthTotal)}</span>`;
   if (d.monthIncome > 0) summary += ` · <span class="sum-in">${t('summary_income')} +${eur(d.monthIncome)}</span>`;
@@ -498,16 +499,43 @@ async function loadGastos() {
     }
   });
 
-  renderDonut($('gDonut'), d.byCategory.map(c => ({ color: c.category.color, value: c.total })));
-  $('gCatList').innerHTML = d.byCategory.map(c => `
-    <li><span class="dot" style="background:${c.category.color}"></span>
-      ${esc(catName(c.category.name))}<span class="amount">${eur(c.total)}</span></li>`).join('')
-    || `<li class="tx-sub">${t('no_expenses_period')}</li>`;
+  renderCategoryCard(d, cash);
 
   recentCache = d.recent;
   $('gRecent').innerHTML = d.recent.map((tx, i) => txRow(tx, i)).join('')
     || `<li class="tx-sub">${t('no_movements_yet')}</li>`;
   bindTxRows($('gRecent'), recentCache);
+}
+
+// "Por categoría": una rueda genérica (todas las cuentas) y una por cada cuenta, con selector.
+let catAccountSel;   // 'all' o id de cuenta; se mantiene entre refrescos
+
+function renderCategoryCard(d, cash) {
+  const box = $('gCatAccounts');
+  const ids = cash.map(a => a.id);
+  if (catAccountSel !== 'all' && !ids.includes(catAccountSel)) catAccountSel = 'all';
+
+  const paint = () => {
+    const byCat = catAccountSel === 'all'
+      ? d.byCategory
+      : ((d.byAccount || []).find(a => a.accountId === catAccountSel)?.byCategory || []);
+    renderDonut($('gDonut'), byCat.map(c => ({ color: c.category.color, value: c.total })));
+    $('gCatList').innerHTML = byCat.map(c => `
+      <li><span class="dot" style="background:${c.category.color}"></span>
+        ${esc(catName(c.category.name))}<span class="amount">${eur(c.total)}</span></li>`).join('')
+      || `<li class="tx-sub">${t('no_expenses_period')}</li>`;
+    box.querySelectorAll('[data-catacc]').forEach(ch =>
+      ch.classList.toggle('selected', ch.dataset.catacc === String(catAccountSel)));
+  };
+
+  // El selector solo aparece con 2+ cuentas de efectivo (con una, la genérica ya es esa cuenta).
+  if (cash.length < 2) { box.classList.add('hidden'); box.innerHTML = ''; catAccountSel = 'all'; paint(); return; }
+  box.classList.remove('hidden');
+  box.innerHTML = `<button class="chip" data-catacc="all">${t('all_accounts')}</button>`
+    + cash.map(a => `<button class="chip" data-catacc="${a.id}">${TYPE_ICON.Cash} ${esc(a.name)}</button>`).join('');
+  box.querySelectorAll('[data-catacc]').forEach(ch =>
+    ch.addEventListener('click', () => { catAccountSel = ch.dataset.catacc === 'all' ? 'all' : +ch.dataset.catacc; paint(); }));
+  paint();
 }
 
 // Hero balance: shows the live balance of one cash account at a time, with a chip switcher.
