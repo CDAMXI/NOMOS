@@ -322,8 +322,8 @@ body {
 
 .sheet-title { font-weight: 700; font-size: 16px; }
 .save:disabled { color: var(--muted); opacity: .6; cursor: default; }
-/* Cancelar / Guardar como píldoras azules sólidas con texto blanco. */
-.sheet-bar .link {
+/* Guardar como píldora azul sólida con texto blanco (Cancelar queda como enlace de texto). */
+.sheet-bar .save {
   background: var(--accent);
   color: #fff;
   border-radius: 20px;
