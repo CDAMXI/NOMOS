@@ -1054,7 +1054,7 @@ function openAccountEditSheet(id) {
     build(body) {
       body.innerHTML = amountBlock(t('current_balance')) + `
         <input id="nameField" class="text-field" maxlength="80" value="${esc(acc.name)}">
-        <button id="deleteAcc" class="danger-btn">${t('delete_account')}</button>`;
+        <button id="deleteAcc" class="pill pill-danger centered">${t('delete_account')}</button>`;
       bindAmount(body, false);
       $('nameField').addEventListener('input', refreshSaveState);
       $('deleteAcc').addEventListener('click', async () => {
@@ -1264,7 +1264,7 @@ function openBrokerEditSheet(b, back) {
     build(body) {
       body.innerHTML = amountBlock(t('free_margin')) + `
         <input id="nameField" class="text-field" maxlength="80" value="${esc(b.name)}">
-        <button id="deleteAcc" class="danger-btn">${t('delete_account')}</button>`;
+        <button id="deleteAcc" class="pill pill-danger centered">${t('delete_account')}</button>`;
       bindAmount(body, false);
       $('nameField').addEventListener('input', refreshSaveState);
       $('deleteAcc').addEventListener('click', async () => {

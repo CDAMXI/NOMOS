@@ -8,6 +8,7 @@
   --accent-soft: #dcebfb;
   --green: #23a94d;
   --red: #e8332a;
+  --red-soft: #fadedc;
   --key: #ffffff;
   --key-active: #e5e5ea;
   --shadow: 0 1px 3px rgba(0, 0, 0, .06);
@@ -21,6 +22,7 @@
   --line: #333338;
   --accent: #4b9bf5;
   --accent-soft: #1d3350;
+  --red-soft: #48211e;
   --key: #2e2e33;
   --key-active: #3d3d44;
   --shadow: 0 1px 3px rgba(0, 0, 0, .4);
@@ -153,6 +155,9 @@ body {
 .pill.active { background: var(--accent-soft); color: var(--accent); }
 /* Píldora que solo se "enciende" al pasar el ratón (p. ej. Editar cuenta en el broker). */
 .pill-hover:hover { background: var(--accent-soft); color: var(--accent); }
+/* Variante destructiva: mismo comportamiento pero en rojo (p. ej. Eliminar cuenta). */
+.pill-danger:hover { background: var(--red-soft); color: var(--red); }
+.pill-danger.centered { margin-top: 16px; }
 
 .chart { position: relative; }
 .chart svg { width: 100%; height: auto; display: block; touch-action: pan-y; }
