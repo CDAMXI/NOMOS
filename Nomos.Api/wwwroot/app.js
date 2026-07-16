@@ -381,6 +381,7 @@ function renderLineChart(el, points, { id, color, xFmt, yFmt, tip, height }) {
     ${axes}
     <path d="${area}" fill="url(#${id})"/>
     <path d="${line}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>
+    ${xy.length === 1 ? `<circle cx="${xy[0][0]}" cy="${xy[0][1]}" r="5.5" fill="${color}" stroke="var(--card)" stroke-width="2"/>` : ''}
     ${hover}
   </svg>${tip ? '<div class="lc-tip"></div>' : ''}`;
 
