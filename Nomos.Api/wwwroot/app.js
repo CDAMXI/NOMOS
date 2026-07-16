@@ -347,9 +347,9 @@ function smoothPath(pts) {
   return d;
 }
 
-function renderLineChart(el, points, { id, color, xFmt, yFmt, tip }) {
+function renderLineChart(el, points, { id, color, xFmt, yFmt, tip, height }) {
   if (!points.length) { el.innerHTML = `<p class="tx-sub">${t('no_data')}</p>`; return; }
-  const W = 600, H = 230, L = 46, R = 10, T = 12, B = 26;
+  const W = 600, H = height || 230, L = 46, R = 10, T = 12, B = 26;
   const iw = W - L - R, ih = H - T - B;
   const ymax = niceMax(Math.max(...points.map(p => p.y)));
   const xy = points.map((p, i) => [
@@ -520,6 +520,7 @@ async function loadGastos() {
 
   renderLineChart($('gChart'), d.series.map(p => ({ x: p.date, y: p.value })), {
     id: 'grad-gastos',
+    height: 300, // más alta que la de Patrimonio para emparejar la columna con "Recientes"
     color: cssVar('--accent'),
     xFmt: iso => { const dt = localDate(iso); return dt.getDate() + ' ' + shortMonth(dt); },
     yFmt: v => nf0(Math.round(v)),
