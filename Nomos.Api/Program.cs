@@ -289,4 +289,45 @@ api.MapDelete("/accounts/{id:int}", async Task<Results<NoContent, NotFound>>
     (int id, ClaimsPrincipal principal, NetWorthService service) =>
     await service.DeleteAsync(id, UserId(principal), Today()) ? TypedResults.NoContent() : TypedResults.NotFound());
 
+// --- Inversiones (broker): posiciones, compra/venta y depósitos/retiradas de margen ---
+api.MapGet("/brokers/{id:int}", async Task<Results<Ok<BrokerDto>, NotFound>>
+    (int id, ClaimsPrincipal principal, InvestmentService service) =>
+{
+    var broker = await service.GetAsync(id, UserId(principal));
+    return broker is null ? TypedResults.NotFound() : TypedResults.Ok(broker);
+});
+
+api.MapPost("/brokers/{id:int}/buy", async Task<Results<Ok<BrokerDto>, NotFound, BadRequest<string>>>
+    (int id, BuyRequest request, ClaimsPrincipal principal, InvestmentService service) =>
+{
+    try
+    {
+        var broker = await service.BuyAsync(id, UserId(principal), request);
+        return broker is null ? TypedResults.NotFound() : TypedResults.Ok(broker);
+    }
+    catch (ArgumentException ex) { return TypedResults.BadRequest(ex.Message); }
+});
+
+api.MapPost("/brokers/{id:int}/sell", async Task<Results<Ok<BrokerDto>, NotFound, BadRequest<string>>>
+    (int id, SellRequest request, ClaimsPrincipal principal, InvestmentService service) =>
+{
+    try
+    {
+        var broker = await service.SellAsync(id, UserId(principal), request);
+        return broker is null ? TypedResults.NotFound() : TypedResults.Ok(broker);
+    }
+    catch (ArgumentException ex) { return TypedResults.BadRequest(ex.Message); }
+});
+
+api.MapPost("/brokers/{id:int}/transfer", async Task<Results<Ok<BrokerDto>, NotFound, BadRequest<string>>>
+    (int id, BrokerTransferRequest request, ClaimsPrincipal principal, InvestmentService service) =>
+{
+    try
+    {
+        var broker = await service.TransferAsync(id, UserId(principal), request);
+        return broker is null ? TypedResults.NotFound() : TypedResults.Ok(broker);
+    }
+    catch (ArgumentException ex) { return TypedResults.BadRequest(ex.Message); }
+});
+
 app.Run();

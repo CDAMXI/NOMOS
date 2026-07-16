@@ -56,6 +56,19 @@ public record NetWorthDto(
     List<SeriesPointDto> Series,
     List<AccountDto> Accounts);
 
+// --- Inversiones (broker) ---
+public record HoldingDto(int Id, string Symbol, decimal Shares, decimal BuyPrice, decimal Cost, DateOnly BuyDate);
+
+/// <summary>Estado de una cuenta broker: total = margen libre + coste de las posiciones.</summary>
+public record BrokerDto(int AccountId, string Name, decimal Margin, decimal Invested, decimal Total, List<HoldingDto> Holdings);
+
+public record BuyRequest(string Symbol, decimal Shares, decimal Price);
+
+public record SellRequest(int HoldingId, decimal Shares, decimal Price);
+
+/// <summary>Mueve dinero entre una cuenta de efectivo y el margen libre del broker.</summary>
+public record BrokerTransferRequest(int CashAccountId, decimal Amount, string Direction);
+
 public record UserDto(int Id, string Username, string? PhotoDataUrl);
 
 public record RegisterRequest(string Username, string Password, string? PhotoDataUrl);

@@ -48,6 +48,21 @@ const I18N = {
     username_ph: 'Nombre de usuario', password_ph: 'Contraseña', repeat_password_ph: 'Repite la contraseña',
     fill_user_pass: 'Rellena usuario y contraseña.', passwords_no_match: 'Las contraseñas no coinciden.',
     choose_photo: 'Elegir foto de perfil', theme_toggle: 'Cambiar tema', add: 'Añadir', edit: 'Editar',
+    broker_total: 'Total en el broker', free_margin: 'Margen libre', invested: 'Invertido',
+    positions: 'Posiciones', no_positions: 'Sin posiciones todavía. Usa Comprar para registrar la primera.',
+    buy: 'Comprar', sell: 'Vender', deposit: 'Depositar', withdraw: 'Retirar',
+    buy_title: 'Comprar acciones', sell_title: 'Vender {0}',
+    symbol_ph: 'Nombre de la acción (p. ej. AAPL)', num_shares: 'Número de acciones',
+    price_per_share: 'Precio por acción (€)', sell_price: 'Precio de venta (€)',
+    total_cost: 'Coste total', total_proceeds: 'Total de la venta',
+    lot_summary: 'Lote: {0} acciones a {1} · compradas el {2}',
+    must_be_positive: 'El precio y la cantidad deben ser mayores que cero.',
+    insufficient_margin: 'Margen libre insuficiente ({0} disponibles).',
+    sell_too_many: 'No puedes vender más de {0} acciones.',
+    buy_saved: 'Compra registrada', sell_saved: 'Venta registrada',
+    transfer_title: 'Depositar / Retirar', transfer_done: 'Transferencia realizada',
+    cash_account_label: 'Cuenta de efectivo', need_cash_account: 'Necesitas una cuenta de efectivo primero.',
+    edit_account: '✏️ Editar cuenta',
     thousands: 'mil'
   },
   en: {
@@ -93,6 +108,21 @@ const I18N = {
     username_ph: 'Username', password_ph: 'Password', repeat_password_ph: 'Repeat password',
     fill_user_pass: 'Fill in username and password.', passwords_no_match: 'Passwords do not match.',
     choose_photo: 'Choose profile photo', theme_toggle: 'Toggle theme', add: 'Add', edit: 'Edit',
+    broker_total: 'Broker total', free_margin: 'Free margin', invested: 'Invested',
+    positions: 'Positions', no_positions: 'No positions yet. Use Buy to add the first one.',
+    buy: 'Buy', sell: 'Sell', deposit: 'Deposit', withdraw: 'Withdraw',
+    buy_title: 'Buy shares', sell_title: 'Sell {0}',
+    symbol_ph: 'Stock name (e.g. AAPL)', num_shares: 'Number of shares',
+    price_per_share: 'Price per share (€)', sell_price: 'Sell price (€)',
+    total_cost: 'Total cost', total_proceeds: 'Sale total',
+    lot_summary: 'Lot: {0} shares at {1} · bought on {2}',
+    must_be_positive: 'Price and quantity must be greater than zero.',
+    insufficient_margin: 'Not enough free margin ({0} available).',
+    sell_too_many: 'You cannot sell more than {0} shares.',
+    buy_saved: 'Purchase recorded', sell_saved: 'Sale recorded',
+    transfer_title: 'Deposit / Withdraw', transfer_done: 'Transfer completed',
+    cash_account_label: 'Cash account', need_cash_account: 'You need a cash account first.',
+    edit_account: '✏️ Edit account',
     thousands: 'k'
   }
 };
@@ -127,6 +157,8 @@ const eurShort = v => Math.abs(v) >= 10000
   ? (lang === 'en' ? '€' + nf0(Math.round(v / 1000)) + 'k' : nf0(Math.round(v / 1000)) + ' mil €')
   : (Number.isInteger(v) ? grpSpace(_curShort.formatToParts(v)) : eur(v));
 const pct1 = v => Math.abs(v).toLocaleString(localeCode(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
+// Número de acciones: hasta 6 decimales (permite fracciones), miles con espacio.
+const nfShares = v => grpSpace(new Intl.NumberFormat(localeCode(), { maximumFractionDigits: 6, useGrouping: true }).formatToParts(v));
 
 // Fecha en DD/MM/YYYY (misma en ambos idiomas, por preferencia). Formateada desde la
 // cadena ISO sin new Date para evitar desfases de zona horaria.
@@ -640,8 +672,14 @@ async function loadPatrimonio() {
   });
   $('nwSections').innerHTML = html || `<p class="tx-sub">${t('add_first_account')}</p>`;
 
+  // Las cuentas de inversión abren la hoja del broker (posiciones, compra/venta); el resto,
+  // la edición clásica de saldo.
   document.querySelectorAll('#nwSections li[data-acc]').forEach(li =>
-    li.addEventListener('click', () => openAccountEditSheet(+li.dataset.acc)));
+    li.addEventListener('click', () => {
+      const acc = accountsCache.find(x => x.id === +li.dataset.acc);
+      if (acc?.type === 'Investment') openBrokerSheet(acc.id).catch(e => toast(e.message));
+      else openAccountEditSheet(+li.dataset.acc);
+    }));
 }
 
 function accRow(a) {
@@ -744,6 +782,18 @@ const amountValue = () => {
 function setAmount(v) {
   if (!v) { amountSeed = ''; return; }
   amountSeed = (Number.isInteger(v) ? String(v) : v.toFixed(2)).replace('.', decSep());
+}
+
+// Como amountValue pero para cualquier input decimal (precio, nº de acciones…). Conserva el
+// signo para que la validación pueda rechazar negativos explícitamente.
+function decValue(el) {
+  const raw = ((el && el.value) || '').trim();
+  const neg = raw.startsWith('-');
+  const dec = decSep();
+  const grp = dec === ',' ? '.' : ',';
+  const norm = raw.split(grp).join('').replace(dec, '.').replace(/[^0-9.]/g, '');
+  const n = parseFloat(norm) || 0;
+  return neg ? -n : n;
 }
 
 // --- Nuevo movimiento / editar movimiento (gasto o ingreso) ---
@@ -1022,6 +1072,219 @@ function openAccountEditSheet(id) {
       });
       toast(t('balance_updated'));
     }
+  });
+}
+
+// ---------- Broker (cuenta de inversión) ----------
+// Total = margen libre + coste de las posiciones (valoradas a precio de compra). Comprar resta
+// del margen; vender ingresa en el margen a precio de venta. Cada compra es un lote independiente
+// y se vende tocándolo en la lista.
+async function openBrokerSheet(accountId) {
+  const b = await getJSON(`/api/brokers/${accountId}`);
+  const back = () => openBrokerSheet(accountId).catch(e => toast(e.message));
+
+  openSheet({
+    title: b.name,
+    build(body) {
+      body.innerHTML = `
+        <div class="broker-hero">
+          <p class="amount-label">${t('broker_total')}</p>
+          <div class="big-figure">${eur(b.total)}</div>
+          <p class="broker-sub">${t('free_margin')}: <b>${eur(b.margin)}</b> · ${t('invested')}: <b>${eur(b.invested)}</b></p>
+        </div>
+        <div class="kind-toggle">
+          <button id="buyBtn" class="pill active">🛒 ${t('buy')}</button>
+          <button id="transferBtn" class="pill">🔁 ${t('deposit')} / ${t('withdraw')}</button>
+        </div>
+        <p class="muted-label">${t('positions')}</p>
+        <ul class="sheet-list tx-list">${b.holdings.map((h, i) => `
+          <li class="clickable" data-h="${i}" title="${t('sell')}">
+            <span class="tx-icon" style="background:${tint('#0a84ff', .14)}">📈</span>
+            <span class="tx-main">
+              <span class="tx-title">${esc(h.symbol)}</span>
+              <div class="tx-sub">${nfShares(h.shares)} × ${eur(h.buyPrice)} · ${dMed(h.buyDate)}</div>
+            </span>
+            <span class="tx-amount">${eur(h.cost)}</span>
+            <span class="acc-chevron">›</span>
+          </li>`).join('') || `<li class="tx-sub">${t('no_positions')}</li>`}
+        </ul>
+        <div class="divider"></div>
+        <button id="editBrokerBtn" class="inline-btn">${t('edit_account')}</button>`;
+
+      $('buyBtn').addEventListener('click', () => openBuySheet(b, back));
+      $('transferBtn').addEventListener('click', () => openBrokerTransferSheet(b, back).catch(e => toast(e.message)));
+      $('editBrokerBtn').addEventListener('click', () => openBrokerEditSheet(b, back));
+      body.querySelectorAll('li[data-h]').forEach(li =>
+        li.addEventListener('click', () => openSellSheet(b, b.holdings[+li.dataset.h], back)));
+    }
+  });
+}
+
+// --- Comprar: nombre, precio y cantidad; el coste no puede superar el margen libre ---
+function openBuySheet(b, back) {
+  openSheet({
+    title: t('buy_title'),
+    canSave: () => {
+      const sh = decValue($('sharesField')), pr = decValue($('priceField'));
+      return !!$('symField')?.value.trim() && sh > 0 && pr > 0 && Math.round(sh * pr * 100) / 100 <= b.margin;
+    },
+    build(body) {
+      body.innerHTML = `
+        <input id="symField" class="text-field" placeholder="${t('symbol_ph')}" maxlength="40" autofocus>
+        <input id="sharesField" class="text-field" inputmode="decimal" autocomplete="off" placeholder="${t('num_shares')}">
+        <input id="priceField" class="text-field" inputmode="decimal" autocomplete="off" placeholder="${t('price_per_share')}">
+        <div class="calc-line"><span>${t('total_cost')}</span><b id="buyCost">—</b></div>
+        <div class="calc-line"><span>${t('free_margin')}</span><b>${eur(b.margin)}</b></div>
+        <p class="field-hint" id="buyHint"></p>`;
+
+      const paint = () => {
+        const sh = decValue($('sharesField')), pr = decValue($('priceField'));
+        const cost = Math.round(sh * pr * 100) / 100;
+        $('buyCost').textContent = sh > 0 && pr > 0 ? eur(cost) : '—';
+        $('buyHint').textContent =
+          sh < 0 || pr < 0 ? t('must_be_positive')
+          : cost > b.margin ? t('insufficient_margin', eur(b.margin))
+          : '';
+        refreshSaveState();
+      };
+      ['symField', 'sharesField', 'priceField'].forEach(id => $(id).addEventListener('input', paint));
+    },
+    async onSave() {
+      await sendJSON(`/api/brokers/${b.accountId}/buy`, 'POST', {
+        symbol: $('symField').value,
+        shares: decValue($('sharesField')),
+        price: decValue($('priceField'))
+      });
+      toast(t('buy_saved'));
+    },
+    afterSave: back
+  });
+}
+
+// --- Vender un lote: cantidad ≤ acciones del lote y precio > 0; si no, se indica y se bloquea ---
+function openSellSheet(b, h, back) {
+  openSheet({
+    title: t('sell_title', h.symbol),
+    canSave: () => {
+      const sh = decValue($('sharesField')), pr = decValue($('priceField'));
+      return sh > 0 && sh <= h.shares && pr > 0;
+    },
+    build(body) {
+      body.innerHTML = `
+        <p class="tx-sub cat-hint">${t('lot_summary', nfShares(h.shares), eur(h.buyPrice), dMed(h.buyDate))}</p>
+        <input id="sharesField" class="text-field" inputmode="decimal" autocomplete="off" placeholder="${t('num_shares')}" autofocus>
+        <input id="priceField" class="text-field" inputmode="decimal" autocomplete="off" placeholder="${t('sell_price')}">
+        <div class="calc-line"><span>${t('total_proceeds')}</span><b id="sellTotal">—</b></div>
+        <p class="field-hint" id="sellHint"></p>`;
+
+      const paint = () => {
+        const sh = decValue($('sharesField')), pr = decValue($('priceField'));
+        $('sellTotal').textContent = sh > 0 && pr > 0 ? eur(Math.round(sh * pr * 100) / 100) : '—';
+        $('sellHint').textContent =
+          sh < 0 || pr < 0 ? t('must_be_positive')
+          : sh > h.shares ? t('sell_too_many', nfShares(h.shares))
+          : '';
+        refreshSaveState();
+      };
+      ['sharesField', 'priceField'].forEach(id => $(id).addEventListener('input', paint));
+    },
+    async onSave() {
+      await sendJSON(`/api/brokers/${b.accountId}/sell`, 'POST', {
+        holdingId: h.id,
+        shares: decValue($('sharesField')),
+        price: decValue($('priceField'))
+      });
+      toast(t('sell_saved'));
+    },
+    afterSave: back
+  });
+}
+
+// --- Depositar/retirar: mueve dinero entre una cuenta de efectivo y el margen libre ---
+async function openBrokerTransferSheet(b, back) {
+  const cash = (await getJSON('/api/accounts')).filter(a => a.type === 'Cash');
+  if (!cash.length) { toast(t('need_cash_account')); return; }
+  let direction = 'deposit';
+  let cashSel = cash[0].id;
+  setAmount(0);
+
+  openSheet({
+    title: t('transfer_title'),
+    canSave: () => amountValue() > 0,
+    build(body) {
+      body.innerHTML = `
+        <div class="kind-toggle">
+          <button class="pill" data-dir="deposit">⬇️ ${t('deposit')}</button>
+          <button class="pill" data-dir="withdraw">⬆️ ${t('withdraw')}</button>
+        </div>
+        ${amountBlock(t('amount'))}
+        <p class="tx-sub cat-hint">${t('cash_account_label')}</p>
+        <div class="chips">${cash.map(a =>
+          `<button class="chip" data-acc="${a.id}">${TYPE_ICON.Cash} ${esc(a.name)}</button>`).join('')}</div>
+        <div class="calc-line"><span>${t('free_margin')}</span><b>${eur(b.margin)}</b></div>`;
+      bindAmount(body, true);
+
+      const paintDir = () => body.querySelectorAll('[data-dir]').forEach(p =>
+        p.classList.toggle('active', p.dataset.dir === direction));
+      body.querySelectorAll('[data-dir]').forEach(p =>
+        p.addEventListener('click', () => { direction = p.dataset.dir; paintDir(); }));
+      paintDir();
+
+      const paintAcc = () => body.querySelectorAll('.chip[data-acc]').forEach(ch => {
+        const sel = +ch.dataset.acc === cashSel;
+        ch.classList.toggle('selected', sel);
+        ch.style.background = sel ? 'var(--accent-soft)' : '';
+        ch.style.color = sel ? 'var(--accent)' : '';
+      });
+      body.querySelectorAll('.chip[data-acc]').forEach(ch =>
+        ch.addEventListener('click', () => { cashSel = +ch.dataset.acc; paintAcc(); }));
+      paintAcc();
+    },
+    async onSave() {
+      await sendJSON(`/api/brokers/${b.accountId}/transfer`, 'POST', {
+        cashAccountId: cashSel,
+        amount: amountValue(),
+        direction
+      });
+      toast(t('transfer_done'));
+    },
+    afterSave: back
+  });
+}
+
+// --- Editar la cuenta broker: renombrar, fijar el margen libre a mano o eliminarla ---
+function openBrokerEditSheet(b, back) {
+  setAmount(b.margin);
+
+  openSheet({
+    title: b.name,
+    canSave: () => $('nameField')?.value.trim().length > 0,
+    build(body) {
+      body.innerHTML = amountBlock(t('free_margin')) + `
+        <input id="nameField" class="text-field" maxlength="80" value="${esc(b.name)}">
+        <button id="deleteAcc" class="danger-btn">${t('delete_account')}</button>`;
+      bindAmount(body, false);
+      $('nameField').addEventListener('input', refreshSaveState);
+      $('deleteAcc').addEventListener('click', async () => {
+        if (!confirm(t('confirm_delete', b.name))) return;
+        try {
+          await sendJSON(`/api/accounts/${b.accountId}`, 'DELETE');
+          closeSheet();
+          await refreshCurrent();
+          toast(t('account_deleted'));
+        } catch (e) { toast(e.message); }
+      });
+    },
+    async onSave() {
+      // Para una cuenta de inversión, el valor introducido es el margen libre (los movimientos
+      // no se asignan a brokers, así que el baseline coincide con el margen).
+      await sendJSON(`/api/accounts/${b.accountId}`, 'PUT', {
+        name: $('nameField').value,
+        balance: amountValue()
+      });
+      toast(t('balance_updated'));
+    },
+    afterSave: back
   });
 }
 

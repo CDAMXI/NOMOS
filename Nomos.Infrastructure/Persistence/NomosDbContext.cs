@@ -10,6 +10,7 @@ public class NomosDbContext(DbContextOptions<NomosDbContext> options) : DbContex
     public DbSet<Expense> Expenses => Set<Expense>();
     public DbSet<Income> Incomes => Set<Income>();
     public DbSet<Account> Accounts => Set<Account>();
+    public DbSet<Holding> Holdings => Set<Holding>();
     public DbSet<NetWorthSnapshot> Snapshots => Set<NetWorthSnapshot>();
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -73,6 +74,21 @@ public class NomosDbContext(DbContextOptions<NomosDbContext> options) : DbContex
              .WithMany()
              .HasForeignKey(a => a.UserId)
              .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<Holding>(e =>
+        {
+            e.Property(h => h.Symbol).HasMaxLength(40);
+            // Las posiciones viven y mueren con su cuenta broker; el usuario cascada vía la cuenta.
+            e.HasOne<Account>()
+             .WithMany()
+             .HasForeignKey(h => h.AccountId)
+             .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<User>()
+             .WithMany()
+             .HasForeignKey(h => h.UserId)
+             .OnDelete(DeleteBehavior.NoAction);
+            e.HasIndex(h => new { h.UserId, h.AccountId });
         });
 
         builder.Entity<NetWorthSnapshot>(e =>

@@ -7,12 +7,13 @@ namespace Nomos.Application.Services;
 
 public class NetWorthService(
     IAccountRepository accounts, ISnapshotRepository snapshots,
-    IExpenseRepository expenses, IIncomeRepository incomes)
+    IExpenseRepository expenses, IIncomeRepository incomes, IHoldingRepository holdings)
 {
     public async Task<NetWorthDto> GetOverviewAsync(int userId, DateOnly today)
     {
         var all = await accounts.GetAllAsync(userId);
-        var live = AccountBalances.Live(all, await expenses.GetAllAsync(userId), await incomes.GetAllAsync(userId));
+        var live = AccountBalances.Live(all,
+            await expenses.GetAllAsync(userId), await incomes.GetAllAsync(userId), await holdings.GetAllAsync(userId));
         var assets = all.Where(a => a.Type != AccountType.Liability).Sum(a => live[a.Id]);
         var liabilities = all.Where(a => a.Type == AccountType.Liability).Sum(a => live[a.Id]);
         var net = assets - liabilities;
@@ -108,7 +109,8 @@ public class NetWorthService(
     private async Task RefreshSnapshotAsync(int userId, DateOnly today)
     {
         var all = await accounts.GetAllAsync(userId);
-        var live = AccountBalances.Live(all, await expenses.GetAllAsync(userId), await incomes.GetAllAsync(userId));
+        var live = AccountBalances.Live(all,
+            await expenses.GetAllAsync(userId), await incomes.GetAllAsync(userId), await holdings.GetAllAsync(userId));
         await snapshots.UpsertAsync(new NetWorthSnapshot
         {
             UserId = userId,

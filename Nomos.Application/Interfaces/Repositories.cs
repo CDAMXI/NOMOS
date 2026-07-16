@@ -54,6 +54,16 @@ public interface IAccountRepository
     Task DeleteAsync(Account account);
 }
 
+public interface IHoldingRepository
+{
+    Task<List<Holding>> GetAllAsync(int userId);
+    Task<List<Holding>> GetByAccountAsync(int accountId, int userId);
+    Task<Holding?> GetByIdAsync(int id, int userId);
+    Task<Holding> AddAsync(Holding holding);
+    Task UpdateAsync(Holding holding);
+    Task DeleteAsync(Holding holding);
+}
+
 public interface ISnapshotRepository
 {
     Task<List<NetWorthSnapshot>> GetFromAsync(int userId, DateOnly from);

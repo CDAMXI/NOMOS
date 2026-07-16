@@ -545,6 +545,15 @@ li.clickable { cursor: pointer; }
 
 .cat-hint { text-align: center; margin-bottom: 14px; }
 
+/* ---------- Hoja del broker (inversiones) ---------- */
+.broker-hero { text-align: center; padding: 2px 0 14px; }
+.broker-hero .big-figure { font-size: 34px; }
+.broker-sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
+.broker-sub b { color: var(--text); font-weight: 600; }
+.calc-line { display: flex; justify-content: space-between; color: var(--muted); font-size: 14px; padding: 7px 2px; }
+.calc-line b { color: var(--text); font-weight: 600; }
+.field-hint { color: var(--red); font-size: 13.5px; text-align: center; min-height: 18px; margin: 6px 0 2px; }
+
 .swatches { display: flex; flex-wrap: wrap; gap: 10px; padding: 4px 0 8px; }
 .swatch {
   width: 30px;
