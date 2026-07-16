@@ -768,17 +768,24 @@ function bindAmount(container, focus) {
   }
 }
 
-// Interpreta el importe según el idioma: en es "," es decimal y "." es separador de miles
-// (al revés en en). Quita los miles, conserva el signo y redondea a 2 decimales.
+// Al teclear, tanto la coma como el punto valen como separador decimal: el ÚLTIMO que
+// aparezca es el decimal y los anteriores se descartan como miles. Conserva el signo.
+// "12,5" = "12.5" = 12.5 · "1.234,56" = "1,234.56" = 1234.56. Al mostrar, siempre coma.
+const parseDecimal = raw => {
+  raw = (raw || '').trim();
+  const neg = raw.startsWith('-');
+  const d = raw.replace(/[^0-9.,]/g, '');
+  const iSep = Math.max(d.lastIndexOf('.'), d.lastIndexOf(','));
+  const norm = iSep < 0 ? d : d.slice(0, iSep).replace(/[.,]/g, '') + '.' + d.slice(iSep + 1);
+  const n = parseFloat(norm) || 0;
+  return neg ? -n : n;
+};
+
+// Importe del input principal, redondeado a 2 decimales.
 const amountValue = () => {
   const el = $('amountInput');
-  const raw = ((el ? el.value : amountSeed) || '').trim();
-  const neg = raw.startsWith('-');
-  const dec = decSep();                 // ',' en español, '.' en inglés
-  const grp = dec === ',' ? '.' : ',';  // el otro es el separador de miles
-  const norm = raw.split(grp).join('').replace(dec, '.').replace(/[^0-9.]/g, '');
-  const n = Math.round((parseFloat(norm) || 0) * 100) / 100;
-  return neg ? -n : n;
+  const n = parseDecimal((el ? el.value : amountSeed) || '');
+  return Math.round(n * 100) / 100;
 };
 
 function setAmount(v) {
@@ -786,16 +793,11 @@ function setAmount(v) {
   amountSeed = (Number.isInteger(v) ? String(v) : v.toFixed(2)).replace('.', decSep());
 }
 
-// Como amountValue pero para cualquier input decimal (precio, nº de acciones…). Conserva el
-// signo para que la validación pueda rechazar negativos explícitamente.
+// Como amountValue pero para cualquier input decimal (precio, nº de acciones…), sin
+// redondear (las acciones admiten hasta 6 decimales). Conserva el signo para que la
+// validación pueda rechazar negativos explícitamente.
 function decValue(el) {
-  const raw = ((el && el.value) || '').trim();
-  const neg = raw.startsWith('-');
-  const dec = decSep();
-  const grp = dec === ',' ? '.' : ',';
-  const norm = raw.split(grp).join('').replace(dec, '.').replace(/[^0-9.]/g, '');
-  const n = parseFloat(norm) || 0;
-  return neg ? -n : n;
+  return parseDecimal((el && el.value) || '');
 }
 
 // --- Nuevo movimiento / editar movimiento (gasto o ingreso) ---
