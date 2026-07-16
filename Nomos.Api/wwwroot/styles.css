@@ -151,6 +151,8 @@ body {
   cursor: pointer;
 }
 .pill.active { background: var(--accent-soft); color: var(--accent); }
+/* Píldora que solo se "enciende" al pasar el ratón (p. ej. Editar cuenta en el broker). */
+.pill-hover:hover { background: var(--accent-soft); color: var(--accent); }
 
 .chart { position: relative; }
 .chart svg { width: 100%; height: auto; display: block; touch-action: pan-y; }
@@ -504,6 +506,8 @@ body {
 }
 
 .divider { border-top: 1px solid var(--line); margin: 18px 0 12px; }
+
+.centered { display: block; margin: 0 auto; }
 
 .inline-btn {
   border: none;
