@@ -196,6 +196,8 @@ body {
 }
 .cat-list .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 .cat-list .amount { margin-left: auto; font-weight: 600; }
+/* Estado vacío ("Sin gastos en este periodo."): mensaje centrado ocupando toda la tarjeta. */
+.cat-list.empty li { justify-content: center; }
 
 /* ---------- Listas de movimientos / cuentas ---------- */
 .tx-list { list-style: none; }

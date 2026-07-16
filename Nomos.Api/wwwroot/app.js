@@ -553,6 +553,9 @@ function renderCategoryCard(d, cash) {
     const byCat = catAccountSel === 'all'
       ? d.byCategory
       : ((d.byAccount || []).find(a => a.accountId === catAccountSel)?.byCategory || []);
+    // Sin gastos: la rueda vacía se oculta y el mensaje se centra en la tarjeta.
+    $('gDonut').classList.toggle('hidden', !byCat.length);
+    $('gCatList').classList.toggle('empty', !byCat.length);
     renderDonut($('gDonut'), byCat.map(c => ({ color: c.category.color, value: c.total })));
     $('gCatList').innerHTML = byCat.map(c => `
       <li><span class="dot" style="background:${c.category.color}"></span>
