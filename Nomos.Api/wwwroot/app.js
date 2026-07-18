@@ -1642,11 +1642,17 @@ function openProfileSheet() {
       // Activar/desactivar "Gastos de viaje" se aplica al momento (los datos no se borran).
       $('tripsToggle').addEventListener('change', async e => {
         const on = e.target.checked;
+        // El guardado y la actualización de la pestaña van por separado: un fallo al pintar la
+        // pestaña (p. ej. index.html cacheado sin ella) NO debe revertir un guardado correcto.
         try {
           me = await sendJSON('/api/auth/profile', 'PUT', { tripsEnabled: on });
-          applyTripsTab();
-          toast(t(on ? 'trips_enabled_on' : 'trips_enabled_off'));
-        } catch (err) { e.target.checked = !on; toast(err.message); }
+        } catch (err) {
+          e.target.checked = !on;
+          toast(err.message);
+          return;
+        }
+        applyTripsTab();
+        toast(t(on ? 'trips_enabled_on' : 'trips_enabled_off'));
       });
 
       $('changePassBtn').addEventListener('click', async () => {
@@ -1783,9 +1789,11 @@ document.querySelectorAll('.tab').forEach(tab =>
 // La pestaña Viajes solo existe si el usuario la activó en el perfil. Al apagarla, si estabas
 // en esa vista, vuelve a Gastos (los datos siguen en el servidor, solo se ocultan).
 function applyTripsTab() {
-  $('tabViajes').classList.toggle('hidden', !me?.tripsEnabled);
+  // Tolerante a un index.html cacheado antiguo: si la pestaña aún no existe en el DOM, no rompas.
+  const tab = $('tabViajes');
+  if (tab) tab.classList.toggle('hidden', !me?.tripsEnabled);
   if (!me?.tripsEnabled && currentView === 'viajes')
-    document.querySelector('.tab[data-view="gastos"]').click();
+    document.querySelector('.tab[data-view="gastos"]')?.click();
 }
 
 document.querySelectorAll('.pill[data-days]').forEach(pill =>
