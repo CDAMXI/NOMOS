@@ -991,16 +991,19 @@ async function openCategoriesSheet() {
     title: t('categories'),
     build(body) {
       const sorted = [...categories].sort((a, b) => catName(a.name).localeCompare(catName(b.name), localeCode()));
-      body.innerHTML = `<ul class="sheet-list cat-manage">${sorted.map(c => `
-        <li class="clickable" data-cat="${c.id}">
+      body.innerHTML = `<div class="settings-group cat-manage">${sorted.map(c => `
+        <button class="settings-row" data-cat="${c.id}">
           <span class="tx-icon" style="background:${tint(c.color, .16)}">${c.icon}</span>
-          <span class="tx-main"><span class="tx-title">${esc(catName(c.name))}</span></span>
+          <span class="settings-label">${esc(catName(c.name))}</span>
           <span class="acc-chevron">›</span>
-        </li>`).join('')}</ul>
-        <button id="addCat" class="inline-btn">${t('add_category')}</button>`;
-      body.querySelectorAll('li[data-cat]').forEach(li =>
-        li.addEventListener('click', () => {
-          const c = categories.find(x => x.id === +li.dataset.cat);
+        </button>`).join('')}
+        <button class="settings-row cat-add-row" id="addCat">
+          <span class="tx-icon cat-add-tile">＋</span>
+          <span class="settings-label">${t('add_category').replace(/^＋\s*/, '')}</span>
+        </button></div>`;
+      body.querySelectorAll('button[data-cat]').forEach(b =>
+        b.addEventListener('click', () => {
+          const c = categories.find(x => x.id === +b.dataset.cat);
           openCategoryEditSheet(c, () => openCategoriesSheet());
         }));
       $('addCat').addEventListener('click', () => openCategoryEditSheet(null, () => openCategoriesSheet()));
