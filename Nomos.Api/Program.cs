@@ -330,4 +330,78 @@ api.MapPost("/brokers/{id:int}/transfer", async Task<Results<Ok<BrokerDto>, NotF
     catch (ArgumentException ex) { return TypedResults.BadRequest(ex.Message); }
 });
 
+// --- Viajes (gastos de viaje multi-moneda; registro aparte) ---
+api.MapGet("/trips", (ClaimsPrincipal principal, TripService service) =>
+    service.GetAllAsync(UserId(principal)));
+
+api.MapGet("/trips/{id:int}", async Task<Results<Ok<TripDetailDto>, NotFound>>
+    (int id, ClaimsPrincipal principal, TripService service) =>
+{
+    var trip = await service.GetDetailAsync(id, UserId(principal));
+    return trip is null ? TypedResults.NotFound() : TypedResults.Ok(trip);
+});
+
+api.MapPost("/trips", async Task<Results<Created<TripDetailDto>, BadRequest<string>>>
+    (SaveTripRequest request, ClaimsPrincipal principal, TripService service) =>
+{
+    try
+    {
+        var created = await service.CreateAsync(UserId(principal), request);
+        return TypedResults.Created($"/api/trips/{created.Id}", created);
+    }
+    catch (ArgumentException ex) { return TypedResults.BadRequest(ex.Message); }
+});
+
+api.MapPut("/trips/{id:int}", async Task<Results<Ok<TripDetailDto>, NotFound, BadRequest<string>>>
+    (int id, SaveTripRequest request, ClaimsPrincipal principal, TripService service) =>
+{
+    try
+    {
+        var updated = await service.UpdateAsync(id, UserId(principal), request);
+        return updated is null ? TypedResults.NotFound() : TypedResults.Ok(updated);
+    }
+    catch (ArgumentException ex) { return TypedResults.BadRequest(ex.Message); }
+});
+
+api.MapDelete("/trips/{id:int}", async Task<Results<NoContent, NotFound>>
+    (int id, ClaimsPrincipal principal, TripService service) =>
+    await service.DeleteAsync(id, UserId(principal)) ? TypedResults.NoContent() : TypedResults.NotFound());
+
+api.MapPost("/trips/{id:int}/expenses", async Task<Results<Ok<TripDetailDto>, NotFound, BadRequest<string>>>
+    (int id, SaveTripExpenseRequest request, ClaimsPrincipal principal, TripService service) =>
+{
+    try
+    {
+        var trip = await service.AddExpenseAsync(id, UserId(principal), request);
+        return trip is null ? TypedResults.NotFound() : TypedResults.Ok(trip);
+    }
+    catch (ArgumentException ex) { return TypedResults.BadRequest(ex.Message); }
+});
+
+api.MapPut("/trips/{id:int}/expenses/{eid:int}", async Task<Results<Ok<TripDetailDto>, NotFound, BadRequest<string>>>
+    (int id, int eid, SaveTripExpenseRequest request, ClaimsPrincipal principal, TripService service) =>
+{
+    try
+    {
+        var trip = await service.UpdateExpenseAsync(id, eid, UserId(principal), request);
+        return trip is null ? TypedResults.NotFound() : TypedResults.Ok(trip);
+    }
+    catch (ArgumentException ex) { return TypedResults.BadRequest(ex.Message); }
+});
+
+api.MapDelete("/trips/{id:int}/expenses/{eid:int}", async Task<Results<Ok<TripDetailDto>, NotFound>>
+    (int id, int eid, ClaimsPrincipal principal, TripService service) =>
+{
+    if (!await service.DeleteExpenseAsync(id, eid, UserId(principal))) return TypedResults.NotFound();
+    var trip = await service.GetDetailAsync(id, UserId(principal));
+    return trip is null ? TypedResults.NotFound() : TypedResults.Ok(trip);
+});
+
+api.MapGet("/trips/{id:int}/expenses/{eid:int}/receipt", async Task<Results<Ok<string>, NotFound>>
+    (int id, int eid, ClaimsPrincipal principal, TripService service) =>
+{
+    var receipt = await service.GetReceiptAsync(id, eid, UserId(principal));
+    return receipt is null ? TypedResults.NotFound() : TypedResults.Ok(receipt);
+});
+
 app.Run();

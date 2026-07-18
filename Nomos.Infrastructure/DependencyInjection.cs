@@ -25,6 +25,7 @@ public static class DependencyInjection
         services.AddScoped<IIncomeRepository, IncomeRepository>();
         services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<IHoldingRepository, HoldingRepository>();
+        services.AddScoped<ITripRepository, TripRepository>();
         services.AddScoped<ISnapshotRepository, SnapshotRepository>();
 
         services.AddScoped<AuthService>();
@@ -33,6 +34,7 @@ public static class DependencyInjection
         services.AddScoped<IncomeService>();
         services.AddScoped<NetWorthService>();
         services.AddScoped<InvestmentService>();
+        services.AddScoped<TripService>();
 
         return services;
     }

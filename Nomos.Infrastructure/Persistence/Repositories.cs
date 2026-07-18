@@ -208,6 +208,65 @@ public class HoldingRepository(NomosDbContext db) : IHoldingRepository
     }
 }
 
+public class TripRepository(NomosDbContext db) : ITripRepository
+{
+    // Rastreado (sin AsNoTracking) para que el resumen incluya monedas y gastos.
+    public Task<List<Trip>> GetAllAsync(int userId) =>
+        db.Trips.AsNoTracking()
+            .Include(t => t.Currencies)
+            .Include(t => t.Expenses)
+            .Where(t => t.UserId == userId)
+            .ToListAsync();
+
+    // Rastreado a propósito: UpdateAsync persiste los cambios en la colección de monedas.
+    public Task<Trip?> GetDetailAsync(int id, int userId) =>
+        db.Trips
+            .Include(t => t.Currencies)
+            .Include(t => t.Expenses).ThenInclude(e => e.Category)
+            .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
+
+    public async Task<Trip> AddAsync(Trip trip)
+    {
+        db.Trips.Add(trip);
+        await db.SaveChangesAsync();
+        return trip;
+    }
+
+    public async Task UpdateAsync(Trip trip)
+    {
+        // trip viene rastreado de GetDetailAsync: guarda alta/baja/edición de monedas.
+        await db.SaveChangesAsync();
+    }
+
+    public async Task DeleteAsync(Trip trip)
+    {
+        db.Trips.Remove(trip);
+        await db.SaveChangesAsync();
+    }
+
+    public Task<TripExpense?> GetExpenseAsync(int tripId, int expenseId, int userId) =>
+        db.TripExpenses.Include(e => e.Category)
+            .FirstOrDefaultAsync(e => e.Id == expenseId && e.TripId == tripId && e.UserId == userId);
+
+    public async Task<TripExpense> AddExpenseAsync(TripExpense expense)
+    {
+        db.TripExpenses.Add(expense);
+        await db.SaveChangesAsync();
+        return expense;
+    }
+
+    public async Task UpdateExpenseAsync(TripExpense expense)
+    {
+        await db.SaveChangesAsync();
+    }
+
+    public async Task DeleteExpenseAsync(TripExpense expense)
+    {
+        db.TripExpenses.Remove(expense);
+        await db.SaveChangesAsync();
+    }
+}
+
 public class SnapshotRepository(NomosDbContext db) : ISnapshotRepository
 {
     public Task<List<NetWorthSnapshot>> GetFromAsync(int userId, DateOnly from) =>

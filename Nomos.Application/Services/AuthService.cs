@@ -69,6 +69,9 @@ public partial class AuthService(IUserRepository users)
         if (request.PhotoDataUrl is not null)
             user.PhotoDataUrl = ValidatePhoto(request.PhotoDataUrl);
 
+        if (request.TripsEnabled is bool tripsEnabled)
+            user.TripsEnabled = tripsEnabled;
+
         await users.UpdateAsync(user);
         return ToDto(user);
     }
@@ -113,5 +116,5 @@ public partial class AuthService(IUserRepository users)
         return photoDataUrl;
     }
 
-    private static UserDto ToDto(User u) => new(u.Id, u.Username, u.PhotoDataUrl);
+    private static UserDto ToDto(User u) => new(u.Id, u.Username, u.PhotoDataUrl, u.TripsEnabled);
 }

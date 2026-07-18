@@ -84,11 +84,20 @@
     <div id="nwSections"></div>
   </main>
 
+  <!-- ===== Vista Viajes (opt-in desde el perfil) ===== -->
+  <main id="view-viajes" class="view hidden">
+    <section class="nw-hero">
+      <p class="eyebrow" data-i18n="tab_viajes">Viajes</p>
+    </section>
+    <div id="tripsList"></div>
+  </main>
+
   <button id="fab" class="hidden" data-i18n-title="add" title="Añadir">+</button>
 
   <nav class="tabbar">
     <button class="tab active" data-view="gastos">💸 <span data-i18n="tab_gastos">Gastos</span></button>
     <button class="tab" data-view="patrimonio">📊 <span data-i18n="tab_patrimonio">Patrimonio</span></button>
+    <button class="tab hidden" data-view="viajes" id="tabViajes">✈️ <span data-i18n="tab_viajes">Viajes</span></button>
   </nav>
 
   <!-- ===== Hoja modal (movimientos / cuentas / perfil / ver todo) ===== -->

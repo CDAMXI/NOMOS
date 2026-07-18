@@ -63,6 +63,20 @@ const I18N = {
     transfer_title: 'Depositar / Retirar', transfer_done: 'Transferencia realizada',
     cash_account_label: 'Cuenta de efectivo', need_cash_account: 'Necesitas una cuenta de efectivo primero.',
     edit_account: '✏️ Editar cuenta',
+    tab_viajes: 'Viajes', trips_toggle: '✈️ Gastos de viaje',
+    trips_toggle_hint: 'Muestra la pestaña Viajes. Al apagarlo se oculta, pero tus viajes y gastos se conservan.',
+    new_trip: 'Nuevo viaje', edit_trip: 'Editar viaje', trip_name_ph: 'Nombre del viaje (p. ej. Japón 2026)',
+    destinations_ph: 'Destino(s) (p. ej. Tokio, Kioto)', destinations_label: 'Destinos',
+    currencies_label: 'Monedas y tasa a €', currency_code_ph: 'Moneda (p. ej. JPY)', rate_ph: '1 = … €',
+    add_currency: '＋ moneda', trip_saved: 'Viaje guardado', trip_deleted: 'Viaje eliminado',
+    delete_trip: 'Eliminar viaje', add_trips_first: 'Añade tu primer viaje con el botón +.',
+    trip_total: 'Total del viaje', trip_expenses: 'Gastos del viaje', no_trip_expenses: 'Sin gastos todavía. Añade uno con ＋ Gasto.',
+    add_trip_expense: '＋ Gasto', new_trip_expense: 'Nuevo gasto', edit_trip_expense: 'Editar gasto',
+    by_currency: 'Por moneda', currency_label: 'Moneda', receipt: 'Factura',
+    add_receipt: '📷 Adjuntar factura', change_receipt: '📷 Cambiar factura', remove_receipt: 'Quitar factura',
+    view_receipt: '🧾 Ver factura', trip_expense_saved: 'Gasto guardado', trip_expense_deleted: 'Gasto eliminado',
+    delete_trip_expense: 'Eliminar gasto', need_currency: 'Añade al menos una moneda.',
+    trips_enabled_on: 'Gastos de viaje activados', trips_enabled_off: 'Gastos de viaje desactivados',
     thousands: 'mil'
   },
   en: {
@@ -123,6 +137,20 @@ const I18N = {
     transfer_title: 'Deposit / Withdraw', transfer_done: 'Transfer completed',
     cash_account_label: 'Cash account', need_cash_account: 'You need a cash account first.',
     edit_account: '✏️ Edit account',
+    tab_viajes: 'Trips', trips_toggle: '✈️ Travel expenses',
+    trips_toggle_hint: 'Shows the Trips tab. Turning it off hides it, but your trips and expenses are kept.',
+    new_trip: 'New trip', edit_trip: 'Edit trip', trip_name_ph: 'Trip name (e.g. Japan 2026)',
+    destinations_ph: 'Destination(s) (e.g. Tokyo, Kyoto)', destinations_label: 'Destinations',
+    currencies_label: 'Currencies and € rate', currency_code_ph: 'Currency (e.g. JPY)', rate_ph: '1 = … €',
+    add_currency: '＋ currency', trip_saved: 'Trip saved', trip_deleted: 'Trip deleted',
+    delete_trip: 'Delete trip', add_trips_first: 'Add your first trip with the + button.',
+    trip_total: 'Trip total', trip_expenses: 'Trip expenses', no_trip_expenses: 'No expenses yet. Add one with ＋ Expense.',
+    add_trip_expense: '＋ Expense', new_trip_expense: 'New expense', edit_trip_expense: 'Edit expense',
+    by_currency: 'By currency', currency_label: 'Currency', receipt: 'Receipt',
+    add_receipt: '📷 Attach receipt', change_receipt: '📷 Change receipt', remove_receipt: 'Remove receipt',
+    view_receipt: '🧾 View receipt', trip_expense_saved: 'Expense saved', trip_expense_deleted: 'Expense deleted',
+    delete_trip_expense: 'Delete expense', need_currency: 'Add at least one currency.',
+    trips_enabled_on: 'Travel expenses enabled', trips_enabled_off: 'Travel expenses disabled',
     thousands: 'k'
   }
 };
@@ -1295,6 +1323,277 @@ function openBrokerEditSheet(b, back) {
   });
 }
 
+// ---------- Vista Viajes (gastos de viaje multi-moneda; registro aparte) ----------
+let tripsCache = [];
+
+async function loadViajes() {
+  const trips = await getJSON('/api/trips');
+  tripsCache = trips;
+  $('tripsList').innerHTML = trips.length
+    ? `<ul class="acc-list">${trips.map(tripRow).join('')}</ul>`
+    : `<p class="tx-sub">${t('add_trips_first')}</p>`;
+  document.querySelectorAll('#tripsList li[data-trip]').forEach(li =>
+    li.addEventListener('click', () => openTripDetailSheet(+li.dataset.trip).catch(e => toast(e.message))));
+}
+
+function tripRow(tr) {
+  const sub = [tr.destinations, tr.currencies.join(' · ')].filter(Boolean).join(' — ');
+  return `<li data-trip="${tr.id}" class="clickable">
+    <span class="tx-icon" style="background:${tint('#0a84ff', .14)}">✈️</span>
+    <span class="tx-main">
+      <span class="tx-title">${esc(tr.name)}</span>
+      <div class="tx-sub">${esc(sub || '—')}</div>
+    </span>
+    <span class="tx-amount">${eur(tr.totalEur)}</span>
+    <span class="acc-chevron">›</span>
+  </li>`;
+}
+
+// --- Crear / editar un viaje: nombre, destinos y monedas con su tasa a € ---
+function openTripSheet(existing = null) {
+  const isEdit = !!existing;
+  // Filas de moneda: {code, rate} como texto (locale). Nueva → una fila vacía.
+  let rows = isEdit
+    ? existing.currencies.map(c => ({ code: c.code, rate: (Number.isInteger(c.rateToEur) ? String(c.rateToEur) : String(c.rateToEur)).replace('.', decSep()) }))
+    : [{ code: '', rate: '' }];
+
+  const readRows = () => [...document.querySelectorAll('#curRows .cur-row')].map(r => ({
+    code: r.querySelector('[data-c=code]').value.trim(),
+    rate: r.querySelector('[data-c=rate]').value.trim()
+  }));
+
+  openSheet({
+    title: t(isEdit ? 'edit_trip' : 'new_trip'),
+    canSave: () => {
+      const name = $('tripName')?.value.trim();
+      const rs = readRows();
+      return !!name && rs.length > 0 && rs.every(r => r.code && decValue({ value: r.rate }) > 0);
+    },
+    build(body) {
+      const rowHtml = r => `<div class="cur-row">
+        <input class="text-field cur-code" data-c="code" placeholder="${t('currency_code_ph')}" maxlength="8" value="${esc(r.code)}">
+        <input class="text-field cur-rate" data-c="rate" inputmode="decimal" placeholder="${t('rate_ph')}" value="${esc(r.rate)}">
+        <button class="cur-del" data-c="del" title="${t('remove_receipt')}">✕</button>
+      </div>`;
+      body.innerHTML = `
+        <input id="tripName" class="text-field" placeholder="${t('trip_name_ph')}" maxlength="80" value="${isEdit ? esc(existing.name) : ''}" autofocus>
+        <input id="tripDest" class="text-field" placeholder="${t('destinations_ph')}" maxlength="200" value="${isEdit ? esc(existing.destinations) : ''}">
+        <p class="tx-sub cat-hint">${t('currencies_label')}</p>
+        <div id="curRows">${rows.map(rowHtml).join('')}</div>
+        <button id="addCur" class="inline-btn">${t('add_currency')}</button>
+        ${isEdit ? `<button id="deleteTrip" class="pill pill-danger centered">${t('delete_trip')}</button>` : ''}`;
+
+      const wire = () => {
+        body.querySelectorAll('.cur-row [data-c]').forEach(el => el.addEventListener('input', refreshSaveState));
+        body.querySelectorAll('.cur-del').forEach(btn => btn.addEventListener('click', () => {
+          const kept = readRows();
+          const i = [...body.querySelectorAll('.cur-row')].indexOf(btn.closest('.cur-row'));
+          kept.splice(i, 1);
+          rows = kept.length ? kept : [{ code: '', rate: '' }];
+          $('curRows').innerHTML = rows.map(rowHtml).join('');
+          wire(); refreshSaveState();
+        }));
+      };
+      wire();
+
+      $('tripName').addEventListener('input', refreshSaveState);
+      $('addCur').addEventListener('click', () => {
+        rows = [...readRows(), { code: '', rate: '' }];
+        $('curRows').innerHTML = rows.map(rowHtml).join('');
+        wire(); refreshSaveState();
+      });
+
+      if (isEdit) $('deleteTrip').addEventListener('click', async () => {
+        if (!confirm(t('confirm_delete', existing.name))) return;
+        try {
+          await sendJSON(`/api/trips/${existing.id}`, 'DELETE');
+          closeSheet();
+          await refreshCurrent();
+          toast(t('trip_deleted'));
+        } catch (e) { toast(e.message); }
+      });
+    },
+    async onSave() {
+      const payload = {
+        name: $('tripName').value,
+        destinations: $('tripDest').value,
+        currencies: readRows().map(r => ({ code: r.code, rateToEur: decValue({ value: r.rate }) }))
+      };
+      if (isEdit) await sendJSON(`/api/trips/${existing.id}`, 'PUT', payload);
+      else await sendJSON('/api/trips', 'POST', payload);
+      toast(t('trip_saved'));
+    }
+  });
+}
+
+// --- Detalle del viaje: total, resumen por moneda y categoría, y lista de gastos ---
+async function openTripDetailSheet(id) {
+  const trip = await getJSON(`/api/trips/${id}`);
+  const back = () => openTripDetailSheet(id).catch(e => toast(e.message));
+  const s = trip.summary;
+
+  openSheet({
+    title: trip.name,
+    build(body) {
+      const byCur = s.byCurrency.filter(c => c.total > 0);
+      body.innerHTML = `
+        <div class="broker-hero">
+          <p class="amount-label">${t('trip_total')}</p>
+          <div class="big-figure">${eur(s.totalEur)}</div>
+          ${trip.destinations ? `<p class="broker-sub">${esc(trip.destinations)}</p>` : ''}
+        </div>
+        <div class="kind-toggle">
+          <button id="addTripExp" class="pill active">${t('add_trip_expense')}</button>
+          <button id="editTripBtn" class="pill pill-hover">✏️ ${t('edit_trip')}</button>
+        </div>
+        ${byCur.length ? `<p class="muted-label">${t('by_currency')}</p>
+        <ul class="cat-list trip-cur-list">${byCur.map(c => `
+          <li><span>${esc(c.code)} <span class="tx-sub">(${nfShares(c.total)})</span></span>
+            <span class="amount">${eur(c.totalEur)}</span></li>`).join('')}</ul>` : ''}
+        ${s.byCategory.length ? `<div class="cat-wrap trip-donut-wrap">
+          <div id="tripDonut" class="donut"></div>
+          <ul class="cat-list">${s.byCategory.map(c => `
+            <li><span class="dot" style="background:${c.category.color}"></span>
+              ${esc(catName(c.category.name))}<span class="amount">${eur(c.total)}</span></li>`).join('')}</ul>
+        </div>` : ''}
+        <p class="muted-label">${t('trip_expenses')}</p>
+        <ul class="sheet-list tx-list">${trip.expenses.map((e, i) => tripExpRow(e, i)).join('')
+          || `<li class="tx-sub">${t('no_trip_expenses')}</li>`}</ul>`;
+
+      if (s.byCategory.length)
+        renderDonut($('tripDonut'), s.byCategory.map(c => ({ color: c.category.color, value: c.total })));
+
+      $('addTripExp').addEventListener('click', () => openTripExpenseSheet(trip, null, back));
+      $('editTripBtn').addEventListener('click', () => openTripSheet(trip));
+      body.querySelectorAll('li[data-texp]').forEach(li =>
+        li.addEventListener('click', () => openTripExpenseSheet(trip, trip.expenses[+li.dataset.texp], back)));
+    }
+  });
+}
+
+function tripExpRow(e, index) {
+  const icon = e.category ? e.category.icon : '🧾';
+  const bg = tint(e.category ? e.category.color : '#8e8e93', .16);
+  let sub = (e.category ? catName(e.category.name) : '') + (e.category ? ' · ' : '') + dMed(e.date);
+  if (e.hasReceipt) sub += ' · 🧾';
+  return `<li class="clickable" data-texp="${index}" title="${t('edit')}">
+    <span class="tx-icon" style="background:${bg}">${icon}</span>
+    <span class="tx-main">
+      <span class="tx-title">${esc(e.description)}</span>
+      <div class="tx-sub">${esc(sub)}</div>
+    </span>
+    <span class="tx-amount">${nfShares(e.amount)} ${esc(e.currencyCode)}</span>
+  </li>`;
+}
+
+// --- Crear / editar un gasto del viaje: importe, moneda, categoría, descripción, fecha, factura ---
+async function openTripExpenseSheet(trip, existing = null, back = null) {
+  await ensureCategoriesFresh();
+  const isEdit = !!existing;
+  let currency = existing ? existing.currencyCode : (trip.currencies[0]?.code || '');
+  let selectedCat = existing?.category?.id ?? categories[0]?.id ?? null;
+  // Factura: undefined = sin cambios; null = quitar; string = nueva imagen.
+  let receipt = undefined;
+  let existingReceiptLoaded = false;
+  setAmount(existing ? existing.amount : 0);
+
+  openSheet({
+    title: t(isEdit ? 'edit_trip_expense' : 'new_trip_expense'),
+    canSave: () => amountValue() > 0 && !!currency,
+    build(body) {
+      body.innerHTML = `
+        ${amountBlock(t('amount'))}
+        <p class="tx-sub cat-hint">${t('currency_label')}</p>
+        <div class="chips" id="curChips">${trip.currencies.map(c =>
+          `<button class="chip" data-cur="${esc(c.code)}">${esc(c.code)}</button>`).join('')}</div>
+        <p class="tx-sub cat-hint">${t('category_breakdown')}</p>
+        <div class="chips" id="expCatChips">${[...categories].sort((a, b) => catName(a.name).localeCompare(catName(b.name), localeCode())).map(c =>
+          `<button class="chip" data-cat="${c.id}">${c.icon} ${esc(catName(c.name))}</button>`).join('')}</div>
+        <input id="descField" class="text-field" placeholder="${t('description_optional')}" maxlength="120" value="${existing ? esc(existing.description) : ''}">
+        <input id="dateField" class="text-field" type="date" value="${existing ? existing.date : todayISO()}">
+        <div class="receipt-box" id="receiptBox"></div>
+        <input id="receiptInput" type="file" accept="image/*" hidden>
+        ${isEdit ? `<button id="deleteTripExp" class="pill pill-danger centered">${t('delete_trip_expense')}</button>` : ''}`;
+      bindAmount(body, true);
+
+      const paintCur = () => body.querySelectorAll('.chip[data-cur]').forEach(ch => {
+        const sel = ch.dataset.cur === currency;
+        ch.classList.toggle('selected', sel);
+        ch.style.background = sel ? 'var(--accent-soft)' : '';
+        ch.style.color = sel ? 'var(--accent)' : '';
+      });
+      body.querySelectorAll('.chip[data-cur]').forEach(ch =>
+        ch.addEventListener('click', () => { currency = ch.dataset.cur; paintCur(); refreshSaveState(); }));
+      paintCur();
+
+      const paintCat = () => body.querySelectorAll('.chip[data-cat]').forEach(ch => {
+        const cat = categories.find(c => c.id === +ch.dataset.cat);
+        const sel = cat.id === selectedCat;
+        ch.classList.toggle('selected', sel);
+        ch.style.background = sel ? tint(cat.color, .18) : '';
+        ch.style.color = sel ? cat.color : '';
+      });
+      body.querySelectorAll('.chip[data-cat]').forEach(ch =>
+        ch.addEventListener('click', () => { selectedCat = selectedCat === +ch.dataset.cat ? null : +ch.dataset.cat; paintCat(); }));
+      paintCat();
+
+      // Zona de factura: preview + botones adjuntar/cambiar/quitar/ver.
+      const paintReceipt = async () => {
+        const boxEl = $('receiptBox');
+        let imgSrc = null;
+        if (typeof receipt === 'string') imgSrc = receipt;
+        else if (receipt === undefined && isEdit && existing.hasReceipt) {
+          if (!existingReceiptLoaded) { // carga perezosa de la imagen guardada
+            try { imgSrc = await getJSON(`/api/trips/${trip.id}/expenses/${existing.id}/receipt`); existingReceiptLoaded = imgSrc; }
+            catch { imgSrc = null; }
+          } else imgSrc = existingReceiptLoaded;
+        }
+        boxEl.innerHTML = imgSrc
+          ? `<img class="receipt-preview" src="${esc(imgSrc)}" alt="${t('receipt')}">
+             <div class="receipt-actions"><button id="changeReceipt" class="inline-btn">${t('change_receipt')}</button>
+             <button id="removeReceipt" class="inline-btn danger-link">${t('remove_receipt')}</button></div>`
+          : `<button id="addReceipt" class="inline-btn">${t('add_receipt')}</button>`;
+        const add = $('addReceipt') || $('changeReceipt');
+        if (add) add.addEventListener('click', () => $('receiptInput').click());
+        if ($('removeReceipt')) $('removeReceipt').addEventListener('click', () => { receipt = null; existingReceiptLoaded = false; paintReceipt(); });
+      };
+      $('receiptInput').addEventListener('change', async ev => {
+        const file = ev.target.files[0];
+        if (!file) return;
+        try { receipt = await resizeImage(file, 1100); existingReceiptLoaded = false; paintReceipt(); }
+        catch { toast(t('photo_error')); }
+      });
+      paintReceipt();
+
+      if (isEdit) $('deleteTripExp').addEventListener('click', async () => {
+        if (!confirm(t('confirm_delete', existing.description))) return;
+        try {
+          await sendJSON(`/api/trips/${trip.id}/expenses/${existing.id}`, 'DELETE');
+          closeSheet();
+          await refreshCurrent();
+          toast(t('trip_expense_deleted'));
+        } catch (e) { toast(e.message); }
+      });
+    },
+    async onSave() {
+      const payload = {
+        amount: amountValue(),
+        currencyCode: currency,
+        categoryId: selectedCat,
+        description: $('descField').value,
+        date: $('dateField').value || todayISO()
+      };
+      // receipt: undefined = no tocar; null = quitar ("" al servidor); string = nueva.
+      if (receipt === null) payload.receiptDataUrl = '';
+      else if (typeof receipt === 'string') payload.receiptDataUrl = receipt;
+      if (isEdit) await sendJSON(`/api/trips/${trip.id}/expenses/${existing.id}`, 'PUT', payload);
+      else await sendJSON(`/api/trips/${trip.id}/expenses`, 'POST', payload);
+      toast(t('trip_expense_saved'));
+    },
+    afterSave: back
+  });
+}
+
 // --- Perfil ---
 function openProfileSheet() {
   let newPhoto = null; // solo se envía si el usuario elige una nueva
@@ -1313,6 +1612,12 @@ function openProfileSheet() {
         <input id="profUsername" class="text-field" maxlength="30" value="${esc(me.username)}">
         <div class="divider"></div>
         <button id="manageCatsBtn" class="inline-btn">${t('manage_categories')}</button>
+        <div class="divider"></div>
+        <label class="switch-row">
+          <span class="switch-main"><span class="switch-title">${t('trips_toggle')}</span>
+            <span class="tx-sub">${t('trips_toggle_hint')}</span></span>
+          <span class="switch"><input type="checkbox" id="tripsToggle" ${me.tripsEnabled ? 'checked' : ''}><span class="switch-slider"></span></span>
+        </label>
         <div class="divider"></div>
         <p class="muted-label">${t('change_password')}</p>
         <input id="profCurPass" class="text-field" type="password" placeholder="${t('current_password')}" maxlength="128" autocomplete="current-password">
@@ -1333,6 +1638,16 @@ function openProfileSheet() {
       });
 
       $('manageCatsBtn').addEventListener('click', () => openCategoriesSheet());
+
+      // Activar/desactivar "Gastos de viaje" se aplica al momento (los datos no se borran).
+      $('tripsToggle').addEventListener('change', async e => {
+        const on = e.target.checked;
+        try {
+          me = await sendJSON('/api/auth/profile', 'PUT', { tripsEnabled: on });
+          applyTripsTab();
+          toast(t(on ? 'trips_enabled_on' : 'trips_enabled_off'));
+        } catch (err) { e.target.checked = !on; toast(err.message); }
+      });
 
       $('changePassBtn').addEventListener('click', async () => {
         try {
@@ -1398,6 +1713,7 @@ function showAuth() {
 function enterApp() {
   authScreen.classList.add('hidden');
   renderTopAvatar();
+  applyTripsTab();
   $('fab').classList.remove('hidden');
   refreshCurrent();
 }
@@ -1448,7 +1764,10 @@ $('authSubmit').addEventListener('click', submitAuth);
 // ---------- Navegación / tema / sincronización ----------
 function refreshCurrent() {
   if (!me) return Promise.resolve();
-  return (currentView === 'gastos' ? loadGastos() : loadPatrimonio()).catch(e => toast(e.message));
+  const load = currentView === 'gastos' ? loadGastos
+    : currentView === 'patrimonio' ? loadPatrimonio
+    : loadViajes;
+  return load().catch(e => toast(e.message));
 }
 
 document.querySelectorAll('.tab').forEach(tab =>
@@ -1457,8 +1776,17 @@ document.querySelectorAll('.tab').forEach(tab =>
     document.querySelectorAll('.tab').forEach(t2 => t2.classList.toggle('active', t2 === tab));
     $('view-gastos').classList.toggle('hidden', currentView !== 'gastos');
     $('view-patrimonio').classList.toggle('hidden', currentView !== 'patrimonio');
+    $('view-viajes').classList.toggle('hidden', currentView !== 'viajes');
     refreshCurrent();
   }));
+
+// La pestaña Viajes solo existe si el usuario la activó en el perfil. Al apagarla, si estabas
+// en esa vista, vuelve a Gastos (los datos siguen en el servidor, solo se ocultan).
+function applyTripsTab() {
+  $('tabViajes').classList.toggle('hidden', !me?.tripsEnabled);
+  if (!me?.tripsEnabled && currentView === 'viajes')
+    document.querySelector('.tab[data-view="gastos"]').click();
+}
 
 document.querySelectorAll('.pill[data-days]').forEach(pill =>
   pill.addEventListener('click', () => {
@@ -1467,8 +1795,11 @@ document.querySelectorAll('.pill[data-days]').forEach(pill =>
     if (me) loadGastos().catch(e => toast(e.message));
   }));
 
-$('fab').addEventListener('click', () =>
-  currentView === 'gastos' ? openTxSheet().catch(e => toast(e.message)) : openAccountSheet());
+$('fab').addEventListener('click', () => {
+  if (currentView === 'gastos') openTxSheet().catch(e => toast(e.message));
+  else if (currentView === 'patrimonio') openAccountSheet();
+  else openTripSheet();
+});
 
 $('verTodoBtn').addEventListener('click', () => openAllTxSheet().catch(e => toast(e.message)));
 $('profileBtn').addEventListener('click', openProfileSheet);
