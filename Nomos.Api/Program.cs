@@ -41,6 +41,12 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 builder.Services.AddAuthorization();
 
+// Red de seguridad de errores: mapea excepciones conocidas (incl. conflicto de concurrencia) a
+// códigos/mensajes claros y registra los 500. Los try/catch de los endpoints siguen funcionando;
+// esto captura lo que se les escape.
+builder.Services.AddExceptionHandler<Nomos.Api.GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
 // Detrás del proxy de Render: confiar en X-Forwarded-Proto/For para que el esquema real (https)
 // llegue a la app (necesario para cookies Secure y enlaces correctos).
 builder.Services.Configure<ForwardedHeadersOptions>(o =>
@@ -54,6 +60,13 @@ builder.Services.Configure<ForwardedHeadersOptions>(o =>
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    // Cuerpo con mensaje claro: si no, el front mostraría el genérico "Ha ocurrido un error".
+    options.OnRejected = async (ctx, ct) =>
+    {
+        ctx.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        await ctx.HttpContext.Response.WriteAsJsonAsync(
+            "Demasiados intentos. Espera un momento e inténtalo de nuevo.", ct);
+    };
     options.AddPolicy("login", http =>
         RateLimitPartition.GetFixedWindowLimiter(
             http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
@@ -76,6 +89,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseForwardedHeaders();
+app.UseExceptionHandler();
 
 // Cabeceras de seguridad en todas las respuestas (defensa en profundidad).
 app.Use(async (ctx, next) =>

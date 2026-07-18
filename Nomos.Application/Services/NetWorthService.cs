@@ -8,7 +8,7 @@ namespace Nomos.Application.Services;
 public class NetWorthService(
     IAccountRepository accounts, ISnapshotRepository snapshots,
     IExpenseRepository expenses, IIncomeRepository incomes, IHoldingRepository holdings,
-    SnapshotWriter snapshotWriter)
+    SnapshotWriter snapshotWriter, IUnitOfWork unitOfWork)
 {
     public async Task<NetWorthDto> GetOverviewAsync(int userId, DateOnly today)
     {
@@ -61,15 +61,19 @@ public class NetWorthService(
 
         // No movements yet, so the entered balance is both the baseline and the live balance.
         var balance = decimal.Round(request.Balance, 2);
-        var account = await accounts.AddAsync(new Account
+        Account account = null!;
+        await unitOfWork.InTransactionAsync(async () =>
         {
-            UserId = userId,
-            Name = request.Name.Trim(),
-            Type = ParseType(request.Type),
-            Balance = balance,
-            UpdatedAt = DateTime.UtcNow
+            account = await accounts.AddAsync(new Account
+            {
+                UserId = userId,
+                Name = request.Name.Trim(),
+                Type = ParseType(request.Type),
+                Balance = balance,
+                UpdatedAt = DateTime.UtcNow
+            });
+            await snapshotWriter.RefreshAsync(userId, today);
         });
-        await snapshotWriter.RefreshAsync(userId, today);
         return ToDto(account, balance);
     }
 
@@ -84,8 +88,11 @@ public class NetWorthService(
         var target = decimal.Round(request.Balance, 2);
         account.Balance = target - await AccountFlowAsync(userId, id);
         account.UpdatedAt = DateTime.UtcNow;
-        await accounts.UpdateAsync(account);
-        await snapshotWriter.RefreshAsync(userId, today);
+        await unitOfWork.InTransactionAsync(async () =>
+        {
+            await accounts.UpdateAsync(account);
+            await snapshotWriter.RefreshAsync(userId, today);
+        });
         return ToDto(account, target);
     }
 
@@ -93,8 +100,11 @@ public class NetWorthService(
     {
         var account = await accounts.GetByIdAsync(id, userId);
         if (account is null) return false;
-        await accounts.DeleteAsync(account);
-        await snapshotWriter.RefreshAsync(userId, today);
+        await unitOfWork.InTransactionAsync(async () =>
+        {
+            await accounts.DeleteAsync(account);
+            await snapshotWriter.RefreshAsync(userId, today);
+        });
         return true;
     }
 
