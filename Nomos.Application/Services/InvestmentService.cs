@@ -42,13 +42,13 @@ public class InvestmentService(
             Symbol = request.Symbol.Trim(),
             Shares = request.Shares,
             BuyPrice = request.Price,
-            BuyDate = DateOnly.FromDateTime(DateTime.Today)
+            BuyDate = AppClock.Today()
         });
         broker.Balance -= cost;
         broker.UpdatedAt = DateTime.UtcNow;
         await accounts.UpdateAsync(broker);
         // El total del broker no cambia (margen → posiciones), pero mantenemos el snapshot fresco.
-        await snapshotWriter.RefreshAsync(userId, DateOnly.FromDateTime(DateTime.Today));
+        await snapshotWriter.RefreshAsync(userId, AppClock.Today());
         return await ToDtoAsync(broker, userId);
     }
 
@@ -75,7 +75,7 @@ public class InvestmentService(
         if (lot.Shares == 0) await holdings.DeleteAsync(lot);
         else await holdings.UpdateAsync(lot);
         await accounts.UpdateAsync(broker);
-        await snapshotWriter.RefreshAsync(userId, DateOnly.FromDateTime(DateTime.Today));
+        await snapshotWriter.RefreshAsync(userId, AppClock.Today());
         return await ToDtoAsync(broker, userId);
     }
 
@@ -118,7 +118,7 @@ public class InvestmentService(
         cash.UpdatedAt = broker.UpdatedAt = DateTime.UtcNow;
         await accounts.UpdateAsync(cash);
         await accounts.UpdateAsync(broker);
-        await snapshotWriter.RefreshAsync(userId, DateOnly.FromDateTime(DateTime.Today));
+        await snapshotWriter.RefreshAsync(userId, AppClock.Today());
         return await ToDtoAsync(broker, userId);
     }
 

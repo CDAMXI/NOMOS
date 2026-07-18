@@ -1,7 +1,9 @@
 using System.Security.Claims;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Nomos.Application.Common;
 using Nomos.Application.DTOs;
@@ -29,6 +31,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.Name = "nomos_auth";
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Strict;
+        // Solo por HTTPS. Con UseForwardedHeaders el proxy de Render marca el esquema real como https.
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
         options.ExpireTimeSpan = TimeSpan.FromDays(30);
         options.SlidingExpiration = true;
         // This is an API: answer with status codes, never with login-page redirects.
@@ -36,6 +40,25 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Events.OnRedirectToAccessDenied = ctx => { ctx.Response.StatusCode = StatusCodes.Status403Forbidden; return Task.CompletedTask; };
     });
 builder.Services.AddAuthorization();
+
+// Detrás del proxy de Render: confiar en X-Forwarded-Proto/For para que el esquema real (https)
+// llegue a la app (necesario para cookies Secure y enlaces correctos).
+builder.Services.Configure<ForwardedHeadersOptions>(o =>
+{
+    o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    o.KnownIPNetworks.Clear();
+    o.KnownProxies.Clear();
+});
+
+// Rate limiting del login: frena la fuerza bruta (por IP, ventana fija).
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("login", http =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }));
+});
 
 var app = builder.Build();
 
@@ -52,6 +75,23 @@ using (var scope = app.Services.CreateScope())
     await LegacyBackfill.RunAsync(db); // give pre-account users a default "Efectivo" account (one-time)
 }
 
+app.UseForwardedHeaders();
+
+// Cabeceras de seguridad en todas las respuestas (defensa en profundidad).
+app.Use(async (ctx, next) =>
+{
+    var h = ctx.Response.Headers;
+    h["X-Content-Type-Options"] = "nosniff";
+    h["X-Frame-Options"] = "DENY";
+    h["Referrer-Policy"] = "no-referrer";
+    // style-src 'unsafe-inline': el front fija colores con atributos style (chips, donut).
+    // img-src data:: avatares y facturas van como data URL. Sin scripts externos ni framing.
+    h["Content-Security-Policy"] =
+        "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; " +
+        "script-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'";
+    await next();
+});
+
 app.UseDefaultFiles();
 // "no-cache" = el navegador puede guardar pero DEBE revalidar (ETag) antes de usar, así los
 // despliegues de JS/CSS/HTML se recogen sin forzar recarga a mano.
@@ -61,8 +101,9 @@ app.UseStaticFiles(new StaticFileOptions
 });
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
-static DateOnly Today() => DateOnly.FromDateTime(DateTime.Today);
+static DateOnly Today() => AppClock.Today();
 static int UserId(ClaimsPrincipal user) => int.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
 static async Task SignInAsync(HttpContext http, UserDto user)
@@ -103,7 +144,7 @@ auth.MapPost("/login", async (LoginRequest request, AuthService service, HttpCon
         return Results.Json("Usuario o contraseña incorrectos.", statusCode: StatusCodes.Status401Unauthorized);
     await SignInAsync(http, user);
     return Results.Ok(user);
-}).AllowAnonymous();
+}).AllowAnonymous().RequireRateLimiting("login");
 
 auth.MapPost("/logout", async (HttpContext http) =>
 {

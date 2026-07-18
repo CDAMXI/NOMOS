@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+using Nomos.Application.Common;
 using Nomos.Application.DTOs;
 using Nomos.Application.Interfaces;
 using Nomos.Domain.Entities;
@@ -161,7 +163,7 @@ public class TripService(ITripRepository trips, ICategoryRepository categories)
             category = await categories.GetByIdAsync(cid, userId)
                 ?? throw new ArgumentException("Categoría no encontrada.");
 
-        var date = ExpenseService.ValidateDate(request.Date ?? DateOnly.FromDateTime(DateTime.Today));
+        var date = ExpenseService.ValidateDate(request.Date ?? AppClock.Today());
         var receipt = ValidateReceipt(request.ReceiptDataUrl);
         return (decimal.Round(request.Amount, 2), code, category, date, receipt);
     }
@@ -195,13 +197,18 @@ public class TripService(ITripRepository trips, ICategoryRepository categories)
         return result;
     }
 
+    // Forma estricta de data-URL de imagen base64 (igual que la foto de perfil): nada de comillas
+    // ni caracteres que puedan romper el atributo src del <img> que pinta el cliente.
+    private static readonly Regex ImagePattern =
+        new(@"^data:image/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=\r\n]+$", RegexOptions.Compiled);
+
     private static string? ValidateReceipt(string? dataUrl)
     {
         if (string.IsNullOrEmpty(dataUrl)) return null;
-        if (!dataUrl.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase))
-            throw new ArgumentException("La factura debe ser una imagen.");
         if (dataUrl.Length > MaxReceiptLength)
             throw new ArgumentException("La imagen de la factura es demasiado grande.");
+        if (!ImagePattern.IsMatch(dataUrl))
+            throw new ArgumentException("La factura debe ser una imagen válida.");
         return dataUrl;
     }
 

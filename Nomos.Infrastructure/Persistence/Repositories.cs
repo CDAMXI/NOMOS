@@ -244,6 +244,9 @@ public class TripRepository(NomosDbContext db) : ITripRepository
         await db.SaveChangesAsync();
     }
 
+    public Task<bool> AnyExpenseForCategoryAsync(int categoryId, int userId) =>
+        db.TripExpenses.AnyAsync(e => e.CategoryId == categoryId && e.UserId == userId);
+
     public Task<TripExpense?> GetExpenseAsync(int tripId, int expenseId, int userId) =>
         db.TripExpenses.Include(e => e.Category)
             .FirstOrDefaultAsync(e => e.Id == expenseId && e.TripId == tripId && e.UserId == userId);

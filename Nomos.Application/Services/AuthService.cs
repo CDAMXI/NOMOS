@@ -99,8 +99,8 @@ public partial class AuthService(IUserRepository users)
 
     private static void ValidatePassword(string? password)
     {
-        if (string.IsNullOrEmpty(password) || password.Length < 6)
-            throw new ArgumentException("La contraseña debe tener al menos 6 caracteres.");
+        if (string.IsNullOrEmpty(password) || password.Length < 8)
+            throw new ArgumentException("La contraseña debe tener al menos 8 caracteres.");
         if (password.Length > 128)
             throw new ArgumentException("La contraseña es demasiado larga.");
     }

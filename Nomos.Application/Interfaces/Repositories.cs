@@ -73,6 +73,7 @@ public interface ITripRepository
     Task UpdateAsync(Trip trip);
     Task DeleteAsync(Trip trip);
 
+    Task<bool> AnyExpenseForCategoryAsync(int categoryId, int userId);
     Task<TripExpense?> GetExpenseAsync(int tripId, int expenseId, int userId);
     Task<TripExpense> AddExpenseAsync(TripExpense expense);
     Task UpdateExpenseAsync(TripExpense expense);
