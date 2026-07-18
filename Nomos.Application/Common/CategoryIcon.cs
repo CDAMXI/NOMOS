@@ -28,7 +28,7 @@ public static class CategoryIcon
         ("✈️", ["vuelo", "avion", "avión", "viaje", "vacaciones", "hotel", "airbnb", "booking"]),
         ("🚗", ["coche", "auto", "parking", "peaje", "itv", "taller", "transporte"]),
         ("🏠", ["alquiler", "hipoteca", "casa", "vivienda", "piso", "comunidad", "renta"]),
-        ("💡", ["luz", "electricidad", "endesa", "iberdrola"]),
+        ("💦", ["luz", "electricidad", "endesa", "iberdrola"]),
         ("💧", ["agua", "canal"]),
         ("🔥", ["calefaccion", "calefacción", "naturgy", "butano", "gas natural"]),
         ("📶", ["internet", "fibra", "wifi", "movil", "móvil", "telefono", "teléfono", "movistar", "vodafone", "orange", "yoigo"]),
