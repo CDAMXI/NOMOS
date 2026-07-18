@@ -247,7 +247,7 @@ const ICON_RULES = [
   ['🚗', ['coche', 'auto', 'parking', 'peaje', 'itv', 'taller', 'transporte', 'car', 'transport']],
   ['🏠', ['alquiler', 'hipoteca', 'casa', 'vivienda', 'piso', 'comunidad', 'renta', 'rent', 'mortgage', 'home', 'housing']],
   ['💡', ['luz', 'electricidad', 'endesa', 'iberdrola', 'electricity', 'power']],
-  ['💦', ['agua', 'canal', 'water']],
+  ['💧', ['agua', 'canal', 'water']],
   ['🔥', ['calefaccion', 'naturgy', 'heating', 'butano', 'gas natural']],
   ['📶', ['internet', 'fibra', 'wifi', 'movil', 'telefono', 'movistar', 'vodafone', 'orange', 'yoigo', 'phone', 'mobile']],
   ['💊', ['farmacia', 'medicina', 'medicamento', 'pharmacy', 'medicine']],
@@ -663,9 +663,9 @@ function txRow(tx, index) {
   </li>`;
 }
 
-function bindTxRows(listEl, cache) {
+function bindTxRows(listEl, cache, back = null) {
   listEl.querySelectorAll('li[data-i]').forEach(li =>
-    li.addEventListener('click', () => openTxSheet(cache[+li.dataset.i])));
+    li.addEventListener('click', () => openTxSheet(cache[+li.dataset.i], null, back)));
 }
 
 // ---------- Vista Patrimonio ----------
@@ -780,7 +780,13 @@ function refreshSaveState() {
   sheetSave.disabled = !(sheetCtx && sheetCtx.canSave && sheetCtx.canSave());
 }
 
-$('sheetCancel').addEventListener('click', closeSheet);
+// Cerrar la hoja: si fue abierta desde otra (ctx.back), vuelve a la anterior; si no, cierra del todo.
+function dismissSheet() {
+  const back = sheetCtx?.back;
+  if (back) back(); else closeSheet();
+}
+
+$('sheetCancel').addEventListener('click', dismissSheet);
 sheetSave.addEventListener('click', async () => {
   if (sheetSave.disabled || !sheetCtx?.onSave) return;
   const ctx = sheetCtx;
@@ -789,13 +795,15 @@ sheetSave.addEventListener('click', async () => {
     await ctx.onSave();
     closeSheet();
     await refreshCurrent();
-    ctx.afterSave?.();
+    // Tras guardar: afterSave (reabre la anterior con el resultado) o, si no, back (vuelve a la anterior).
+    if (ctx.afterSave) ctx.afterSave();
+    else if (ctx.back) ctx.back();
   } catch (e) {
     toast(e.message);
     refreshSaveState();
   }
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && sheetCtx) closeSheet(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && sheetCtx) dismissSheet(); });
 
 // --- Importe: input numérico nativo (abre el teclado numérico del móvil) ---
 let amountSeed = '';   // valor inicial del input; se fija con setAmount antes de abrir la hoja
@@ -864,7 +872,7 @@ function decValue(el) {
 }
 
 // --- Nuevo movimiento / editar movimiento (gasto o ingreso) ---
-async function openTxSheet(existing = null, draft = null) {
+async function openTxSheet(existing = null, draft = null, back = null) {
   await ensureCategoriesFresh();
   const cashAccounts = (await getJSON('/api/accounts')).filter(a => a.type === 'Cash');
   const isEdit = !!existing;
@@ -888,6 +896,7 @@ async function openTxSheet(existing = null, draft = null) {
   openSheet({
     title: titleFor(),
     canSave: () => amountValue() > 0 && (kind === 'income' || selectedCat),
+    back, // si se abrió desde "Ver todo", Cancelar/Guardar vuelven allí
     build(body) {
       body.innerHTML = `
         ${isEdit ? '' : `<div class="kind-toggle">
@@ -979,7 +988,7 @@ async function openAllTxSheet() {
     build(body) {
       body.innerHTML = `<ul class="sheet-list tx-list">${items.map((tx, i) => txRow(tx, i)).join('')
         || `<li class="tx-sub">${t('no_movements')}</li>`}</ul>`;
-      bindTxRows(body, items);
+      bindTxRows(body, items, () => openAllTxSheet()); // editar un movimiento vuelve a "Ver todo"
     }
   });
 }
@@ -989,6 +998,7 @@ async function openCategoriesSheet() {
   await ensureCategoriesFresh();
   openSheet({
     title: t('categories'),
+    back: () => openProfileSheet(), // se llega desde el Perfil
     build(body) {
       const sorted = [...categories].sort((a, b) => catName(a.name).localeCompare(catName(b.name), localeCode()));
       body.innerHTML = `<div class="settings-group cat-manage">${sorted.map(c => `
@@ -1019,6 +1029,7 @@ function openCategoryEditSheet(cat = null, onDone = null) {
   openSheet({
     title: t(isEdit ? 'edit_category' : 'new_category'),
     canSave: () => $('catName')?.value.trim().length > 0,
+    back: onDone ? () => onDone() : undefined, // vuelve a la hoja de origen (lista o gasto)
     build(body) {
       body.innerHTML = `
         <div class="cat-editor">
@@ -1070,6 +1081,7 @@ function openAccountSheet(onDone = null, opts = {}) {
   openSheet({
     title: t('new_account'),
     canSave: () => $('nameField')?.value.trim().length > 0,
+    back: onDone ? () => onDone() : undefined, // vuelve al movimiento si se llegó desde el chip "＋ cuenta"
     build(body) {
       body.innerHTML = amountBlock(t('current_balance')) + `
         ${opts.cashOnly ? '' : `<div class="chips">${Object.keys(TYPE_ICON).map(type =>
@@ -1212,7 +1224,7 @@ function openBuySheet(b, back) {
       });
       toast(t('buy_saved'));
     },
-    afterSave: back
+    back, afterSave: back
   });
 }
 
@@ -1251,7 +1263,7 @@ function openSellSheet(b, h, back) {
       });
       toast(t('sell_saved'));
     },
-    afterSave: back
+    back, afterSave: back
   });
 }
 
@@ -1297,7 +1309,7 @@ async function openBrokerTransferSheet(b, back) {
       });
       toast(t('transfer_done'));
     },
-    afterSave: back
+    back, afterSave: back
   });
 }
 
@@ -1333,7 +1345,7 @@ function openBrokerEditSheet(b, back) {
       });
       toast(t('balance_updated'));
     },
-    afterSave: back
+    back, afterSave: back
   });
 }
 
@@ -1591,7 +1603,7 @@ async function openTripExpenseSheet(trip, existing = null, back = null) {
       else await sendJSON(`/api/trips/${trip.id}/expenses`, 'POST', payload);
       toast(t('trip_expense_saved'));
     },
-    afterSave: back
+    back, afterSave: back
   });
 }
 
