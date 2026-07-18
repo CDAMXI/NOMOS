@@ -46,7 +46,8 @@ body {
   align-items: center;
   justify-content: center;
   position: relative;
-  padding: 18px 20px 6px;
+  /* +safe-area: respeta el notch/isla en móviles que lo tienen (0 donde no lo hay). */
+  padding: calc(18px + env(safe-area-inset-top)) 20px 6px;
 }
 
 .brand {
@@ -278,7 +279,7 @@ body {
 #fab {
   position: fixed;
   right: 26px;
-  bottom: 96px;
+  bottom: calc(96px + env(safe-area-inset-bottom));
   width: 58px;
   height: 58px;
   border: none;
@@ -296,7 +297,7 @@ body {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: 18px;
+  bottom: calc(18px + env(safe-area-inset-bottom));
   display: flex;
   gap: 4px;
   background: var(--card);
@@ -338,7 +339,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 18px;
+  padding: calc(16px + env(safe-area-inset-top)) 18px 16px;
 }
 
 .sheet-title { font-weight: 700; font-size: 16px; }
@@ -361,7 +362,7 @@ body {
   max-width: 720px;
   width: 100%;
   margin: 0 auto;
-  padding: 0 18px 18px;
+  padding: 0 18px calc(18px + env(safe-area-inset-bottom));
   overflow-y: auto;
 }
 

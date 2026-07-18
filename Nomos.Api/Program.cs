@@ -237,6 +237,13 @@ api.MapDelete("/categories/{id:int}", async Task<Results<NoContent, NotFound, Co
 api.MapGet("/transactions", (ClaimsPrincipal principal, ExpenseService service) =>
     service.GetTransactionsAsync(UserId(principal)));
 
+// Exporta todos los movimientos del usuario a CSV (para respaldo / abrir en Excel).
+api.MapGet("/transactions/export", async (ClaimsPrincipal principal, ExpenseService service) =>
+{
+    var txs = await service.GetTransactionsAsync(UserId(principal));
+    return Results.File(CsvExport.Transactions(txs), "text/csv; charset=utf-8", "pluto-movimientos.csv");
+});
+
 api.MapGet("/expenses/dashboard", (ClaimsPrincipal principal, ExpenseService service, int days = 30) =>
     service.GetDashboardAsync(UserId(principal), Math.Clamp(days, 7, 365), Today()));
 

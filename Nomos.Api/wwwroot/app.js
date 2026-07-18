@@ -40,6 +40,7 @@ const I18N = {
     account_label: 'Cuenta', add_account_chip: '＋ cuenta', all_accounts: 'Todas',
     profile: 'Perfil', change_photo: 'Cambiar foto', username: 'Nombre de usuario',
     manage_categories: '🏷️ Gestionar categorías', language: 'Idioma',
+    export_csv: '⬇️ Exportar movimientos (CSV)',
     change_password: 'Cambiar contraseña', current_password: 'Contraseña actual',
     new_password_ph: 'Nueva contraseña (mín. 8 caracteres)', update_password: 'Actualizar contraseña',
     logout: 'Cerrar sesión', password_updated: 'Contraseña actualizada', profile_updated: 'Perfil actualizado',
@@ -114,6 +115,7 @@ const I18N = {
     account_label: 'Account', add_account_chip: '＋ account', all_accounts: 'All',
     profile: 'Profile', change_photo: 'Change photo', username: 'Username',
     manage_categories: '🏷️ Manage categories', language: 'Language',
+    export_csv: '⬇️ Export movements (CSV)',
     change_password: 'Change password', current_password: 'Current password',
     new_password_ph: 'New password (min. 8 characters)', update_password: 'Update password',
     logout: 'Log out', password_updated: 'Password updated', profile_updated: 'Profile updated',
@@ -483,7 +485,8 @@ function renderDonut(el, items) {
       stroke-dashoffset="${(-off).toFixed(2)}"/>`;
     off += len;
   }
-  el.innerHTML = `<svg viewBox="0 0 140 140" style="transform:rotate(-90deg)">${segs}</svg>`;
+  // Decorativo: los datos ya están en la lista de categorías contigua (accesible).
+  el.innerHTML = `<svg viewBox="0 0 140 140" style="transform:rotate(-90deg)" aria-hidden="true">${segs}</svg>`;
 }
 
 // ---------- Estado ----------
@@ -736,6 +739,7 @@ function paintChipGroup(scope, attr, isSel, styleSel) {
   scope.querySelectorAll(`.chip[data-${attr}]`).forEach(ch => {
     const sel = isSel(ch);
     ch.classList.toggle('selected', sel);
+    ch.setAttribute('aria-pressed', sel ? 'true' : 'false'); // estado para lectores de pantalla
     const s = !sel ? { bg: '', color: '' }
       : styleSel ? styleSel(ch)
       : { bg: 'var(--accent-soft)', color: 'var(--accent)' };
@@ -1606,6 +1610,7 @@ function openProfileSheet() {
         <input id="profUsername" class="text-field" maxlength="30" value="${esc(me.username)}">
         <div class="divider"></div>
         <button id="manageCatsBtn" class="inline-btn">${t('manage_categories')}</button>
+        <button id="exportCsvBtn" class="inline-btn">${t('export_csv')}</button>
         <div class="divider"></div>
         <label class="switch-row">
           <span class="switch-main"><span class="switch-title">${t('trips_toggle')}</span>
@@ -1632,6 +1637,19 @@ function openProfileSheet() {
       });
 
       $('manageCatsBtn').addEventListener('click', () => openCategoriesSheet());
+
+      $('exportCsvBtn').addEventListener('click', async () => {
+        try {
+          const res = await fetch('/api/transactions/export');
+          if (!res.ok) throw new Error(await parseError(res));
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = 'pluto-movimientos.csv';
+          document.body.appendChild(a); a.click(); a.remove();
+          URL.revokeObjectURL(url);
+        } catch (e) { toast(e.message); }
+      });
 
       // Activar/desactivar "Gastos de viaje" se aplica al momento (los datos no se borran).
       $('tripsToggle').addEventListener('change', async e => {
@@ -1773,7 +1791,11 @@ function refreshCurrent() {
 document.querySelectorAll('.tab').forEach(tab =>
   tab.addEventListener('click', () => {
     currentView = tab.dataset.view;
-    document.querySelectorAll('.tab').forEach(t2 => t2.classList.toggle('active', t2 === tab));
+    document.querySelectorAll('.tab').forEach(t2 => {
+      const active = t2 === tab;
+      t2.classList.toggle('active', active);
+      t2.setAttribute('aria-current', active ? 'page' : 'false');
+    });
     $('view-gastos').classList.toggle('hidden', currentView !== 'gastos');
     $('view-patrimonio').classList.toggle('hidden', currentView !== 'patrimonio');
     $('view-viajes').classList.toggle('hidden', currentView !== 'viajes');
@@ -1842,3 +1864,8 @@ setInterval(() => { if (!sheetCtx && me && !chartHovering) refreshCurrent(); }, 
   if (user) { me = user; enterApp(); } else { showAuth(); }
   $('bootLoader')?.classList.add('hidden');
 })();
+
+// PWA: service worker network-first — recoge despliegues al instante y abre offline con lo último.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+}
