@@ -39,8 +39,8 @@ const I18N = {
     account_created: 'Cuenta creada', delete_account: 'Eliminar cuenta', account_deleted: 'Cuenta eliminada',
     account_label: 'Cuenta', add_account_chip: '＋ cuenta', all_accounts: 'Todas',
     profile: 'Perfil', change_photo: 'Cambiar foto', username: 'Nombre de usuario',
-    manage_categories: '🏷️ Gestionar categorías', language: 'Idioma',
-    export_csv: '⬇️ Exportar movimientos (CSV)',
+    manage_categories: 'Gestionar categorías', language: 'Idioma',
+    export_csv: 'Exportar movimientos (CSV)',
     change_password: 'Cambiar contraseña', current_password: 'Contraseña actual',
     new_password_ph: 'Nueva contraseña (mín. 8 caracteres)', update_password: 'Actualizar contraseña',
     logout: 'Cerrar sesión', password_updated: 'Contraseña actualizada', profile_updated: 'Perfil actualizado',
@@ -64,7 +64,7 @@ const I18N = {
     transfer_title: 'Depositar / Retirar', transfer_done: 'Transferencia realizada',
     cash_account_label: 'Cuenta de efectivo', need_cash_account: 'Necesitas una cuenta de efectivo primero.',
     edit_account: '✏️ Editar cuenta',
-    tab_viajes: 'Viajes', trips_toggle: '✈️ Gastos de viaje',
+    tab_viajes: 'Viajes', trips_toggle: 'Gastos de viaje',
     trips_toggle_hint: 'Muestra la pestaña Viajes. Al apagarlo se oculta, pero tus viajes y gastos se conservan.',
     new_trip: 'Nuevo viaje', edit_trip: 'Editar viaje', trip_name_ph: 'Nombre del viaje (p. ej. Japón 2026)',
     destinations_ph: 'Destino(s) (p. ej. Tokio, Kioto)', destinations_label: 'Destinos',
@@ -114,8 +114,8 @@ const I18N = {
     account_created: 'Account created', delete_account: 'Delete account', account_deleted: 'Account deleted',
     account_label: 'Account', add_account_chip: '＋ account', all_accounts: 'All',
     profile: 'Profile', change_photo: 'Change photo', username: 'Username',
-    manage_categories: '🏷️ Manage categories', language: 'Language',
-    export_csv: '⬇️ Export movements (CSV)',
+    manage_categories: 'Manage categories', language: 'Language',
+    export_csv: 'Export movements (CSV)',
     change_password: 'Change password', current_password: 'Current password',
     new_password_ph: 'New password (min. 8 characters)', update_password: 'Update password',
     logout: 'Log out', password_updated: 'Password updated', profile_updated: 'Profile updated',
@@ -139,7 +139,7 @@ const I18N = {
     transfer_title: 'Deposit / Withdraw', transfer_done: 'Transfer completed',
     cash_account_label: 'Cash account', need_cash_account: 'You need a cash account first.',
     edit_account: '✏️ Edit account',
-    tab_viajes: 'Trips', trips_toggle: '✈️ Travel expenses',
+    tab_viajes: 'Trips', trips_toggle: 'Travel expenses',
     trips_toggle_hint: 'Shows the Trips tab. Turning it off hides it, but your trips and expenses are kept.',
     new_trip: 'New trip', edit_trip: 'Edit trip', trip_name_ph: 'Trip name (e.g. Japan 2026)',
     destinations_ph: 'Destination(s) (e.g. Tokyo, Kyoto)', destinations_label: 'Destinations',
@@ -1601,29 +1601,45 @@ function openProfileSheet() {
     canSave: () => $('profUsername')?.value.trim().length > 0,
     build(body) {
       body.innerHTML = `
-        <div class="profile-photo-wrap">
-          <label class="avatar-pick filled" for="profPhotoInput" id="profAvatar" title="${t('change_photo')}">${avatarHtml(me)}</label>
+        <div class="profile-header">
+          <label class="avatar-pick filled prof-avatar" for="profPhotoInput" id="profAvatar" title="${t('change_photo')}">${avatarHtml(me)}</label>
           <input id="profPhotoInput" type="file" accept="image/*" hidden>
-          <label class="link" for="profPhotoInput">${t('change_photo')}</label>
+          <label class="link photo-link" for="profPhotoInput">${t('change_photo')}</label>
+          <input id="profUsername" class="profile-name" maxlength="30" value="${esc(me.username)}" aria-label="${t('username')}">
         </div>
-        <p class="muted-label">${t('username')}</p>
-        <input id="profUsername" class="text-field" maxlength="30" value="${esc(me.username)}">
-        <div class="divider"></div>
-        <button id="manageCatsBtn" class="inline-btn">${t('manage_categories')}</button>
-        <button id="exportCsvBtn" class="inline-btn">${t('export_csv')}</button>
-        <div class="divider"></div>
-        <label class="switch-row">
-          <span class="switch-main"><span class="switch-title">${t('trips_toggle')}</span>
-            <span class="tx-sub">${t('trips_toggle_hint')}</span></span>
-          <span class="switch"><input type="checkbox" id="tripsToggle" ${me.tripsEnabled ? 'checked' : ''}><span class="switch-slider"></span></span>
-        </label>
-        <div class="divider"></div>
-        <p class="muted-label">${t('change_password')}</p>
-        <input id="profCurPass" class="text-field" type="password" placeholder="${t('current_password')}" maxlength="128" autocomplete="current-password">
-        <input id="profNewPass" class="text-field" type="password" placeholder="${t('new_password_ph')}" maxlength="128" autocomplete="new-password">
-        <button id="changePassBtn" class="inline-btn">${t('update_password')}</button>
-        <div class="divider"></div>
-        <button id="logoutBtn" class="danger-btn">${t('logout')}</button>`;
+
+        <div class="settings-group">
+          <button class="settings-row" id="manageCatsBtn">
+            <span class="tx-icon" style="background:${tint('#0a84ff', .14)}">🏷️</span>
+            <span class="settings-label">${t('manage_categories')}</span>
+            <span class="acc-chevron">›</span>
+          </button>
+          <button class="settings-row" id="exportCsvBtn">
+            <span class="tx-icon" style="background:${tint('#34c759', .16)}">⬇️</span>
+            <span class="settings-label">${t('export_csv')}</span>
+            <span class="acc-chevron">›</span>
+          </button>
+        </div>
+
+        <div class="settings-group">
+          <label class="settings-row switch-row">
+            <span class="tx-icon" style="background:${tint('#0a84ff', .14)}">✈️</span>
+            <span class="settings-label">
+              <span class="settings-title">${t('trips_toggle')}</span>
+              <span class="tx-sub">${t('trips_toggle_hint')}</span>
+            </span>
+            <span class="switch"><input type="checkbox" id="tripsToggle" ${me.tripsEnabled ? 'checked' : ''}><span class="switch-slider"></span></span>
+          </label>
+        </div>
+
+        <p class="section-title">${t('change_password')}</p>
+        <div class="settings-group password-group">
+          <input id="profCurPass" class="text-field" type="password" placeholder="${t('current_password')}" maxlength="128" autocomplete="current-password">
+          <input id="profNewPass" class="text-field" type="password" placeholder="${t('new_password_ph')}" maxlength="128" autocomplete="new-password">
+        </div>
+        <button id="changePassBtn" class="pill pill-hover centered">${t('update_password')}</button>
+
+        <button id="logoutBtn" class="pill pill-danger centered prof-logout">${t('logout')}</button>`;
 
       $('profUsername').addEventListener('input', refreshSaveState);
 
