@@ -81,9 +81,11 @@ var app = builder.Build();
 // y sirve; las peticiones reintentan la BD. Las migraciones ya aplicadas hacen que esto sea seguro.
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<NomosDbContext>();
     try
     {
+        // Incluye la construcción del DbContext dentro del try: si la cadena de conexión está mal,
+        // el fallo se captura aquí en vez de tumbar el proceso.
+        var db = scope.ServiceProvider.GetRequiredService<NomosDbContext>();
         // SQLite (local dev) creates the schema directly; PostgreSQL/Supabase applies migrations.
         if (db.Database.ProviderName?.Contains("Sqlite") == true)
             db.Database.EnsureCreated();
