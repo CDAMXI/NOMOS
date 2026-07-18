@@ -76,16 +76,26 @@ builder.Services.AddRateLimiter(options =>
 var app = builder.Build();
 
 // Apply migrations (creates the schema on first run) and seed demo data.
+// Envuelto en try/catch: un fallo aquí (BD momentáneamente inaccesible, error puntual del runtime al
+// abrir la conexión…) NO debe tumbar el arranque y marcar el deploy como fallido. La app levanta igual
+// y sirve; las peticiones reintentan la BD. Las migraciones ya aplicadas hacen que esto sea seguro.
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<NomosDbContext>();
-    // SQLite (local dev) creates the schema directly; PostgreSQL/Supabase applies migrations.
-    if (db.Database.ProviderName?.Contains("Sqlite") == true)
-        db.Database.EnsureCreated();
-    else
-        db.Database.Migrate();
-    await DbSeeder.SeedAsync(db);
-    await LegacyBackfill.RunAsync(db); // give pre-account users a default "Efectivo" account (one-time)
+    try
+    {
+        // SQLite (local dev) creates the schema directly; PostgreSQL/Supabase applies migrations.
+        if (db.Database.ProviderName?.Contains("Sqlite") == true)
+            db.Database.EnsureCreated();
+        else
+            db.Database.Migrate();
+        await DbSeeder.SeedAsync(db);
+        await LegacyBackfill.RunAsync(db); // give pre-account users a default "Efectivo" account (one-time)
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "Fallo en la inicialización de la base de datos al arrancar; la app continúa.");
+    }
 }
 
 app.UseForwardedHeaders();
