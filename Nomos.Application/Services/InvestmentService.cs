@@ -12,7 +12,7 @@ namespace Nomos.Application.Services;
 /// </summary>
 public class InvestmentService(
     IAccountRepository accounts, IHoldingRepository holdings,
-    ISnapshotRepository snapshots, IExpenseRepository expenses, IIncomeRepository incomes)
+    IExpenseRepository expenses, IIncomeRepository incomes, SnapshotWriter snapshotWriter)
 {
     public async Task<BrokerDto?> GetAsync(int accountId, int userId)
     {
@@ -48,7 +48,7 @@ public class InvestmentService(
         broker.UpdatedAt = DateTime.UtcNow;
         await accounts.UpdateAsync(broker);
         // El total del broker no cambia (margen → posiciones), pero mantenemos el snapshot fresco.
-        await RefreshSnapshotAsync(userId);
+        await snapshotWriter.RefreshAsync(userId, DateOnly.FromDateTime(DateTime.Today));
         return await ToDtoAsync(broker, userId);
     }
 
@@ -75,7 +75,7 @@ public class InvestmentService(
         if (lot.Shares == 0) await holdings.DeleteAsync(lot);
         else await holdings.UpdateAsync(lot);
         await accounts.UpdateAsync(broker);
-        await RefreshSnapshotAsync(userId);
+        await snapshotWriter.RefreshAsync(userId, DateOnly.FromDateTime(DateTime.Today));
         return await ToDtoAsync(broker, userId);
     }
 
@@ -118,7 +118,7 @@ public class InvestmentService(
         cash.UpdatedAt = broker.UpdatedAt = DateTime.UtcNow;
         await accounts.UpdateAsync(cash);
         await accounts.UpdateAsync(broker);
-        await RefreshSnapshotAsync(userId);
+        await snapshotWriter.RefreshAsync(userId, DateOnly.FromDateTime(DateTime.Today));
         return await ToDtoAsync(broker, userId);
     }
 
@@ -138,18 +138,4 @@ public class InvestmentService(
         return new BrokerDto(broker.Id, broker.Name, broker.Balance, invested, broker.Balance + invested, lots);
     }
 
-    /// <summary>Mismo criterio que NetWorthService: el snapshot del mes refleja los totales vivos.</summary>
-    private async Task RefreshSnapshotAsync(int userId)
-    {
-        var all = await accounts.GetAllAsync(userId);
-        var live = AccountBalances.Live(all,
-            await expenses.GetAllAsync(userId), await incomes.GetAllAsync(userId), await holdings.GetAllAsync(userId));
-        await snapshots.UpsertAsync(new NetWorthSnapshot
-        {
-            UserId = userId,
-            Date = DateOnly.FromDateTime(DateTime.Today),
-            Assets = all.Where(a => a.Type != AccountType.Liability).Sum(a => live[a.Id]),
-            Liabilities = all.Where(a => a.Type == AccountType.Liability).Sum(a => live[a.Id])
-        });
-    }
 }

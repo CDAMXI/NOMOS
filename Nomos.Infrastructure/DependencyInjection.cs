@@ -32,6 +32,7 @@ public static class DependencyInjection
         services.AddScoped<CategoryService>();
         services.AddScoped<ExpenseService>();
         services.AddScoped<IncomeService>();
+        services.AddScoped<SnapshotWriter>();
         services.AddScoped<NetWorthService>();
         services.AddScoped<InvestmentService>();
         services.AddScoped<TripService>();
