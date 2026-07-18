@@ -64,6 +64,16 @@ public interface IHoldingRepository
     Task DeleteAsync(Holding holding);
 }
 
+/// <summary>
+/// Ejecuta varias operaciones de repositorio dentro de una única transacción de base de datos:
+/// o se confirman todas o no se confirma ninguna. Todos los repos comparten el mismo DbContext,
+/// así que sus SaveChanges participan de la transacción abierta aquí.
+/// </summary>
+public interface IUnitOfWork
+{
+    Task InTransactionAsync(Func<Task> action);
+}
+
 public interface ITripRepository
 {
     Task<List<Trip>> GetAllAsync(int userId);

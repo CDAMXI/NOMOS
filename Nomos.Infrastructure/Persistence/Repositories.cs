@@ -208,6 +208,18 @@ public class HoldingRepository(NomosDbContext db) : IHoldingRepository
     }
 }
 
+public class UnitOfWork(NomosDbContext db) : IUnitOfWork
+{
+    public async Task InTransactionAsync(Func<Task> action)
+    {
+        // Los proveedores relacionales (Npgsql y SQLite) soportan transacciones explícitas.
+        // Si la acción lanza, el dispose hace rollback; solo se confirma al llegar a Commit.
+        await using var tx = await db.Database.BeginTransactionAsync();
+        await action();
+        await tx.CommitAsync();
+    }
+}
+
 public class TripRepository(NomosDbContext db) : ITripRepository
 {
     // Rastreado (sin AsNoTracking) para que el resumen incluya monedas y gastos.

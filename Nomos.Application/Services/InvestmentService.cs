@@ -12,7 +12,8 @@ namespace Nomos.Application.Services;
 /// </summary>
 public class InvestmentService(
     IAccountRepository accounts, IHoldingRepository holdings,
-    IExpenseRepository expenses, IIncomeRepository incomes, SnapshotWriter snapshotWriter)
+    IExpenseRepository expenses, IIncomeRepository incomes, SnapshotWriter snapshotWriter,
+    IUnitOfWork unitOfWork)
 {
     public async Task<BrokerDto?> GetAsync(int accountId, int userId)
     {
@@ -35,20 +36,24 @@ public class InvestmentService(
         if (cost > broker.Balance)
             throw new ArgumentException($"Margen libre insuficiente: la compra cuesta {cost:0.##} € y tienes {broker.Balance:0.##} €.");
 
-        await holdings.AddAsync(new Holding
+        // Atómico: crear el lote y descontar el margen van juntos o no van.
+        await unitOfWork.InTransactionAsync(async () =>
         {
-            UserId = userId,
-            AccountId = accountId,
-            Symbol = request.Symbol.Trim(),
-            Shares = request.Shares,
-            BuyPrice = request.Price,
-            BuyDate = AppClock.Today()
+            await holdings.AddAsync(new Holding
+            {
+                UserId = userId,
+                AccountId = accountId,
+                Symbol = request.Symbol.Trim(),
+                Shares = request.Shares,
+                BuyPrice = request.Price,
+                BuyDate = AppClock.Today()
+            });
+            broker.Balance -= cost;
+            broker.UpdatedAt = DateTime.UtcNow;
+            await accounts.UpdateAsync(broker);
+            // El total del broker no cambia (margen → posiciones), pero mantenemos el snapshot fresco.
+            await snapshotWriter.RefreshAsync(userId, AppClock.Today());
         });
-        broker.Balance -= cost;
-        broker.UpdatedAt = DateTime.UtcNow;
-        await accounts.UpdateAsync(broker);
-        // El total del broker no cambia (margen → posiciones), pero mantenemos el snapshot fresco.
-        await snapshotWriter.RefreshAsync(userId, AppClock.Today());
         return await ToDtoAsync(broker, userId);
     }
 
@@ -67,15 +72,19 @@ public class InvestmentService(
         if (request.Price <= 0)
             throw new ArgumentException("El precio de venta debe ser mayor que cero.");
 
-        // Lo vendido entra al margen a precio de venta; ahí se materializa la ganancia o pérdida.
-        broker.Balance += decimal.Round(request.Shares * request.Price, 2);
-        broker.UpdatedAt = DateTime.UtcNow;
+        // Atómico: ingresar en el margen y reducir/borrar el lote van juntos o no van.
+        await unitOfWork.InTransactionAsync(async () =>
+        {
+            // Lo vendido entra al margen a precio de venta; ahí se materializa la ganancia o pérdida.
+            broker.Balance += decimal.Round(request.Shares * request.Price, 2);
+            broker.UpdatedAt = DateTime.UtcNow;
 
-        lot.Shares -= request.Shares;
-        if (lot.Shares == 0) await holdings.DeleteAsync(lot);
-        else await holdings.UpdateAsync(lot);
-        await accounts.UpdateAsync(broker);
-        await snapshotWriter.RefreshAsync(userId, AppClock.Today());
+            lot.Shares -= request.Shares;
+            if (lot.Shares == 0) await holdings.DeleteAsync(lot);
+            else await holdings.UpdateAsync(lot);
+            await accounts.UpdateAsync(broker);
+            await snapshotWriter.RefreshAsync(userId, AppClock.Today());
+        });
         return await ToDtoAsync(broker, userId);
     }
 
@@ -115,10 +124,14 @@ public class InvestmentService(
             cash.Balance += amount;
         }
 
-        cash.UpdatedAt = broker.UpdatedAt = DateTime.UtcNow;
-        await accounts.UpdateAsync(cash);
-        await accounts.UpdateAsync(broker);
-        await snapshotWriter.RefreshAsync(userId, AppClock.Today());
+        // Atómico: los dos saldos (efectivo y broker) se mueven juntos o no se mueven.
+        await unitOfWork.InTransactionAsync(async () =>
+        {
+            cash.UpdatedAt = broker.UpdatedAt = DateTime.UtcNow;
+            await accounts.UpdateAsync(cash);
+            await accounts.UpdateAsync(broker);
+            await snapshotWriter.RefreshAsync(userId, AppClock.Today());
+        });
         return await ToDtoAsync(broker, userId);
     }
 

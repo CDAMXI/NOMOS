@@ -27,6 +27,7 @@ public static class DependencyInjection
         services.AddScoped<IHoldingRepository, HoldingRepository>();
         services.AddScoped<ITripRepository, TripRepository>();
         services.AddScoped<ISnapshotRepository, SnapshotRepository>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         services.AddScoped<AuthService>();
         services.AddScoped<CategoryService>();
