@@ -728,6 +728,34 @@ function accRow(a) {
   </li>`;
 }
 
+// ---------- Chips de selección (patrón común de todas las hojas) ----------
+// Pinta un grupo de chips de selección única: marca `.selected` y aplica el color del elegido.
+// `attr` = sufijo del data-atributo ('acc', 'cat', 'cur', 'type'); `isSel(chip)` decide el activo;
+// `styleSel(chip)` da {bg,color} del activo (por defecto, el estilo "acento" azul).
+function paintChipGroup(scope, attr, isSel, styleSel) {
+  scope.querySelectorAll(`.chip[data-${attr}]`).forEach(ch => {
+    const sel = isSel(ch);
+    ch.classList.toggle('selected', sel);
+    const s = !sel ? { bg: '', color: '' }
+      : styleSel ? styleSel(ch)
+      : { bg: 'var(--accent-soft)', color: 'var(--accent)' };
+    ch.style.background = s.bg;
+    ch.style.color = s.color;
+  });
+}
+
+// Enlaza el click de cada chip del grupo, pasando el valor de su data-atributo.
+function onChipPick(scope, attr, handler) {
+  scope.querySelectorAll(`.chip[data-${attr}]`).forEach(ch =>
+    ch.addEventListener('click', () => handler(ch.dataset[attr], ch)));
+}
+
+// Estilo del chip de categoría seleccionado: tinte y color propios de la categoría.
+const catChipStyle = ch => {
+  const c = categories.find(x => x.id === +ch.dataset.cat);
+  return { bg: tint(c.color, .18), color: c.color };
+};
+
 // ---------- Hoja modal ----------
 const sheet = $('sheet'), sheetBody = $('sheetBody'), sheetTitle = $('sheetTitle'), sheetSave = $('sheetSave');
 let sheetCtx = null;
@@ -877,16 +905,9 @@ async function openTxSheet(existing = null, draft = null) {
 
       const paintChips = () => {
         $('catChips').classList.toggle('hidden', kind === 'income');
-        body.querySelectorAll('.chip[data-cat]').forEach(ch => {
-          const cat = categories.find(c => c.id === +ch.dataset.cat);
-          const sel = cat.id === selectedCat;
-          ch.classList.toggle('selected', sel);
-          ch.style.background = sel ? tint(cat.color, .18) : '';
-          ch.style.color = sel ? cat.color : '';
-        });
+        paintChipGroup(body, 'cat', ch => +ch.dataset.cat === selectedCat, catChipStyle);
       };
-      body.querySelectorAll('.chip[data-cat]').forEach(ch =>
-        ch.addEventListener('click', () => { selectedCat = +ch.dataset.cat; paintChips(); refreshSaveState(); }));
+      onChipPick(body, 'cat', v => { selectedCat = +v; paintChips(); refreshSaveState(); });
 
       const addChip = $('addCatChip');
       if (addChip) addChip.addEventListener('click', () => {
@@ -896,14 +917,8 @@ async function openTxSheet(existing = null, draft = null) {
         openCategoryEditSheet(null, saved => openTxSheet(existing, { ...carry, categoryId: saved?.id }).catch(e => toast(e.message)));
       });
 
-      const paintAccChips = () => body.querySelectorAll('.chip[data-acc]').forEach(ch => {
-        const sel = +ch.dataset.acc === selectedAccount;
-        ch.classList.toggle('selected', sel);
-        ch.style.background = sel ? 'var(--accent-soft)' : '';
-        ch.style.color = sel ? 'var(--accent)' : '';
-      });
-      body.querySelectorAll('.chip[data-acc]').forEach(ch =>
-        ch.addEventListener('click', () => { selectedAccount = +ch.dataset.acc; paintAccChips(); }));
+      const paintAccChips = () => paintChipGroup(body, 'acc', ch => +ch.dataset.acc === selectedAccount);
+      onChipPick(body, 'acc', v => { selectedAccount = +v; paintAccChips(); });
       paintAccChips();
 
       const addAccChip = $('addAccChip');
@@ -1055,14 +1070,8 @@ function openAccountSheet(onDone = null, opts = {}) {
         <input id="nameField" class="text-field" placeholder="${t('account_name_ph')}" maxlength="80" autofocus>`;
       bindAmount(body, false);
       if (!opts.cashOnly) {
-        const paint = () => body.querySelectorAll('.chip[data-type]').forEach(ch => {
-          const sel = ch.dataset.type === selectedType;
-          ch.classList.toggle('selected', sel);
-          ch.style.background = sel ? 'var(--accent-soft)' : '';
-          ch.style.color = sel ? 'var(--accent)' : '';
-        });
-        body.querySelectorAll('.chip[data-type]').forEach(ch =>
-          ch.addEventListener('click', () => { selectedType = ch.dataset.type; paint(); }));
+        const paint = () => paintChipGroup(body, 'type', ch => ch.dataset.type === selectedType);
+        onChipPick(body, 'type', v => { selectedType = v; paint(); });
         paint();
       }
       $('nameField').addEventListener('input', refreshSaveState);
@@ -1269,14 +1278,8 @@ async function openBrokerTransferSheet(b, back) {
         p.addEventListener('click', () => { direction = p.dataset.dir; paintDir(); }));
       paintDir();
 
-      const paintAcc = () => body.querySelectorAll('.chip[data-acc]').forEach(ch => {
-        const sel = +ch.dataset.acc === cashSel;
-        ch.classList.toggle('selected', sel);
-        ch.style.background = sel ? 'var(--accent-soft)' : '';
-        ch.style.color = sel ? 'var(--accent)' : '';
-      });
-      body.querySelectorAll('.chip[data-acc]').forEach(ch =>
-        ch.addEventListener('click', () => { cashSel = +ch.dataset.acc; paintAcc(); }));
+      const paintAcc = () => paintChipGroup(body, 'acc', ch => +ch.dataset.acc === cashSel);
+      onChipPick(body, 'acc', v => { cashSel = +v; paintAcc(); });
       paintAcc();
     },
     async onSave() {
@@ -1520,25 +1523,12 @@ async function openTripExpenseSheet(trip, existing = null, back = null) {
         ${isEdit ? `<button id="deleteTripExp" class="pill pill-danger centered">${t('delete_trip_expense')}</button>` : ''}`;
       bindAmount(body, true);
 
-      const paintCur = () => body.querySelectorAll('.chip[data-cur]').forEach(ch => {
-        const sel = ch.dataset.cur === currency;
-        ch.classList.toggle('selected', sel);
-        ch.style.background = sel ? 'var(--accent-soft)' : '';
-        ch.style.color = sel ? 'var(--accent)' : '';
-      });
-      body.querySelectorAll('.chip[data-cur]').forEach(ch =>
-        ch.addEventListener('click', () => { currency = ch.dataset.cur; paintCur(); refreshSaveState(); }));
+      const paintCur = () => paintChipGroup(body, 'cur', ch => ch.dataset.cur === currency);
+      onChipPick(body, 'cur', v => { currency = v; paintCur(); refreshSaveState(); });
       paintCur();
 
-      const paintCat = () => body.querySelectorAll('.chip[data-cat]').forEach(ch => {
-        const cat = categories.find(c => c.id === +ch.dataset.cat);
-        const sel = cat.id === selectedCat;
-        ch.classList.toggle('selected', sel);
-        ch.style.background = sel ? tint(cat.color, .18) : '';
-        ch.style.color = sel ? cat.color : '';
-      });
-      body.querySelectorAll('.chip[data-cat]').forEach(ch =>
-        ch.addEventListener('click', () => { selectedCat = selectedCat === +ch.dataset.cat ? null : +ch.dataset.cat; paintCat(); }));
+      const paintCat = () => paintChipGroup(body, 'cat', ch => +ch.dataset.cat === selectedCat, catChipStyle);
+      onChipPick(body, 'cat', v => { selectedCat = selectedCat === +v ? null : +v; paintCat(); });
       paintCat();
 
       // Zona de factura: preview + botones adjuntar/cambiar/quitar/ver.
