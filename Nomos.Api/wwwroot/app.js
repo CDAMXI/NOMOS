@@ -836,16 +836,18 @@ async function openTxSheet(existing = null, draft = null) {
   await ensureCategoriesFresh();
   const cashAccounts = (await getJSON('/api/accounts')).filter(a => a.type === 'Cash');
   const isEdit = !!existing;
+  // draft, cuando existe, gana sobre los valores originales: así, al volver de crear una
+  // categoría en medio de una edición, se recupera lo que el usuario ya había tecleado.
   let kind = existing ? existing.kind : (draft?.kind || 'expense');
-  let selectedCat = existing?.category?.id ?? draft?.categoryId ?? categories[0]?.id;
+  let selectedCat = draft?.categoryId ?? existing?.category?.id ?? categories[0]?.id;
   // Edits keep exactly the account the movement already had (including "none", so a
   // previously-unassigned movement is never silently reattached on save); only brand-new
   // movements default to the first cash account so the user rarely has to pick one.
-  let selectedAccount = existing
-    ? (existing.accountId ?? null)
-    : (draft?.accountId ?? cashAccounts[0]?.id ?? null);
-  setAmount(existing ? existing.amount : (draft?.amount || 0));
-  const startDesc = existing ? existing.description : (draft?.description || '');
+  let selectedAccount = draft && 'accountId' in draft
+    ? draft.accountId
+    : (existing ? (existing.accountId ?? null) : (cashAccounts[0]?.id ?? null));
+  setAmount(draft && 'amount' in draft ? draft.amount : (existing ? existing.amount : 0));
+  const startDesc = draft && 'description' in draft ? draft.description : (existing ? existing.description : '');
 
   const titleFor = () => t(isEdit
     ? (kind === 'income' ? 'edit_income' : 'edit_expense')
@@ -863,13 +865,13 @@ async function openTxSheet(existing = null, draft = null) {
         ${amountBlock(t('amount'))}
         <div class="chips" id="catChips">${[...categories].sort((a, b) => catName(a.name).localeCompare(catName(b.name), localeCode())).map(c =>
           `<button class="chip" data-cat="${c.id}">${c.icon} ${esc(catName(c.name))}</button>`).join('')}
-          ${isEdit ? '' : `<button class="chip chip-add" id="addCatChip">${t('add_category_chip')}</button>`}</div>
+          <button class="chip chip-add" id="addCatChip">${t('add_category_chip')}</button></div>
         ${(cashAccounts.length >= 1 || !isEdit) ? `<p class="tx-sub cat-hint">${t('account_label')}</p>
         <div class="chips" id="accChips">${cashAccounts.map(a =>
           `<button class="chip" data-acc="${a.id}">${TYPE_ICON.Cash} ${esc(a.name)}</button>`).join('')}
           ${isEdit ? '' : `<button class="chip chip-add" id="addAccChip">${t('add_account_chip')}</button>`}</div>` : ''}
         <input id="descField" class="text-field" placeholder="${t('description_optional')}" maxlength="120" value="${esc(startDesc)}">
-        <input id="dateField" class="text-field" type="date" value="${existing ? existing.date : (draft?.date || todayISO())}">
+        <input id="dateField" class="text-field" type="date" value="${(draft && draft.date) ? draft.date : (existing ? existing.date : todayISO())}">
         ${isEdit ? `<button id="deleteTx" class="danger-btn">${t(kind === 'income' ? 'delete_income' : 'delete_expense')}</button>` : ''}`;
       bindAmount(body, true);
 
@@ -889,7 +891,9 @@ async function openTxSheet(existing = null, draft = null) {
       const addChip = $('addCatChip');
       if (addChip) addChip.addEventListener('click', () => {
         const carry = { kind, amount: amountValue(), description: $('descField').value, date: $('dateField').value, accountId: selectedAccount };
-        openCategoryEditSheet(null, saved => openTxSheet(null, { ...carry, categoryId: saved?.id }).catch(e => toast(e.message)));
+        // Se pasa `existing`: si estabas editando, vuelves al MISMO gasto en edición con la nueva
+        // categoría ya seleccionada; si era nuevo, sigue siendo nuevo.
+        openCategoryEditSheet(null, saved => openTxSheet(existing, { ...carry, categoryId: saved?.id }).catch(e => toast(e.message)));
       });
 
       const paintAccChips = () => body.querySelectorAll('.chip[data-acc]').forEach(ch => {
