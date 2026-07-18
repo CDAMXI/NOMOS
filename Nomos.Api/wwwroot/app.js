@@ -40,7 +40,7 @@ const I18N = {
     account_label: 'Cuenta', add_account_chip: '＋ cuenta', all_accounts: 'Todas',
     profile: 'Perfil', change_photo: 'Cambiar foto', username: 'Nombre de usuario',
     manage_categories: 'Gestionar categorías', language: 'Idioma',
-    export_csv: 'Exportar movimientos (CSV)',
+    export_csv: 'Exportar movimientos (CSV)', export_done: 'Descarga iniciada',
     change_password: 'Cambiar contraseña', current_password: 'Contraseña actual',
     new_password_ph: 'Nueva contraseña (mín. 8 caracteres)', update_password: 'Actualizar contraseña',
     logout: 'Cerrar sesión', password_updated: 'Contraseña actualizada', profile_updated: 'Perfil actualizado',
@@ -115,7 +115,7 @@ const I18N = {
     account_label: 'Account', add_account_chip: '＋ account', all_accounts: 'All',
     profile: 'Profile', change_photo: 'Change photo', username: 'Username',
     manage_categories: 'Manage categories', language: 'Language',
-    export_csv: 'Export movements (CSV)',
+    export_csv: 'Export movements (CSV)', export_done: 'Download started',
     change_password: 'Change password', current_password: 'Current password',
     new_password_ph: 'New password (min. 8 characters)', update_password: 'Update password',
     logout: 'Log out', password_updated: 'Password updated', profile_updated: 'Profile updated',
@@ -1665,8 +1665,12 @@ function openProfileSheet() {
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url; a.download = 'pluto-movimientos.csv';
-          document.body.appendChild(a); a.click(); a.remove();
-          URL.revokeObjectURL(url);
+          a.rel = 'noopener';
+          document.body.appendChild(a); a.click();
+          // Revocar tarde y quitar el enlace después: revocar de inmediato cancela la descarga
+          // en algunos navegadores (y en la PWA instalada).
+          setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 4000);
+          toast(t('export_done'));
         } catch (e) { toast(e.message); }
       });
 
