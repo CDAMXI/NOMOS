@@ -18,6 +18,7 @@ function openProfileSheet() {
           <input id="profUsername" class="profile-name" maxlength="30" value="${esc(me.username)}" aria-label="${t('username')}">
         </div>
 
+        <p class="section-title">${t('section_general')}</p>
         <div class="settings-group">
           <button class="settings-row" id="manageCatsBtn">
             <span class="tx-icon" style="background:${tint('#1b3a8e', .14)}">🏷️</span>
@@ -25,18 +26,19 @@ function openProfileSheet() {
             <span class="acc-chevron">›</span>
           </button>
           <button class="settings-row" id="exportCsvBtn">
-            <span class="tx-icon" style="background:${tint('#34c759', .16)}">⬇️</span>
+            <span class="tx-icon" style="background:${tint('#1b3a8e', .14)}">⬇️</span>
             <span class="settings-label">${t('export_csv')}</span>
             <span class="acc-chevron">›</span>
           </button>
           <label class="settings-row" for="currencySel">
-            <span class="tx-icon" style="background:${tint('#ff9f0a', .16)}">💱</span>
+            <span class="tx-icon" style="background:${tint('#1b3a8e', .14)}">💱</span>
             <span class="settings-label">${t('currency_label_setting')}</span>
             <select id="currencySel" class="settings-select">${CURRENCIES.map(c =>
               `<option value="${c[0]}"${c[0] === me.currency ? ' selected' : ''}>${c[0]} — ${esc(c[1])}</option>`).join('')}</select>
           </label>
         </div>
 
+        <p class="section-title">${t('section_features')}</p>
         <div class="settings-group">
           <label class="settings-row switch-row">
             <span class="tx-icon" style="background:${tint('#1b3a8e', .14)}">✈️</span>
