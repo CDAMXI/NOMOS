@@ -177,7 +177,7 @@ body {
 .broker-hero .big-figure::after {
   content: '';
   display: block;
-  width: 130px;
+  width: 168px; /* misma anchura de firma que .reed bajo saldo/patrimonio */
   height: 5px;
   margin: var(--sp-7) auto 0;
   border-radius: var(--r-1);
@@ -349,7 +349,8 @@ body {
 }
 
 .two-cards { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-14); margin-bottom: var(--sp-16); }
-.muted-label { color: var(--muted); font-size: var(--fs-14); margin-bottom: var(--sp-6); }
+/* Rótulos de sección en hojas broker/viajes con el tratamiento "cuño" (section-title). */
+.muted-label { color: var(--muted); font-size: var(--fs-12); font-weight: 600; text-transform: uppercase; letter-spacing: .18em; margin-bottom: var(--sp-6); }
 .big-figure { font-size: var(--fs-26); font-weight: 700; }
 .green { color: var(--green); }
 .red { color: var(--red); }
@@ -660,6 +661,8 @@ li.clickable { cursor: pointer; }
 /* ---------- Hoja del broker (inversiones) ---------- */
 .broker-hero { text-align: center; padding: var(--sp-2) 0 var(--sp-14); }
 .broker-hero .big-figure { font-size: var(--fs-34); }
+/* Rótulo del total con tratamiento "cuño" (eyebrow: mayúsculas espaciadas), como en Patrimonio. */
+.broker-hero .amount-label { text-transform: uppercase; letter-spacing: .25em; font-size: var(--fs-115); font-weight: 600; }
 .broker-sub { color: var(--muted); font-size: var(--fs-14); margin-top: var(--sp-4); }
 .broker-sub b { color: var(--text); font-weight: 600; }
 .calc-line { display: flex; justify-content: space-between; color: var(--muted); font-size: var(--fs-14); padding: var(--sp-7) var(--sp-2); }
