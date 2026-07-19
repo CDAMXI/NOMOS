@@ -3,6 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <script>
+  // Escala consistente entre móviles: los que tienen un viewport CSS estrecho (p. ej. S22 Ultra)
+  // renderizan la app "zoomed in". Aquí, si el ancho es menor que MIN, forzamos width=MIN: el
+  // navegador escala ese diseño para caber, dejando la misma escala que un móvil ancho (S25+).
+  (function () {
+    var MIN = 400;
+    var w = window.innerWidth;
+    if (w && w > 0 && w < MIN - 4) {
+      var m = document.querySelector('meta[name="viewport"]');
+      if (m) m.setAttribute('content', 'width=' + MIN + ', viewport-fit=cover');
+    }
+  })();
+  </script>
   <title>PLUTO</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💠</text></svg>">
   <link rel="manifest" href="/manifest.json">
