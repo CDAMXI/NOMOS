@@ -330,7 +330,7 @@ function openBuySheet(b, back) {
       body.innerHTML = `
         <input id="symField" class="text-field" placeholder="${t('symbol_ph')}" maxlength="40" autofocus>
         <input id="sharesField" class="text-field" inputmode="decimal" autocomplete="off" placeholder="${t('num_shares')}">
-        <input id="priceField" class="text-field" inputmode="decimal" autocomplete="off" placeholder="${t('price_per_share')}">
+        <input id="priceField" class="text-field" inputmode="decimal" autocomplete="off" placeholder="${t('price_per_share', curSymbol)}">
         <div class="calc-line"><span>${t('total_cost')}</span><b id="buyCost">—</b></div>
         <div class="calc-line"><span>${t('free_margin')}</span><b>${eur(b.margin)}</b></div>
         <p class="field-hint" id="buyHint"></p>`;
@@ -371,7 +371,7 @@ function openSellSheet(b, h, back) {
       body.innerHTML = `
         <p class="tx-sub cat-hint">${t('lot_summary', nfShares(h.shares), eur(h.buyPrice), dMed(h.buyDate))}</p>
         <input id="sharesField" class="text-field" inputmode="decimal" autocomplete="off" placeholder="${t('num_shares')}" autofocus>
-        <input id="priceField" class="text-field" inputmode="decimal" autocomplete="off" placeholder="${t('sell_price')}">
+        <input id="priceField" class="text-field" inputmode="decimal" autocomplete="off" placeholder="${t('sell_price', curSymbol)}">
         <div class="calc-line"><span>${t('total_proceeds')}</span><b id="sellTotal">—</b></div>
         <p class="field-hint" id="sellHint"></p>`;
 

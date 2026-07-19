@@ -29,6 +29,12 @@ function openProfileSheet() {
             <span class="settings-label">${t('export_csv')}</span>
             <span class="acc-chevron">›</span>
           </button>
+          <label class="settings-row" for="currencySel">
+            <span class="tx-icon" style="background:${tint('#ff9f0a', .16)}">💱</span>
+            <span class="settings-label">${t('currency_label_setting')}</span>
+            <select id="currencySel" class="settings-select">${CURRENCIES.map(c =>
+              `<option value="${c[0]}"${c[0] === me.currency ? ' selected' : ''}>${c[0]} — ${esc(c[1])}</option>`).join('')}</select>
+          </label>
         </div>
 
         <div class="settings-group">
@@ -63,6 +69,15 @@ function openProfileSheet() {
       });
 
       $('manageCatsBtn').addEventListener('click', () => openCategoriesSheet());
+
+      $('currencySel').addEventListener('change', async e => {
+        const prev = me.currency, code = e.target.value;
+        try { me = await sendJSON('/api/auth/profile', 'PUT', { currency: code }); }
+        catch (err) { e.target.value = prev; toast(err.message); return; }
+        applyUserCurrency();
+        refreshCurrent();
+        toast(t('currency_updated'));
+      });
 
       $('exportCsvBtn').addEventListener('click', async () => {
         try {

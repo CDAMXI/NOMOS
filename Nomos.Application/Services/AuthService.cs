@@ -10,6 +10,13 @@ public partial class AuthService(IUserRepository users)
 {
     private const int MaxPhotoLength = 500_000; // ~366 KB decoded; avatars are resized client-side
 
+    // Divisas soportadas (ISO 4217). Espejo de CURRENCIES en el front (js/format.js).
+    private static readonly HashSet<string> SupportedCurrencies = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "EUR", "USD", "GBP", "CHF", "JPY", "CNY", "CAD", "AUD",
+        "MXN", "COP", "ARS", "CLP", "PEN", "BRL", "UYU", "BOB", "VES", "PYG", "GTQ", "DOP"
+    };
+
     // Letters (incl. accents/ñ via \p{L}), digits, spaces and . _ - ; 3–30 chars.
     [GeneratedRegex(@"^[\p{L}\p{N} ._-]{3,30}$")]
     private static partial Regex UsernamePattern();
@@ -72,6 +79,9 @@ public partial class AuthService(IUserRepository users)
         if (request.TripsEnabled is bool tripsEnabled)
             user.TripsEnabled = tripsEnabled;
 
+        if (request.Currency is not null)
+            user.Currency = ValidateCurrency(request.Currency);
+
         await users.UpdateAsync(user);
         return ToDto(user);
     }
@@ -116,5 +126,13 @@ public partial class AuthService(IUserRepository users)
         return photoDataUrl;
     }
 
-    private static UserDto ToDto(User u) => new(u.Id, u.Username, u.PhotoDataUrl, u.TripsEnabled);
+    private static string ValidateCurrency(string code)
+    {
+        var c = code.Trim().ToUpperInvariant();
+        if (!SupportedCurrencies.Contains(c))
+            throw new ArgumentException("Divisa no soportada.");
+        return c;
+    }
+
+    private static UserDto ToDto(User u) => new(u.Id, u.Username, u.PhotoDataUrl, u.TripsEnabled, u.Currency);
 }

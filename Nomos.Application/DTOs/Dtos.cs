@@ -100,12 +100,12 @@ public record SaveTripRequest(string Name, string? Destinations, List<TripCurren
 public record SaveTripExpenseRequest(
     decimal Amount, string CurrencyCode, int? CategoryId, string? Description, DateOnly? Date, string? ReceiptDataUrl);
 
-public record UserDto(int Id, string Username, string? PhotoDataUrl, bool TripsEnabled);
+public record UserDto(int Id, string Username, string? PhotoDataUrl, bool TripsEnabled, string Currency);
 
 public record RegisterRequest(string Username, string Password, string? PhotoDataUrl);
 
 public record LoginRequest(string Username, string Password);
 
-public record UpdateProfileRequest(string? Username, string? PhotoDataUrl, bool? TripsEnabled);
+public record UpdateProfileRequest(string? Username, string? PhotoDataUrl, bool? TripsEnabled, string? Currency);
 
 public record ChangePasswordRequest(string CurrentPassword, string NewPassword);

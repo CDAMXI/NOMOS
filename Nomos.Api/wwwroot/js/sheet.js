@@ -86,7 +86,7 @@ function amountBlock(label) {
       <input id="amountInput" class="amount-input" type="text" inputmode="decimal" enterkeyhint="done"
         autocomplete="off" placeholder="0" aria-label="${label}"
         value="${esc(amountSeed)}" style="width:${Math.max(amountSeed.length, 1)}ch">
-      <span class="cur">€</span>
+      <span class="cur">${curSymbol}</span>
     </div>
   </div>`;
 }

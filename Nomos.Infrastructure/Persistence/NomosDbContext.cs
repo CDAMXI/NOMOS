@@ -23,6 +23,7 @@ public class NomosDbContext(DbContextOptions<NomosDbContext> options) : DbContex
             e.Property(u => u.Username).HasMaxLength(30);
             e.HasIndex(u => u.Username).IsUnique();
             e.Property(u => u.PasswordHash).HasMaxLength(200);
+            e.Property(u => u.Currency).HasMaxLength(3).HasDefaultValue("EUR");
         });
 
         builder.Entity<Category>(e =>

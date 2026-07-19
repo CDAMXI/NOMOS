@@ -6,15 +6,36 @@
 const $ = id => document.getElementById(id);
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 
+// Divisa principal del usuario (solo display). Se fija desde me.currency tras el login.
+let currency = 'EUR';
+let curSymbol = '€';
 let _nf2, _nf0, _cur, _curShort;
 function buildFormatters() {
   const l = localeCode();
   _nf2 = new Intl.NumberFormat(l, { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: true });
   _nf0 = new Intl.NumberFormat(l, { useGrouping: true });
-  _cur = new Intl.NumberFormat(l, { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: true });
-  _curShort = new Intl.NumberFormat(l, { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0, useGrouping: true });
+  _cur = new Intl.NumberFormat(l, { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: true });
+  _curShort = new Intl.NumberFormat(l, { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0, useGrouping: true });
+  curSymbol = (_cur.formatToParts(0).find(p => p.type === 'currency') || {}).value || currency;
 }
 buildFormatters();
+
+// Fija la divisa desde el usuario y reconstruye los formateadores. Llamar tras cargar/cambiar `me`.
+function applyUserCurrency() {
+  currency = (me && me.currency) || 'EUR';
+  buildFormatters();
+}
+
+// Divisas soportadas: [código ISO, nombre]. Espejo de SupportedCurrencies en AuthService.cs.
+const CURRENCIES = [
+  ['EUR', 'Euro'], ['USD', 'Dólar estadounidense'], ['GBP', 'Libra esterlina'],
+  ['CHF', 'Franco suizo'], ['JPY', 'Yen japonés'], ['CNY', 'Yuan chino'],
+  ['CAD', 'Dólar canadiense'], ['AUD', 'Dólar australiano'], ['MXN', 'Peso mexicano'],
+  ['COP', 'Peso colombiano'], ['ARS', 'Peso argentino'], ['CLP', 'Peso chileno'],
+  ['PEN', 'Sol peruano'], ['BRL', 'Real brasileño'], ['UYU', 'Peso uruguayo'],
+  ['BOB', 'Boliviano'], ['VES', 'Bolívar venezolano'], ['PYG', 'Guaraní'],
+  ['GTQ', 'Quetzal'], ['DOP', 'Peso dominicano'],
+];
 
 const decSep = () => (lang === 'en' ? '.' : ',');
 // Separador de miles = espacio, SOLO para mostrar cifras (los inputs no usan esto). Espacio
@@ -23,7 +44,7 @@ const grpSpace = parts => parts.map(p => p.type === 'group' ? ' ' : p.value).jo
 const eur = v => grpSpace(_cur.formatToParts(v));
 const nf0 = v => grpSpace(_nf0.formatToParts(v));
 const eurShort = v => Math.abs(v) >= 10000
-  ? (lang === 'en' ? '€' + nf0(Math.round(v / 1000)) + 'k' : nf0(Math.round(v / 1000)) + ' mil €')
+  ? (lang === 'en' ? curSymbol + nf0(Math.round(v / 1000)) + 'k' : nf0(Math.round(v / 1000)) + ' mil ' + curSymbol)
   : (Number.isInteger(v) ? grpSpace(_curShort.formatToParts(v)) : eur(v));
 const pct1 = v => Math.abs(v).toLocaleString(localeCode(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
 // Número de acciones: hasta 6 decimales (permite fracciones), miles con espacio.

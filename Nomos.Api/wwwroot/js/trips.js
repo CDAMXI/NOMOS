@@ -51,13 +51,13 @@ function openTripSheet(existing = null) {
     build(body) {
       const rowHtml = r => `<div class="cur-row">
         <input class="text-field cur-code" data-c="code" placeholder="${t('currency_code_ph')}" maxlength="8" value="${esc(r.code)}">
-        <input class="text-field cur-rate" data-c="rate" inputmode="decimal" placeholder="${t('rate_ph')}" value="${esc(r.rate)}">
+        <input class="text-field cur-rate" data-c="rate" inputmode="decimal" placeholder="${t('rate_ph', curSymbol)}" value="${esc(r.rate)}">
         <button class="cur-del" data-c="del" title="${t('remove_receipt')}">✕</button>
       </div>`;
       body.innerHTML = `
         <input id="tripName" class="text-field" placeholder="${t('trip_name_ph')}" maxlength="80" value="${isEdit ? esc(existing.name) : ''}" autofocus>
         <input id="tripDest" class="text-field" placeholder="${t('destinations_ph')}" maxlength="200" value="${isEdit ? esc(existing.destinations) : ''}">
-        <p class="tx-sub cat-hint">${t('currencies_label')}</p>
+        <p class="tx-sub cat-hint">${t('currencies_label', curSymbol)}</p>
         <div id="curRows">${rows.map(rowHtml).join('')}</div>
         <button id="addCur" class="inline-btn">${t('add_currency')}</button>
         ${isEdit ? `<button id="deleteTrip" class="pill pill-danger centered">${t('delete_trip')}</button>` : ''}`;

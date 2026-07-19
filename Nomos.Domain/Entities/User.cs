@@ -12,5 +12,7 @@ public class User
     public decimal InitialBalance { get; set; }
     /// <summary>Opt-in "Gastos de viaje": muestra la pestaña Viajes. Apagarlo la oculta sin borrar datos.</summary>
     public bool TripsEnabled { get; set; }
+    /// <summary>Divisa principal (ISO 4217, p. ej. "EUR", "USD"). Solo display: no convierte importes.</summary>
+    public string Currency { get; set; } = "EUR";
     public DateTime CreatedAt { get; set; }
 }
