@@ -24,4 +24,10 @@ public static class AccountBalances
                 if (balances.ContainsKey(h.AccountId)) balances[h.AccountId] += h.Shares * h.BuyPrice;
         return balances;
     }
+
+    /// <summary>Splits the live balances into assets (every non-liability account) and liabilities.</summary>
+    public static (decimal Assets, decimal Liabilities) SplitAssetsLiabilities(
+        IEnumerable<Account> accounts, Dictionary<int, decimal> live) =>
+        (accounts.Where(a => a.Type != AccountType.Liability).Sum(a => live[a.Id]),
+         accounts.Where(a => a.Type == AccountType.Liability).Sum(a => live[a.Id]));
 }

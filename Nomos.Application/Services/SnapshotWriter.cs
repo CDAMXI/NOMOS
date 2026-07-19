@@ -18,12 +18,13 @@ public class SnapshotWriter(
         var all = await accounts.GetAllAsync(userId);
         var live = AccountBalances.Live(all,
             await expenses.GetAllAsync(userId), await incomes.GetAllAsync(userId), await holdings.GetAllAsync(userId));
+        var (assets, liabilities) = AccountBalances.SplitAssetsLiabilities(all, live);
         await snapshots.UpsertAsync(new NetWorthSnapshot
         {
             UserId = userId,
             Date = today,
-            Assets = all.Where(a => a.Type != AccountType.Liability).Sum(a => live[a.Id]),
-            Liabilities = all.Where(a => a.Type == AccountType.Liability).Sum(a => live[a.Id])
+            Assets = assets,
+            Liabilities = liabilities
         });
     }
 }

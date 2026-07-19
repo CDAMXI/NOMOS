@@ -27,7 +27,6 @@ public interface IExpenseRepository
     Task<List<Expense>> GetAllAsync(int userId);
     Task<List<Expense>> GetBetweenAsync(int userId, DateOnly from, DateOnly to);
     Task<Expense?> GetByIdAsync(int id, int userId);
-    Task<decimal> SumAllAsync(int userId);
     Task<bool> AnyForCategoryAsync(int categoryId, int userId);
     Task<Expense> AddAsync(Expense expense);
     Task UpdateAsync(Expense expense);
@@ -39,7 +38,6 @@ public interface IIncomeRepository
     Task<List<Income>> GetAllAsync(int userId);
     Task<List<Income>> GetBetweenAsync(int userId, DateOnly from, DateOnly to);
     Task<Income?> GetByIdAsync(int id, int userId);
-    Task<decimal> SumAllAsync(int userId);
     Task<Income> AddAsync(Income income);
     Task UpdateAsync(Income income);
     Task DeleteAsync(Income income);

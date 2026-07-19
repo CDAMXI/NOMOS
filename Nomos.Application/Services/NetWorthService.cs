@@ -15,8 +15,7 @@ public class NetWorthService(
         var all = await accounts.GetAllAsync(userId);
         var live = AccountBalances.Live(all,
             await expenses.GetAllAsync(userId), await incomes.GetAllAsync(userId), await holdings.GetAllAsync(userId));
-        var assets = all.Where(a => a.Type != AccountType.Liability).Sum(a => live[a.Id]);
-        var liabilities = all.Where(a => a.Type == AccountType.Liability).Sum(a => live[a.Id]);
+        var (assets, liabilities) = AccountBalances.SplitAssetsLiabilities(all, live);
         var net = assets - liabilities;
 
         var yearStart = new DateOnly(today.Year, 1, 1);

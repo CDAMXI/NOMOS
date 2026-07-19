@@ -11,15 +11,18 @@ public class ExpenseService(
     ICategoryRepository categories, IAccountRepository accounts)
 {
     internal const int MaxDescriptionLength = 120;
+    internal const decimal MaxAmount = 100_000_000m;
     private static readonly CultureInfo Spanish = CultureInfo.GetCultureInfo("es-ES");
 
     public async Task<List<CategoryDto>> GetCategoriesAsync(int userId) =>
         (await categories.GetAllAsync(userId)).Select(ToDto).ToList();
 
     /// <summary>Available balance = sum of the live balances of the user's cash (bank) accounts.</summary>
-    public async Task<decimal> GetBalanceAsync(int userId)
+    public async Task<decimal> GetBalanceAsync(int userId) =>
+        await GetBalanceAsync(userId, await accounts.GetAllAsync(userId));
+
+    private async Task<decimal> GetBalanceAsync(int userId, List<Account> accs)
     {
-        var accs = await accounts.GetAllAsync(userId);
         var live = AccountBalances.Live(accs, await expenses.GetAllAsync(userId), await incomes.GetAllAsync(userId));
         return accs.Where(a => a.Type == AccountType.Cash).Sum(a => live[a.Id]);
     }
@@ -38,7 +41,7 @@ public class ExpenseService(
         ValidateAmount(request.Amount);
         var category = await categories.GetByIdAsync(request.CategoryId, userId)
             ?? throw new ArgumentException("Categoría no encontrada.");
-        var account = await ResolveAccountAsync(userId, request.AccountId);
+        var account = await MovementAccounts.ResolveAsync(accounts, userId, request.AccountId);
 
         var expense = await expenses.AddAsync(new Expense
         {
@@ -60,7 +63,7 @@ public class ExpenseService(
         ValidateAmount(request.Amount);
         var category = await categories.GetByIdAsync(request.CategoryId, userId)
             ?? throw new ArgumentException("Categoría no encontrada.");
-        var account = await ResolveAccountAsync(userId, request.AccountId);
+        var account = await MovementAccounts.ResolveAsync(accounts, userId, request.AccountId);
 
         expense.Amount = decimal.Round(request.Amount, 2);
         expense.CategoryId = category.Id;
@@ -82,6 +85,7 @@ public class ExpenseService(
 
     public async Task<ExpensesDashboardDto> GetDashboardAsync(int userId, int windowDays, DateOnly today)
     {
+        var accs = await accounts.GetAllAsync(userId);
         var monthStart = new DateOnly(today.Year, today.Month, 1);
         var prevMonthStart = monthStart.AddMonths(-1);
         var windowStart = today.AddDays(-(windowDays - 1));
@@ -97,7 +101,7 @@ public class ExpenseService(
             : null;
 
         var monthIncome = incomeItems.Where(i => i.Date >= monthStart).Sum(i => i.Amount);
-        var balance = await GetBalanceAsync(userId);
+        var balance = await GetBalanceAsync(userId, accs);
 
         var inWindow = items.Where(e => e.Date >= windowStart).ToList();
 
@@ -128,7 +132,7 @@ public class ExpenseService(
                 .ToList()))
             .ToList();
 
-        var names = await AccountNamesAsync(userId);
+        var names = accs.ToDictionary(a => a.Id, a => a.Name);
         var recent = items.Select(e => ToTx(e, names))
             .Concat(incomeItems.Select(i => ToTx(i, names)))
             .OrderByDescending(t => t.Date).ThenByDescending(t => t.Id)
@@ -149,25 +153,14 @@ public class ExpenseService(
             Recent: recent);
     }
 
-    /// <summary>Ensures the account (if any) belongs to the user and is a spendable cash/bank account.</summary>
-    private async Task<Account?> ResolveAccountAsync(int userId, int? accountId)
-    {
-        if (accountId is not int id) return null;
-        var account = await accounts.GetByIdAsync(id, userId)
-            ?? throw new ArgumentException("Cuenta no encontrada.");
-        if (account.Type != AccountType.Cash)
-            throw new ArgumentException("Solo puedes asignar movimientos a cuentas de efectivo o banco.");
-        return account;
-    }
-
     private async Task<Dictionary<int, string>> AccountNamesAsync(int userId) =>
         (await accounts.GetAllAsync(userId)).ToDictionary(a => a.Id, a => a.Name);
 
-    private static void ValidateAmount(decimal amount)
+    internal static void ValidateAmount(decimal amount)
     {
         if (amount <= 0)
             throw new ArgumentException("El importe debe ser mayor que cero.");
-        if (amount > 100_000_000m)
+        if (amount > MaxAmount)
             throw new ArgumentException("El importe es demasiado grande.");
     }
 

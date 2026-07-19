@@ -87,9 +87,6 @@ public class ExpenseRepository(NomosDbContext db) : IExpenseRepository
     public Task<Expense?> GetByIdAsync(int id, int userId) =>
         db.Expenses.FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId);
 
-    public async Task<decimal> SumAllAsync(int userId) =>
-        await db.Expenses.Where(e => e.UserId == userId).SumAsync(e => (decimal?)e.Amount) ?? 0m;
-
     public Task<bool> AnyForCategoryAsync(int categoryId, int userId) =>
         db.Expenses.AnyAsync(e => e.CategoryId == categoryId && e.UserId == userId);
 
@@ -125,9 +122,6 @@ public class IncomeRepository(NomosDbContext db) : IIncomeRepository
 
     public Task<Income?> GetByIdAsync(int id, int userId) =>
         db.Incomes.FirstOrDefaultAsync(i => i.Id == id && i.UserId == userId);
-
-    public async Task<decimal> SumAllAsync(int userId) =>
-        await db.Incomes.Where(i => i.UserId == userId).SumAsync(i => (decimal?)i.Amount) ?? 0m;
 
     public async Task<Income> AddAsync(Income income)
     {
