@@ -16,6 +16,8 @@
   --bevel-hi: rgba(255, 255, 255, .9);
   --bevel-lo: rgba(13, 13, 13, .09);
   --shadow: inset 0 1px 0 var(--bevel-hi), 0 1px 0 var(--bevel-lo);
+  /* Firma "canto": degradado marino estriado (reutilizado en .reed y bajo los totales). */
+  --reed-grad: repeating-linear-gradient(90deg, var(--accent) 0 1.5px, transparent 1.5px 4px);
 }
 
 [data-theme="dark"] {
@@ -33,7 +35,6 @@
   --key-active: #3d3d44;
   --bevel-hi: rgba(255, 255, 255, .05);
   --bevel-lo: rgba(0, 0, 0, .5);
-  --shadow: inset 0 1px 0 var(--bevel-hi), 0 1px 0 var(--bevel-lo);
 }
 :root {
   /* Escala de diseno tokenizada (valores exactos: cero cambio visual). */
@@ -117,7 +118,7 @@ body {
   justify-content: center;
   position: relative;
   /* +safe-area: respeta el notch/isla en móviles que lo tienen (0 donde no lo hay). */
-  padding: calc(18px + env(safe-area-inset-top)) 20px 6px;
+  padding: calc(18px + env(safe-area-inset-top)) var(--sp-20) var(--sp-6);
 }
 
 .brand {
@@ -129,8 +130,8 @@ body {
 
 .icon-btn {
   position: absolute;
-  right: 18px;
-  top: 12px;
+  right: var(--sp-18);
+  top: var(--sp-12);
   width: 38px;
   height: 38px;
   border: none;
@@ -170,7 +171,7 @@ body {
   width: 168px;
   margin: var(--sp-5) 0 var(--sp-2);
   border-radius: var(--r-1);
-  background: repeating-linear-gradient(90deg, var(--accent) 0 1.5px, transparent 1.5px 4px);
+  background: var(--reed-grad);
 }
 
 /* El canto también bajo los totales centrados de broker y viajes (misma firma). */
@@ -181,7 +182,7 @@ body {
   height: 5px;
   margin: var(--sp-7) auto 0;
   border-radius: var(--r-1);
-  background: repeating-linear-gradient(90deg, var(--accent) 0 1.5px, transparent 1.5px 4px);
+  background: var(--reed-grad);
 }
 
 .hero-accounts {
@@ -195,7 +196,6 @@ body {
 .hero-accounts::-webkit-scrollbar { display: none; }
 .hero-accounts .chip { padding: var(--sp-6) var(--sp-12); font-size: var(--fs-13); white-space: nowrap; flex: 0 0 auto; }
 .hero-accounts .chip.selected { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
-.hero-accounts.hidden { display: none; }
 
 .hero-delta { font-size: var(--fs-14); color: var(--muted); }
 .hero-delta .up { color: var(--red); font-weight: 600; }
@@ -276,7 +276,6 @@ body {
 .cat-accounts::-webkit-scrollbar { display: none; }
 .cat-accounts .chip { padding: var(--sp-6) var(--sp-12); font-size: var(--fs-13); white-space: nowrap; flex: 0 0 auto; }
 .cat-accounts .chip.selected { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
-.cat-accounts.hidden { display: none; }
 .cat-wrap { display: flex; align-items: center; gap: var(--sp-22); }
 .donut { width: 164px; flex-shrink: 0; }
 .donut svg { width: 100%; height: auto; }
@@ -321,7 +320,6 @@ body {
 .tx-title { font-weight: 600; font-size: var(--fs-15); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tx-sub { color: var(--muted); font-size: var(--fs-13); margin-top: var(--sp-1); }
 .tx-amount { font-weight: 600; font-size: var(--fs-15); white-space: nowrap; }
-.tx-amount.red { color: var(--red); }
 
 .tx-del {
   border: none;
@@ -371,7 +369,7 @@ body {
 /* ---------- FAB y tab bar ---------- */
 #fab {
   position: fixed;
-  right: 26px;
+  right: var(--sp-26);
   /* Suelo de 24px: con navegación de 3 botones env(safe-area-inset-bottom)=0 y el FAB
      se quedaba abajo (S22 Ultra); con max() despega igual que con gestos (S25+). */
   bottom: calc(96px + max(env(safe-area-inset-bottom, 0px), 24px));
@@ -440,7 +438,7 @@ body {
 }
 
 .sheet-title { font-weight: 700; font-size: var(--fs-16); }
-.save:disabled { color: var(--muted); opacity: .6; cursor: default; }
+.save:disabled { cursor: default; }
 /* Guardar como píldora azul sólida con texto blanco (Cancelar queda como enlace de texto). */
 .sheet-bar .save {
   background: var(--accent);
@@ -581,7 +579,7 @@ body {
 
 /* ---------- Avatar en cabecera y perfil ---------- */
 .avatar-btn {
-  left: 18px;
+  left: var(--sp-18);
   right: auto;
   padding: 0;
   overflow: hidden;
@@ -631,11 +629,9 @@ body {
 .hero-sub { font-size: var(--fs-14); color: var(--muted); margin-top: var(--sp-3); }
 .hero-sub b { color: var(--green); font-weight: 600; }
 .hero-adjust { font-size: var(--fs-13); font-weight: 600; padding: 0 0 0 var(--sp-8); vertical-align: middle; }
-.hero-amount.red { color: var(--red); }
 .sum-in { color: var(--green); font-weight: 600; }
 .sum-out { color: var(--text); font-weight: 600; }
 
-.tx-amount.green { color: var(--green); }
 li.clickable { cursor: pointer; }
 
 /* ---------- Editor de categorías ---------- */
