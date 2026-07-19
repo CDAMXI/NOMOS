@@ -149,27 +149,6 @@
 
   <div id="toast" class="toast hidden"></div>
 
-  <script>
-  // DIAGNOSTICO TEMPORAL: solo con ?debug en la URL. Mide el viewport para entender el "zoom"
-  // por dispositivo (S22 Ultra vs S25+). Quitar tras el diagnostico.
-  if (location.search.indexOf('debug') >= 0) {
-    var vd = document.createElement('div');
-    vd.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#000;color:#0f0;'
-      + 'font:12px/1.45 monospace;padding:4px 6px;pointer-events:none;text-align:center';
-    var upd = function () {
-      var v = window.visualViewport;
-      vd.textContent = 'inner ' + window.innerWidth + 'x' + window.innerHeight
-        + ' | screen ' + screen.width + 'x' + screen.height
-        + ' | dpr ' + window.devicePixelRatio
-        + (v ? ' | vv ' + Math.round(v.width) + 'x' + Math.round(v.height) + ' @' + v.scale.toFixed(2) : '');
-    };
-    upd();
-    document.body.appendChild(vd);
-    window.addEventListener('resize', upd);
-    if (window.visualViewport) { visualViewport.addEventListener('resize', upd); visualViewport.addEventListener('scroll', upd); }
-  }
-  </script>
-
   <!-- app.js troceado en módulos por concern; orden de carga: helpers primero, arranque al final -->
   <script src="js/i18n.js"></script>
   <script src="js/format.js"></script>
