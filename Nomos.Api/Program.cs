@@ -249,11 +249,14 @@ api.MapDelete("/categories/{id:int}", async Task<Results<NoContent, NotFound, Co
 api.MapGet("/transactions", (ClaimsPrincipal principal, ExpenseService service) =>
     service.GetTransactionsAsync(UserId(principal)));
 
-// Exporta todos los movimientos del usuario a CSV (para respaldo / abrir en Excel).
+// Exporta todos los movimientos del usuario a Excel (.xlsx): fechas/importes con formato y
+// columnas auto-ajustadas (el CSV no puede guardar anchos ni formato).
 api.MapGet("/transactions/export", async (ClaimsPrincipal principal, ExpenseService service) =>
 {
     var txs = await service.GetTransactionsAsync(UserId(principal));
-    return Results.File(CsvExport.Transactions(txs), "text/csv; charset=utf-8", "pluto-movimientos.csv");
+    return Results.File(ExcelExport.Transactions(txs),
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "pluto-movimientos.xlsx");
 });
 
 api.MapGet("/expenses/dashboard", (ClaimsPrincipal principal, ExpenseService service, int days = 30) =>
