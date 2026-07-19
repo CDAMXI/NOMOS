@@ -279,7 +279,9 @@ body {
 #fab {
   position: fixed;
   right: 26px;
-  bottom: calc(96px + env(safe-area-inset-bottom));
+  /* Suelo de 24px: con navegación de 3 botones env(safe-area-inset-bottom)=0 y el FAB
+     se quedaba abajo (S22 Ultra); con max() despega igual que con gestos (S25+). */
+  bottom: calc(96px + max(env(safe-area-inset-bottom, 0px), 24px));
   width: 58px;
   height: 58px;
   border: none;
@@ -297,7 +299,9 @@ body {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(18px + env(safe-area-inset-bottom));
+  /* Mismo suelo de 24px que el FAB, para que el bloque inferior sea consistente entre
+     dispositivos (gestos vs 3 botones) y no se pegue a la barra del sistema. */
+  bottom: calc(18px + max(env(safe-area-inset-bottom, 0px), 24px));
   display: flex;
   gap: 4px;
   background: var(--card);
