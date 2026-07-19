@@ -18,7 +18,7 @@ async function loadViajes() {
 function tripRow(tr) {
   const sub = [tr.destinations, tr.currencies.join(' · ')].filter(Boolean).join(' — ');
   return `<li data-trip="${tr.id}" class="clickable">
-    <span class="tx-icon" style="background:${tint('#0a84ff', .14)}">✈️</span>
+    <span class="tx-icon" style="background:${tint('#1b3a8e', .14)}">✈️</span>
     <span class="tx-main">
       <span class="tx-title">${esc(tr.name)}</span>
       <div class="tx-sub">${esc(sub || '—')}</div>

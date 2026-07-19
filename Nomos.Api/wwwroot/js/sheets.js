@@ -297,7 +297,7 @@ async function openBrokerSheet(accountId) {
         <p class="muted-label">${t('positions')}</p>
         <ul class="sheet-list tx-list">${b.holdings.map((h, i) => `
           <li class="clickable" data-h="${i}" title="${t('sell')}">
-            <span class="tx-icon" style="background:${tint('#0a84ff', .14)}">📈</span>
+            <span class="tx-icon" style="background:${tint('#1b3a8e', .14)}">📈</span>
             <span class="tx-main">
               <span class="tx-title">${esc(h.symbol)}</span>
               <div class="tx-sub">${nfShares(h.shares)} × ${eur(h.buyPrice)} · ${dMed(h.buyDate)}</div>

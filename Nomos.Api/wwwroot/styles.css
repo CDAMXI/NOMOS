@@ -1,31 +1,39 @@
 :root {
-  --bg: #f2f2f7;
+  /* Paleta de marca CDAMXI (negro + marino). */
+  --bg: #f6f7f9;
   --card: #ffffff;
-  --text: #111114;
-  --muted: #8e8e93;
-  --line: #ececf0;
-  --accent: #1e7ce8;
-  --accent-soft: #dcebfb;
-  --green: #23a94d;
-  --red: #e8332a;
-  --red-soft: #fadedc;
+  --text: #0d0d0d;
+  --muted: #5e6470;
+  --line: #e3e5ea;
+  --accent: #1b3a8e;
+  --accent-soft: #e7ebf6;
+  --green: #157f3b;
+  --red: #c0271c;
+  --red-soft: #f6dcd8;
   --key: #ffffff;
   --key-active: #e5e5ea;
-  --shadow: 0 1px 3px rgba(0, 0, 0, .06);
+  /* Relieve "cuño": bisel de papel (luz arriba + hairline abajo) en vez de sombra difusa. */
+  --bevel-hi: rgba(255, 255, 255, .9);
+  --bevel-lo: rgba(13, 13, 13, .09);
+  --shadow: inset 0 1px 0 var(--bevel-hi), 0 1px 0 var(--bevel-lo);
 }
 
 [data-theme="dark"] {
-  --bg: #17171a;
-  --card: #242428;
+  --bg: #0d0d0d;
+  --card: #1a1a20;
   --text: #f2f2f5;
-  --muted: #98989e;
-  --line: #333338;
-  --accent: #4b9bf5;
-  --accent-soft: #1d3350;
+  --muted: #9aa0aa;
+  --line: #2a2a32;
+  --accent: #6e9bf0;
+  --accent-soft: #1c2a4d;
+  --green: #57c98a;
+  --red: #f0857a;
   --red-soft: #48211e;
   --key: #2e2e33;
   --key-active: #3d3d44;
-  --shadow: 0 1px 3px rgba(0, 0, 0, .4);
+  --bevel-hi: rgba(255, 255, 255, .05);
+  --bevel-lo: rgba(0, 0, 0, .5);
+  --shadow: inset 0 1px 0 var(--bevel-hi), 0 1px 0 var(--bevel-lo);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -88,6 +96,19 @@ body {
   font-weight: 800;
   letter-spacing: -1px;
   margin: 2px 0 4px;
+}
+
+/* Cifras alineadas en columna (tabular). */
+.hero-amount, .tx-amount, .big-figure, .amount-display,
+.cat-list .amount, .calc-line b, .nw-hero .hero-amount { font-variant-numeric: tabular-nums; }
+
+/* Canto estriado: la firma "cuño" bajo el saldo (repeating-linear-gradient marino). */
+.reed {
+  height: 5px;
+  width: 168px;
+  margin: 5px 0 2px;
+  border-radius: 1px;
+  background: repeating-linear-gradient(90deg, var(--accent) 0 1.5px, transparent 1.5px 4px);
 }
 
 .hero-accounts {
@@ -291,7 +312,7 @@ body {
   font-size: 30px;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 0 6px 16px rgba(30, 124, 232, .4);
+  box-shadow: 0 6px 16px rgba(27, 58, 142, .32);
   z-index: 30;
 }
 

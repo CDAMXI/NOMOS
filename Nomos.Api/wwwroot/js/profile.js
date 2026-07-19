@@ -20,7 +20,7 @@ function openProfileSheet() {
 
         <div class="settings-group">
           <button class="settings-row" id="manageCatsBtn">
-            <span class="tx-icon" style="background:${tint('#0a84ff', .14)}">🏷️</span>
+            <span class="tx-icon" style="background:${tint('#1b3a8e', .14)}">🏷️</span>
             <span class="settings-label">${t('manage_categories')}</span>
             <span class="acc-chevron">›</span>
           </button>
@@ -39,7 +39,7 @@ function openProfileSheet() {
 
         <div class="settings-group">
           <label class="settings-row switch-row">
-            <span class="tx-icon" style="background:${tint('#0a84ff', .14)}">✈️</span>
+            <span class="tx-icon" style="background:${tint('#1b3a8e', .14)}">✈️</span>
             <span class="settings-label">
               <span class="settings-title">${t('trips_toggle')}</span>
               <span class="tx-sub">${t('trips_toggle_hint')}</span>
