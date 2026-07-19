@@ -67,7 +67,7 @@ function renderCategoryCard(d, cash) {
   if (cash.length < 2) { box.classList.add('hidden'); box.innerHTML = ''; catAccountSel = 'all'; paint(); return; }
   box.classList.remove('hidden');
   box.innerHTML = `<button class="chip" data-catacc="all">${t('all_accounts')}</button>`
-    + cash.map(a => `<button class="chip" data-catacc="${a.id}">${TYPE_ICON.Cash} ${esc(a.name)}</button>`).join('');
+    + cash.map(a => cashChip(a, 'catacc')).join('');
   box.querySelectorAll('[data-catacc]').forEach(ch =>
     ch.addEventListener('click', () => { catAccountSel = ch.dataset.catacc === 'all' ? 'all' : +ch.dataset.catacc; paint(); }));
   paint();
@@ -100,8 +100,7 @@ function renderHeroBalance(cash, total) {
     return;
   }
   box.classList.remove('hidden');
-  box.innerHTML = cash.map(a =>
-    `<button class="chip" data-bal="${a.id}">${TYPE_ICON.Cash} ${esc(a.name)}</button>`).join('')
+  box.innerHTML = cash.map(a => cashChip(a, 'bal')).join('')
     + `<button class="chip" data-bal="all">${t('all_accounts')}</button>`;
   box.querySelectorAll('[data-bal]').forEach(ch =>
     ch.addEventListener('click', () => {

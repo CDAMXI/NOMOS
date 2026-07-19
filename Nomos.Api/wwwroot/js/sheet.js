@@ -123,11 +123,14 @@ const parseDecimal = raw => {
   return neg ? -n : n;
 };
 
+// Redondeo a 2 decimales (centimos).
+const round2 = n => Math.round(n * 100) / 100;
+
 // Importe del input principal, redondeado a 2 decimales.
 const amountValue = () => {
   const el = $('amountInput');
   const n = parseDecimal((el ? el.value : amountSeed) || '');
-  return Math.round(n * 100) / 100;
+  return round2(n);
 };
 
 function setAmount(v) {
@@ -140,4 +143,25 @@ function setAmount(v) {
 // validación pueda rechazar negativos explícitamente.
 function decValue(el) {
   return parseDecimal((el && el.value) || '');
+}
+
+// Markup de chip reutilizado en varias hojas/vistas (cuenta de efectivo y categoria).
+const cashChip = (a, attr) => `<button class="chip" data-${attr}="${a.id}">${TYPE_ICON.Cash} ${esc(a.name)}</button>`;
+const catChip = c => `<button class="chip" data-cat="${c.id}">${c.icon} ${esc(catName(c.name))}</button>`;
+
+// Marca activo el boton cuyo data-<attr> coincide con `val`, dentro de `scope`.
+const paintActive = (scope, attr, val) => scope.querySelectorAll(`[data-${attr}]`).forEach(p =>
+  p.classList.toggle('active', p.dataset[attr] === val));
+
+// Enlaza un boton de borrado: confirmar -> DELETE -> cerrar hoja -> refrescar -> toast.
+function bindDelete(btnId, { name, url, doneToast }) {
+  $(btnId).addEventListener('click', async () => {
+    if (!confirm(t('confirm_delete', name))) return;
+    try {
+      await sendJSON(url, 'DELETE');
+      closeSheet();
+      await refreshCurrent();
+      toast(t(doneToast));
+    } catch (e) { toast(e.message); }
+  });
 }

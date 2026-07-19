@@ -9,13 +9,14 @@ const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 // Divisa principal del usuario (solo display). Se fija desde me.currency tras el login.
 let currency = 'EUR';
 let curSymbol = '€';
-let _nf2, _nf0, _cur, _curShort;
+let _nf0, _cur, _curShort, _nfShares, _pct;
 function buildFormatters() {
   const l = localeCode();
-  _nf2 = new Intl.NumberFormat(l, { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: true });
   _nf0 = new Intl.NumberFormat(l, { useGrouping: true });
   _cur = new Intl.NumberFormat(l, { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: true });
   _curShort = new Intl.NumberFormat(l, { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0, useGrouping: true });
+  _nfShares = new Intl.NumberFormat(l, { maximumFractionDigits: 6, useGrouping: true });
+  _pct = new Intl.NumberFormat(l, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   curSymbol = (_cur.formatToParts(0).find(p => p.type === 'currency') || {}).value || currency;
 }
 buildFormatters();
@@ -41,14 +42,15 @@ const decSep = () => (lang === 'en' ? '.' : ',');
 // Separador de miles = espacio, SOLO para mostrar cifras (los inputs no usan esto). Espacio
 // duro (U+00A0) para que la cifra no se parta de línea. Ej.: 1 234 567,89 €.
 const grpSpace = parts => parts.map(p => p.type === 'group' ? ' ' : p.value).join('');
-const eur = v => grpSpace(_cur.formatToParts(v));
-const nf0 = v => grpSpace(_nf0.formatToParts(v));
+const grouped = (nf, v) => grpSpace(nf.formatToParts(v));
+const eur = v => grouped(_cur, v);
+const nf0 = v => grouped(_nf0, v);
 const eurShort = v => Math.abs(v) >= 10000
   ? (lang === 'en' ? curSymbol + nf0(Math.round(v / 1000)) + 'k' : nf0(Math.round(v / 1000)) + ' mil ' + curSymbol)
-  : (Number.isInteger(v) ? grpSpace(_curShort.formatToParts(v)) : eur(v));
-const pct1 = v => Math.abs(v).toLocaleString(localeCode(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
+  : (Number.isInteger(v) ? grouped(_curShort, v) : eur(v));
+const pct1 = v => _pct.format(Math.abs(v)) + '%';
 // Número de acciones: hasta 6 decimales (permite fracciones), miles con espacio.
-const nfShares = v => grpSpace(new Intl.NumberFormat(localeCode(), { maximumFractionDigits: 6, useGrouping: true }).formatToParts(v));
+const nfShares = v => grouped(_nfShares, v);
 
 // Fecha en DD/MM/YYYY (misma en ambos idiomas, por preferencia). Formateada desde la
 // cadena ISO sin new Date para evitar desfases de zona horaria.
@@ -59,7 +61,7 @@ const dMed = iso => {
 // Interpreta la fecha ISO como medianoche LOCAL (evita el desfase de zona con new Date(iso), que la trata como UTC).
 const localDate = iso => new Date(String(iso).slice(0, 10) + 'T00:00:00');
 const shortMonth = dt => cap(new Intl.DateTimeFormat(localeCode(), { month: 'short' }).format(dt).replace('.', ''));
-const monthYearLabel = iso => cap(new Intl.DateTimeFormat(localeCode(), { month: 'long', year: 'numeric' }).format(new Date(String(iso).slice(0, 10) + 'T00:00:00')));
+const monthYearLabel = iso => cap(new Intl.DateTimeFormat(localeCode(), { month: 'long', year: 'numeric' }).format(localDate(iso)));
 
 const todayISO = () => {
   const d = new Date();

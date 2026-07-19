@@ -81,7 +81,6 @@ const I18N = {
     view_receipt: '🧾 Ver factura', trip_expense_saved: 'Gasto guardado', trip_expense_deleted: 'Gasto eliminado',
     delete_trip_expense: 'Eliminar gasto', need_currency: 'Añade al menos una moneda.',
     trips_enabled_on: 'Gastos de viaje activados', trips_enabled_off: 'Gastos de viaje desactivados',
-    thousands: 'mil'
   },
   en: {
     error_generic: 'Something went wrong', login_required: 'Please sign in to continue',
@@ -158,7 +157,6 @@ const I18N = {
     view_receipt: '🧾 View receipt', trip_expense_saved: 'Expense saved', trip_expense_deleted: 'Expense deleted',
     delete_trip_expense: 'Delete expense', need_currency: 'Add at least one currency.',
     trips_enabled_on: 'Travel expenses enabled', trips_enabled_off: 'Travel expenses disabled',
-    thousands: 'k'
   }
 };
 

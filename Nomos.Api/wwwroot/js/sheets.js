@@ -4,13 +4,19 @@
 
 // Categorías ordenadas por uso reciente (recentCache), luego alfabético. Las más usadas primero
 // para tocar menos al añadir un gasto. Solo presentación: no toca lógica de negocio ni el modelo.
+// Orden alfabetico de categorias por su nombre traducido (segun el idioma activo).
+const byCatName = (a, b) => catName(a.name).localeCompare(catName(b.name), localeCode());
+
+// Lee cantidad y precio de las hojas comprar/vender (sin redondear; conserva signo).
+const readSharesPrice = () => ({ sh: decValue($('sharesField')), pr: decValue($('priceField')) });
+
 function categoriesByUse() {
   const freq = new Map();
   for (const tx of recentCache)
     if (tx.kind !== 'income' && tx.category) freq.set(tx.category.id, (freq.get(tx.category.id) || 0) + 1);
   return [...categories].sort((a, b) =>
     (freq.get(b.id) || 0) - (freq.get(a.id) || 0)
-    || catName(a.name).localeCompare(catName(b.name), localeCode()));
+    || byCatName(a, b));
 }
 
 // --- Nuevo movimiento / editar movimiento (gasto o ingreso) ---
@@ -46,12 +52,10 @@ async function openTxSheet(existing = null, draft = null, back = null) {
           <button class="pill" data-kind="income">${t('kind_income')}</button>
         </div>`}
         ${amountBlock(t('amount'))}
-        <div class="chips" id="catChips">${categoriesByUse().map(c =>
-          `<button class="chip" data-cat="${c.id}">${c.icon} ${esc(catName(c.name))}</button>`).join('')}
+        <div class="chips" id="catChips">${categoriesByUse().map(catChip).join('')}
           <button class="chip chip-add" id="addCatChip">${t('add_category_chip')}</button></div>
         ${(cashAccounts.length >= 1 || !isEdit) ? `<p class="tx-sub cat-hint">${t('account_label')}</p>
-        <div class="chips" id="accChips">${cashAccounts.map(a =>
-          `<button class="chip" data-acc="${a.id}">${TYPE_ICON.Cash} ${esc(a.name)}</button>`).join('')}
+        <div class="chips" id="accChips">${cashAccounts.map(a => cashChip(a, 'acc')).join('')}
           ${isEdit ? '' : `<button class="chip chip-add" id="addAccChip">${t('add_account_chip')}</button>`}</div>` : ''}
         <input id="descField" class="text-field" placeholder="${t('description_optional')}" maxlength="120" value="${esc(startDesc)}">
         <input id="dateField" class="text-field" type="date" value="${(draft && draft.date) ? draft.date : (existing ? existing.date : todayISO())}">
@@ -84,7 +88,7 @@ async function openTxSheet(existing = null, draft = null, back = null) {
 
       const paintKind = () => {
         sheetTitle.textContent = titleFor();
-        body.querySelectorAll('[data-kind]').forEach(p => p.classList.toggle('active', p.dataset.kind === kind));
+        paintActive(body, 'kind', kind);
         const del = $('deleteTx');
         if (del) del.textContent = t(kind === 'income' ? 'delete_income' : 'delete_expense');
         paintChips();
@@ -142,7 +146,7 @@ async function openCategoriesSheet() {
     title: t('categories'),
     back: () => openProfileSheet(), // se llega desde el Perfil
     build(body) {
-      const sorted = [...categories].sort((a, b) => catName(a.name).localeCompare(catName(b.name), localeCode()));
+      const sorted = [...categories].sort(byCatName);
       body.innerHTML = `<div class="settings-group cat-manage">${sorted.map(c => `
         <button class="settings-row" data-cat="${c.id}">
           <span class="tx-icon" style="background:${tint(c.color, .16)}">${c.icon}</span>
@@ -264,15 +268,7 @@ function openAccountEditSheet(id) {
         <button id="deleteAcc" class="pill pill-danger centered">${t('delete_account')}</button>`;
       bindAmount(body, false);
       $('nameField').addEventListener('input', refreshSaveState);
-      $('deleteAcc').addEventListener('click', async () => {
-        if (!confirm(t('confirm_delete', acc.name))) return;
-        try {
-          await sendJSON(`/api/accounts/${acc.id}`, 'DELETE');
-          closeSheet();
-          await refreshCurrent();
-          toast(t('account_deleted'));
-        } catch (e) { toast(e.message); }
-      });
+      bindDelete('deleteAcc', { name: acc.name, url: `/api/accounts/${acc.id}`, doneToast: 'account_deleted' });
     },
     async onSave() {
       await sendJSON(`/api/accounts/${acc.id}`, 'PUT', {
@@ -334,8 +330,8 @@ function openBuySheet(b, back) {
   openSheet({
     title: t('buy_title'),
     canSave: () => {
-      const sh = decValue($('sharesField')), pr = decValue($('priceField'));
-      return !!$('symField')?.value.trim() && sh > 0 && pr > 0 && Math.round(sh * pr * 100) / 100 <= b.margin;
+      const { sh, pr } = readSharesPrice();
+      return !!$('symField')?.value.trim() && sh > 0 && pr > 0 && round2(sh * pr) <= b.margin;
     },
     build(body) {
       body.innerHTML = `
@@ -347,8 +343,8 @@ function openBuySheet(b, back) {
         <p class="field-hint" id="buyHint"></p>`;
 
       const paint = () => {
-        const sh = decValue($('sharesField')), pr = decValue($('priceField'));
-        const cost = Math.round(sh * pr * 100) / 100;
+        const { sh, pr } = readSharesPrice();
+        const cost = round2(sh * pr);
         $('buyCost').textContent = sh > 0 && pr > 0 ? eur(cost) : '—';
         $('buyHint').textContent =
           sh < 0 || pr < 0 ? t('must_be_positive')
@@ -375,7 +371,7 @@ function openSellSheet(b, h, back) {
   openSheet({
     title: t('sell_title', h.symbol),
     canSave: () => {
-      const sh = decValue($('sharesField')), pr = decValue($('priceField'));
+      const { sh, pr } = readSharesPrice();
       return sh > 0 && sh <= h.shares && pr > 0;
     },
     build(body) {
@@ -387,8 +383,8 @@ function openSellSheet(b, h, back) {
         <p class="field-hint" id="sellHint"></p>`;
 
       const paint = () => {
-        const sh = decValue($('sharesField')), pr = decValue($('priceField'));
-        $('sellTotal').textContent = sh > 0 && pr > 0 ? eur(Math.round(sh * pr * 100) / 100) : '—';
+        const { sh, pr } = readSharesPrice();
+        $('sellTotal').textContent = sh > 0 && pr > 0 ? eur(round2(sh * pr)) : '—';
         $('sellHint').textContent =
           sh < 0 || pr < 0 ? t('must_be_positive')
           : sh > h.shares ? t('sell_too_many', nfShares(h.shares))
@@ -428,13 +424,11 @@ async function openBrokerTransferSheet(b, back) {
         </div>
         ${amountBlock(t('amount'))}
         <p class="tx-sub cat-hint">${t('cash_account_label')}</p>
-        <div class="chips">${cash.map(a =>
-          `<button class="chip" data-acc="${a.id}">${TYPE_ICON.Cash} ${esc(a.name)}</button>`).join('')}</div>
+        <div class="chips">${cash.map(a => cashChip(a, 'acc')).join('')}</div>
         <div class="calc-line"><span>${t('free_margin')}</span><b>${eur(b.margin)}</b></div>`;
       bindAmount(body, true);
 
-      const paintDir = () => body.querySelectorAll('[data-dir]').forEach(p =>
-        p.classList.toggle('active', p.dataset.dir === direction));
+      const paintDir = () => paintActive(body, 'dir', direction);
       body.querySelectorAll('[data-dir]').forEach(p =>
         p.addEventListener('click', () => { direction = p.dataset.dir; paintDir(); }));
       paintDir();
@@ -468,15 +462,7 @@ function openBrokerEditSheet(b, back) {
         <button id="deleteAcc" class="pill pill-danger centered">${t('delete_account')}</button>`;
       bindAmount(body, false);
       $('nameField').addEventListener('input', refreshSaveState);
-      $('deleteAcc').addEventListener('click', async () => {
-        if (!confirm(t('confirm_delete', b.name))) return;
-        try {
-          await sendJSON(`/api/accounts/${b.accountId}`, 'DELETE');
-          closeSheet();
-          await refreshCurrent();
-          toast(t('account_deleted'));
-        } catch (e) { toast(e.message); }
-      });
+      bindDelete('deleteAcc', { name: b.name, url: `/api/accounts/${b.accountId}`, doneToast: 'account_deleted' });
     },
     async onSave() {
       // Para una cuenta de inversión, el valor introducido es el margen libre (los movimientos

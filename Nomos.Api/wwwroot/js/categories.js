@@ -47,8 +47,9 @@ const ICON_RULES = [
 ];
 
 const stripAccents = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '');
+const normKey = s => stripAccents((s || '').toLowerCase().trim());
 function categoryIcon(name) {
-  const n = stripAccents((name || '').toLowerCase().trim());
+  const n = normKey(name);
   if (!n) return ICON_FALLBACK;
   for (const [emoji, keywords] of ICON_RULES)
     for (const k of keywords)
@@ -88,6 +89,6 @@ for (const [es, en] of CAT_TERMS) {
 }
 /** Muestra el nombre de una categoría en el idioma activo si es un término conocido. */
 function catName(name) {
-  const entry = TERM_MAP.get(stripAccents((name || '').toLowerCase().trim()));
+  const entry = TERM_MAP.get(normKey(name));
   return entry ? (lang === 'en' ? entry.en : entry.es) : name;
 }

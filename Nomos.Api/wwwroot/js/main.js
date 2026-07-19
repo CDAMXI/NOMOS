@@ -65,8 +65,10 @@ applyTheme(localStorage.getItem('nomos-theme') || 'light');
 applyStaticI18n();
 
 // Los datos viven en la base de datos: refresca al volver a la pestaña y cada 20 s.
-window.addEventListener('focus', () => { if (!sheetCtx && me && !chartHovering) refreshCurrent(); });
-setInterval(() => { if (!sheetCtx && me && !chartHovering) refreshCurrent(); }, 20000);
+const AUTO_REFRESH_MS = 20000;
+const canAutoRefresh = () => !sheetCtx && me && !chartHovering;
+window.addEventListener('focus', () => { if (canAutoRefresh()) refreshCurrent(); });
+setInterval(() => { if (canAutoRefresh()) refreshCurrent(); }, AUTO_REFRESH_MS);
 
 // ---------- Arranque ----------
 // El plan gratuito de Render "duerme" el servidor tras un rato; la primera petición puede

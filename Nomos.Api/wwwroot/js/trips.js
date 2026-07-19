@@ -34,7 +34,7 @@ function openTripSheet(existing = null) {
   const isEdit = !!existing;
   // Filas de moneda: {code, rate} como texto (locale). Nueva → una fila vacía.
   let rows = isEdit
-    ? existing.currencies.map(c => ({ code: c.code, rate: (Number.isInteger(c.rateToEur) ? String(c.rateToEur) : String(c.rateToEur)).replace('.', decSep()) }))
+    ? existing.currencies.map(c => ({ code: c.code, rate: String(c.rateToEur).replace('.', decSep()) }))
     : [{ code: '', rate: '' }];
 
   const readRows = () => [...document.querySelectorAll('#curRows .cur-row')].map(r => ({
@@ -47,7 +47,7 @@ function openTripSheet(existing = null) {
     canSave: () => {
       const name = $('tripName')?.value.trim();
       const rs = readRows();
-      return !!name && rs.length > 0 && rs.every(r => r.code && decValue({ value: r.rate }) > 0);
+      return !!name && rs.length > 0 && rs.every(r => r.code && parseDecimal(r.rate) > 0);
     },
     build(body) {
       const rowHtml = r => `<div class="cur-row">
@@ -97,7 +97,7 @@ function openTripSheet(existing = null) {
       const payload = {
         name: $('tripName').value,
         destinations: $('tripDest').value,
-        currencies: readRows().map(r => ({ code: r.code, rateToEur: decValue({ value: r.rate }) }))
+        currencies: readRows().map(r => ({ code: r.code, rateToEur: parseDecimal(r.rate) }))
       };
       if (isEdit) await sendJSON(`/api/trips/${existing.id}`, 'PUT', payload);
       else await sendJSON('/api/trips', 'POST', payload);
@@ -187,8 +187,7 @@ async function openTripExpenseSheet(trip, existing = null, back = null) {
         <div class="chips" id="curChips">${trip.currencies.map(c =>
           `<button class="chip" data-cur="${esc(c.code)}">${esc(c.code)}</button>`).join('')}</div>
         <p class="tx-sub cat-hint">${t('category_breakdown')}</p>
-        <div class="chips" id="expCatChips">${[...categories].sort((a, b) => catName(a.name).localeCompare(catName(b.name), localeCode())).map(c =>
-          `<button class="chip" data-cat="${c.id}">${c.icon} ${esc(catName(c.name))}</button>`).join('')}</div>
+        <div class="chips" id="expCatChips">${[...categories].sort(byCatName).map(catChip).join('')}</div>
         <input id="descField" class="text-field" placeholder="${t('description_optional')}" maxlength="120" value="${existing ? esc(existing.description) : ''}">
         <input id="dateField" class="text-field" type="date" value="${existing ? existing.date : todayISO()}">
         <div class="receipt-box" id="receiptBox"></div>

@@ -32,11 +32,12 @@ function renderLineChart(el, points, { id, color, xFmt, yFmt, tip, height }) {
     +(T + ih - p.y / ymax * ih).toFixed(1)
   ]);
 
+  const Y_INTERVALS = 4; // 5 lineas de rejilla horizontal sobre 4 intervalos
   let axes = '';
-  for (let i = 0; i <= 4; i++) {
-    const y = +(T + ih - i * ih / 4).toFixed(1);
+  for (let i = 0; i <= Y_INTERVALS; i++) {
+    const y = +(T + ih - i * ih / Y_INTERVALS).toFixed(1);
     axes += `<line x1="${L}" y1="${y}" x2="${W - R}" y2="${y}" stroke="var(--line)" stroke-width="1"/>`;
-    axes += `<text x="${L - 7}" y="${y + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${yFmt(ymax * i / 4)}</text>`;
+    axes += `<text x="${L - 7}" y="${y + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${yFmt(ymax * i / Y_INTERVALS)}</text>`;
   }
   const nLabels = Math.min(6, points.length);
   for (let i = 0; i < nLabels; i++) {
