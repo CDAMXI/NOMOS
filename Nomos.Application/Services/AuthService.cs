@@ -21,11 +21,6 @@ public partial class AuthService(IUserRepository users)
     [GeneratedRegex(@"^[\p{L}\p{N} ._-]{3,30}$")]
     private static partial Regex UsernamePattern();
 
-    // A strict data-URL shape: only base64 image payloads, no quotes/brackets that could break
-    // out of the <img src="..."> attribute the client renders.
-    [GeneratedRegex(@"^data:image/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=\r\n]+$")]
-    private static partial Regex PhotoPattern();
-
     public async Task<UserDto> RegisterAsync(RegisterRequest request)
     {
         var username = ValidateUsername(request.Username);
@@ -115,16 +110,8 @@ public partial class AuthService(IUserRepository users)
             throw new ArgumentException("La contraseña es demasiado larga.");
     }
 
-    private static string? ValidatePhoto(string? photoDataUrl)
-    {
-        if (string.IsNullOrEmpty(photoDataUrl)) return null;
-        if (photoDataUrl.Length > MaxPhotoLength)
-            throw new ArgumentException("La foto es demasiado grande.");
-        // Strict shape: reject anything that isn't a base64 image data URL (no HTML-breakout chars).
-        if (!PhotoPattern().IsMatch(photoDataUrl))
-            throw new ArgumentException("La foto debe ser una imagen válida.");
-        return photoDataUrl;
-    }
+    private static string? ValidatePhoto(string? photoDataUrl) =>
+        ImageDataUrl.Validate(photoDataUrl, MaxPhotoLength, "La foto es demasiado grande.", "La foto debe ser una imagen válida.");
 
     private static string ValidateCurrency(string code)
     {

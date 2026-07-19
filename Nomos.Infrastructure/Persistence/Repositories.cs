@@ -4,7 +4,7 @@ using Nomos.Domain.Entities;
 
 namespace Nomos.Infrastructure.Persistence;
 
-public class UserRepository(NomosDbContext db) : IUserRepository
+public class UserRepository(NomosDbContext context) : RepositoryBase<User>(context), IUserRepository
 {
     public Task<User?> GetByIdAsync(int id) =>
         db.Users.FirstOrDefaultAsync(u => u.Id == id);
@@ -17,21 +17,9 @@ public class UserRepository(NomosDbContext db) : IUserRepository
         db.Users.AnyAsync(u => u.Username.ToLower() == username.ToLower()
             && (excludeUserId == null || u.Id != excludeUserId));
 
-    public async Task<User> AddAsync(User user)
-    {
-        db.Users.Add(user);
-        await db.SaveChangesAsync();
-        return user;
-    }
-
-    public async Task UpdateAsync(User user)
-    {
-        db.Users.Update(user);
-        await db.SaveChangesAsync();
-    }
 }
 
-public class CategoryRepository(NomosDbContext db) : ICategoryRepository
+public class CategoryRepository(NomosDbContext context) : RepositoryBase<Category>(context), ICategoryRepository
 {
     public Task<List<Category>> GetAllAsync(int userId) =>
         db.Categories.AsNoTracking().Where(c => c.UserId == userId).OrderBy(c => c.Id).ToListAsync();
@@ -44,33 +32,15 @@ public class CategoryRepository(NomosDbContext db) : ICategoryRepository
             && c.Name.ToLower() == name.ToLower()
             && (excludeId == null || c.Id != excludeId));
 
-    public async Task<Category> AddAsync(Category category)
-    {
-        db.Categories.Add(category);
-        await db.SaveChangesAsync();
-        return category;
-    }
-
     public async Task AddRangeAsync(IEnumerable<Category> categories)
     {
         db.Categories.AddRange(categories);
         await db.SaveChangesAsync();
     }
 
-    public async Task UpdateAsync(Category category)
-    {
-        db.Categories.Update(category);
-        await db.SaveChangesAsync();
-    }
-
-    public async Task DeleteAsync(Category category)
-    {
-        db.Categories.Remove(category);
-        await db.SaveChangesAsync();
-    }
 }
 
-public class ExpenseRepository(NomosDbContext db) : IExpenseRepository
+public class ExpenseRepository(NomosDbContext context) : RepositoryBase<Expense>(context), IExpenseRepository
 {
     public Task<List<Expense>> GetAllAsync(int userId) =>
         db.Expenses.AsNoTracking()
@@ -90,27 +60,9 @@ public class ExpenseRepository(NomosDbContext db) : IExpenseRepository
     public Task<bool> AnyForCategoryAsync(int categoryId, int userId) =>
         db.Expenses.AnyAsync(e => e.CategoryId == categoryId && e.UserId == userId);
 
-    public async Task<Expense> AddAsync(Expense expense)
-    {
-        db.Expenses.Add(expense);
-        await db.SaveChangesAsync();
-        return expense;
-    }
-
-    public async Task UpdateAsync(Expense expense)
-    {
-        db.Expenses.Update(expense);
-        await db.SaveChangesAsync();
-    }
-
-    public async Task DeleteAsync(Expense expense)
-    {
-        db.Expenses.Remove(expense);
-        await db.SaveChangesAsync();
-    }
 }
 
-public class IncomeRepository(NomosDbContext db) : IIncomeRepository
+public class IncomeRepository(NomosDbContext context) : RepositoryBase<Income>(context), IIncomeRepository
 {
     public Task<List<Income>> GetAllAsync(int userId) =>
         db.Incomes.AsNoTracking().Where(i => i.UserId == userId).ToListAsync();
@@ -123,27 +75,9 @@ public class IncomeRepository(NomosDbContext db) : IIncomeRepository
     public Task<Income?> GetByIdAsync(int id, int userId) =>
         db.Incomes.FirstOrDefaultAsync(i => i.Id == id && i.UserId == userId);
 
-    public async Task<Income> AddAsync(Income income)
-    {
-        db.Incomes.Add(income);
-        await db.SaveChangesAsync();
-        return income;
-    }
-
-    public async Task UpdateAsync(Income income)
-    {
-        db.Incomes.Update(income);
-        await db.SaveChangesAsync();
-    }
-
-    public async Task DeleteAsync(Income income)
-    {
-        db.Incomes.Remove(income);
-        await db.SaveChangesAsync();
-    }
 }
 
-public class AccountRepository(NomosDbContext db) : IAccountRepository
+public class AccountRepository(NomosDbContext context) : RepositoryBase<Account>(context), IAccountRepository
 {
     public Task<List<Account>> GetAllAsync(int userId) =>
         db.Accounts.AsNoTracking().Where(a => a.UserId == userId).ToListAsync();
@@ -151,27 +85,9 @@ public class AccountRepository(NomosDbContext db) : IAccountRepository
     public Task<Account?> GetByIdAsync(int id, int userId) =>
         db.Accounts.FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
 
-    public async Task<Account> AddAsync(Account account)
-    {
-        db.Accounts.Add(account);
-        await db.SaveChangesAsync();
-        return account;
-    }
-
-    public async Task UpdateAsync(Account account)
-    {
-        db.Accounts.Update(account);
-        await db.SaveChangesAsync();
-    }
-
-    public async Task DeleteAsync(Account account)
-    {
-        db.Accounts.Remove(account);
-        await db.SaveChangesAsync();
-    }
 }
 
-public class HoldingRepository(NomosDbContext db) : IHoldingRepository
+public class HoldingRepository(NomosDbContext context) : RepositoryBase<Holding>(context), IHoldingRepository
 {
     public Task<List<Holding>> GetAllAsync(int userId) =>
         db.Holdings.AsNoTracking().Where(h => h.UserId == userId).ToListAsync();
@@ -182,24 +98,6 @@ public class HoldingRepository(NomosDbContext db) : IHoldingRepository
     public Task<Holding?> GetByIdAsync(int id, int userId) =>
         db.Holdings.FirstOrDefaultAsync(h => h.Id == id && h.UserId == userId);
 
-    public async Task<Holding> AddAsync(Holding holding)
-    {
-        db.Holdings.Add(holding);
-        await db.SaveChangesAsync();
-        return holding;
-    }
-
-    public async Task UpdateAsync(Holding holding)
-    {
-        db.Holdings.Update(holding);
-        await db.SaveChangesAsync();
-    }
-
-    public async Task DeleteAsync(Holding holding)
-    {
-        db.Holdings.Remove(holding);
-        await db.SaveChangesAsync();
-    }
 }
 
 public class UnitOfWork(NomosDbContext db) : IUnitOfWork
@@ -214,9 +112,9 @@ public class UnitOfWork(NomosDbContext db) : IUnitOfWork
     }
 }
 
-public class TripRepository(NomosDbContext db) : ITripRepository
+public class TripRepository(NomosDbContext context) : RepositoryBase<Trip>(context), ITripRepository
 {
-    // Rastreado (sin AsNoTracking) para que el resumen incluya monedas y gastos.
+    // AsNoTracking: solo lectura para el resumen; Include trae monedas y gastos igualmente.
     public Task<List<Trip>> GetAllAsync(int userId) =>
         db.Trips.AsNoTracking()
             .Include(t => t.Currencies)
@@ -231,22 +129,9 @@ public class TripRepository(NomosDbContext db) : ITripRepository
             .Include(t => t.Expenses).ThenInclude(e => e.Category)
             .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
 
-    public async Task<Trip> AddAsync(Trip trip)
-    {
-        db.Trips.Add(trip);
-        await db.SaveChangesAsync();
-        return trip;
-    }
-
-    public async Task UpdateAsync(Trip trip)
+    public override async Task UpdateAsync(Trip trip)
     {
         // trip viene rastreado de GetDetailAsync: guarda alta/baja/edición de monedas.
-        await db.SaveChangesAsync();
-    }
-
-    public async Task DeleteAsync(Trip trip)
-    {
-        db.Trips.Remove(trip);
         await db.SaveChangesAsync();
     }
 

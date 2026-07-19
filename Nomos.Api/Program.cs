@@ -131,6 +131,7 @@ app.UseRateLimiter();
 
 static DateOnly Today() => AppClock.Today();
 static int UserId(ClaimsPrincipal user) => int.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+const string UsernameTakenMessage = "Ese nombre de usuario ya está en uso.";
 
 static async Task SignInAsync(HttpContext http, UserDto user)
 {
@@ -160,7 +161,7 @@ auth.MapPost("/register", async (RegisterRequest request, AuthService service, C
     }
     catch (ConflictException ex) { return Results.Conflict(ex.Message); }
     catch (ArgumentException ex) { return Results.BadRequest(ex.Message); }
-    catch (DbUpdateException) { return Results.Conflict("Ese nombre de usuario ya está en uso."); }
+    catch (DbUpdateException) { return Results.Conflict(UsernameTakenMessage); }
 }).AllowAnonymous();
 
 auth.MapPost("/login", async (LoginRequest request, AuthService service, HttpContext http) =>
@@ -194,7 +195,7 @@ auth.MapPut("/profile", async (UpdateProfileRequest request, ClaimsPrincipal pri
     }
     catch (ConflictException ex) { return Results.Conflict(ex.Message); }
     catch (ArgumentException ex) { return Results.BadRequest(ex.Message); }
-    catch (DbUpdateException) { return Results.Conflict("Ese nombre de usuario ya está en uso."); }
+    catch (DbUpdateException) { return Results.Conflict(UsernameTakenMessage); }
 });
 
 auth.MapPut("/password", async (ChangePasswordRequest request, ClaimsPrincipal principal, AuthService service) =>

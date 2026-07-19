@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Nomos.Application.Common;
 using Nomos.Application.DTOs;
 using Nomos.Application.Interfaces;
@@ -17,6 +16,7 @@ public class TripService(ITripRepository trips, ICategoryRepository categories)
     private const int MaxDestinationsLength = 200;
     private const int MaxCurrencyCodeLength = 8;
     private const int MaxReceiptLength = 1_500_000; // ~1,1 MB en base64; sobra para una foto comprimida
+    private const decimal MaxAmount = 1_000_000_000m; // 10x el de gastos/ingresos (ExpenseService.MaxAmount)
 
     public async Task<List<TripListItemDto>> GetAllAsync(int userId)
     {
@@ -151,7 +151,7 @@ public class TripService(ITripRepository trips, ICategoryRepository categories)
     {
         if (request.Amount <= 0)
             throw new ArgumentException("El importe debe ser mayor que cero.");
-        if (request.Amount > 1_000_000_000m)
+        if (request.Amount > MaxAmount)
             throw new ArgumentException("El importe es demasiado grande.");
 
         var code = (request.CurrencyCode ?? "").Trim().ToUpperInvariant();
@@ -164,7 +164,8 @@ public class TripService(ITripRepository trips, ICategoryRepository categories)
                 ?? throw new ArgumentException("Categoría no encontrada.");
 
         var date = ExpenseService.ValidateDate(request.Date ?? AppClock.Today());
-        var receipt = ValidateReceipt(request.ReceiptDataUrl);
+        var receipt = ImageDataUrl.Validate(request.ReceiptDataUrl, MaxReceiptLength,
+            "La imagen de la factura es demasiado grande.", "La factura debe ser una imagen válida.");
         return (decimal.Round(request.Amount, 2), code, category, date, receipt);
     }
 
@@ -195,21 +196,6 @@ public class TripService(ITripRepository trips, ICategoryRepository categories)
             result.Add((code, decimal.Round(c.RateToEur, 6)));
         }
         return result;
-    }
-
-    // Forma estricta de data-URL de imagen base64 (igual que la foto de perfil): nada de comillas
-    // ni caracteres que puedan romper el atributo src del <img> que pinta el cliente.
-    private static readonly Regex ImagePattern =
-        new(@"^data:image/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=\r\n]+$", RegexOptions.Compiled);
-
-    private static string? ValidateReceipt(string? dataUrl)
-    {
-        if (string.IsNullOrEmpty(dataUrl)) return null;
-        if (dataUrl.Length > MaxReceiptLength)
-            throw new ArgumentException("La imagen de la factura es demasiado grande.");
-        if (!ImagePattern.IsMatch(dataUrl))
-            throw new ArgumentException("La factura debe ser una imagen válida.");
-        return dataUrl;
     }
 
     private static string CleanDescription(string? description, string? fallback) =>
