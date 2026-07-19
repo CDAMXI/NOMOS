@@ -2,6 +2,17 @@
 'use strict';
 
 
+// Categorías ordenadas por uso reciente (recentCache), luego alfabético. Las más usadas primero
+// para tocar menos al añadir un gasto. Solo presentación: no toca lógica de negocio ni el modelo.
+function categoriesByUse() {
+  const freq = new Map();
+  for (const tx of recentCache)
+    if (tx.kind !== 'income' && tx.category) freq.set(tx.category.id, (freq.get(tx.category.id) || 0) + 1);
+  return [...categories].sort((a, b) =>
+    (freq.get(b.id) || 0) - (freq.get(a.id) || 0)
+    || catName(a.name).localeCompare(catName(b.name), localeCode()));
+}
+
 // --- Nuevo movimiento / editar movimiento (gasto o ingreso) ---
 async function openTxSheet(existing = null, draft = null, back = null) {
   await ensureCategoriesFresh();
@@ -10,7 +21,7 @@ async function openTxSheet(existing = null, draft = null, back = null) {
   // draft, cuando existe, gana sobre los valores originales: así, al volver de crear una
   // categoría en medio de una edición, se recupera lo que el usuario ya había tecleado.
   let kind = existing ? existing.kind : (draft?.kind || 'expense');
-  let selectedCat = draft?.categoryId ?? existing?.category?.id ?? categories[0]?.id;
+  let selectedCat = draft?.categoryId ?? existing?.category?.id ?? categoriesByUse()[0]?.id;
   // Edits keep exactly the account the movement already had (including "none", so a
   // previously-unassigned movement is never silently reattached on save); only brand-new
   // movements default to the first cash account so the user rarely has to pick one.
@@ -35,7 +46,7 @@ async function openTxSheet(existing = null, draft = null, back = null) {
           <button class="pill" data-kind="income">${t('kind_income')}</button>
         </div>`}
         ${amountBlock(t('amount'))}
-        <div class="chips" id="catChips">${[...categories].sort((a, b) => catName(a.name).localeCompare(catName(b.name), localeCode())).map(c =>
+        <div class="chips" id="catChips">${categoriesByUse().map(c =>
           `<button class="chip" data-cat="${c.id}">${c.icon} ${esc(catName(c.name))}</button>`).join('')}
           <button class="chip chip-add" id="addCatChip">${t('add_category_chip')}</button></div>
         ${(cashAccounts.length >= 1 || !isEdit) ? `<p class="tx-sub cat-hint">${t('account_label')}</p>
