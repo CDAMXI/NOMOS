@@ -111,6 +111,17 @@ body {
   background: repeating-linear-gradient(90deg, var(--accent) 0 1.5px, transparent 1.5px 4px);
 }
 
+/* El canto también bajo los totales centrados de broker y viajes (misma firma). */
+.broker-hero .big-figure::after {
+  content: '';
+  display: block;
+  width: 130px;
+  height: 5px;
+  margin: 7px auto 0;
+  border-radius: 1px;
+  background: repeating-linear-gradient(90deg, var(--accent) 0 1.5px, transparent 1.5px 4px);
+}
+
 .hero-accounts {
   display: flex;
   gap: 8px;
