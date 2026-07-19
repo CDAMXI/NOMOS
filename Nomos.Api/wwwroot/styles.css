@@ -260,12 +260,10 @@ body {
 .tx-del:hover { opacity: 1; }
 
 /* ---------- Patrimonio ---------- */
+/* Hero de Patrimonio: plano como el de Gastos (sin el gradiente verde cliché), con su canto. */
 .nw-hero {
-  border-radius: 18px;
-  padding: 26px 24px 30px;
-  margin: 4px 0 16px;
-  background: linear-gradient(135deg, rgba(52, 199, 89, .16), rgba(52, 199, 89, .03) 55%), var(--card);
-  box-shadow: var(--shadow);
+  padding: 8px 4px 16px;
+  margin: 0 0 8px;
 }
 
 .eyebrow {

@@ -158,7 +158,7 @@ async function loadPatrimonio() {
 
   renderLineChart($('nwChart'), d.series.map(p => ({ x: p.date, y: p.value })), {
     id: 'grad-nw',
-    color: cssVar('--green'),
+    color: cssVar('--accent'),
     xFmt: iso => shortMonth(localDate(iso)),
     yFmt: v => v >= 1000 ? nf0(Math.round(v / 1000)) + 'k' : nf0(Math.round(v)),
     tip: pt => `<b>${eur(pt.y)}</b><div class="d">${shortMonth(localDate(pt.x))}</div>`
