@@ -1,8 +1,11 @@
 // Service worker NETWORK-FIRST: siempre intenta la red primero y solo cae a la caché si no hay
 // conexión. Así los despliegues se recogen al instante (adiós al "refresca/reancla") y la app
 // sigue abriendo offline con la última versión vista. La API nunca se cachea.
-const CACHE = 'pluto-v1';
-const ASSETS = ['/', '/index.html', '/app.js', '/styles.css', '/manifest.json', '/icon.svg'];
+const CACHE = 'pluto-v2';
+const ASSETS = ['/', '/index.html', '/styles.css', '/manifest.json', '/icon.svg',
+  '/js/i18n.js', '/js/format.js', '/js/categories.js', '/js/net.js', '/js/charts.js',
+  '/js/state.js', '/js/views.js', '/js/sheet.js', '/js/sheets.js', '/js/trips.js',
+  '/js/profile.js', '/js/auth.js', '/js/main.js'];
 
 self.addEventListener('install', event => {
   self.skipWaiting(); // el SW nuevo toma el control sin esperar a que se cierren las pestañas
