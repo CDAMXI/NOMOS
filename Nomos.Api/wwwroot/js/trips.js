@@ -8,6 +8,7 @@ let tripsCache = [];
 async function loadViajes() {
   const trips = await getJSON('/api/trips');
   tripsCache = trips;
+  $('tripsTotal').textContent = eur(trips.reduce((sum, tr) => sum + tr.totalEur, 0));
   $('tripsList').innerHTML = trips.length
     ? `<ul class="acc-list">${trips.map(tripRow).join('')}</ul>`
     : `<p class="tx-sub">${t('add_trips_first')}</p>`;
