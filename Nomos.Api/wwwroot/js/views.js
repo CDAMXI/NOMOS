@@ -34,9 +34,35 @@ async function loadGastos() {
   renderCategoryCard(d, cash);
 
   recentCache = d.recent;
-  $('gRecent').innerHTML = d.recent.map((tx, i) => txRow(tx, i)).join('')
-    || `<li class="tx-sub">${t('no_movements_yet')}</li>`;
+  renderRecent();
   bindTxRows($('gRecent'), recentCache);
+}
+
+// Recientes: 8 de base y, en el layout de dos columnas, se rellena fila a fila hasta igualar la
+// altura natural de la columna izquierda (que crece con la rueda de categorías). En móvil
+// (apilado, breakpoint de .grid) se queda en 8. Se reajusta en cada carga/auto-refresco.
+const RECENT_BASE = 8;
+function renderRecent() {
+  const ul = $('gRecent');
+  ul.innerHTML = recentCache.slice(0, RECENT_BASE).map((tx, i) => txRow(tx, i)).join('')
+    || `<li class="tx-sub">${t('no_movements_yet')}</li>`;
+  if (recentCache.length <= RECENT_BASE) return;
+  if (window.matchMedia('(max-width: 820px)').matches) return; // espejo del breakpoint de .grid
+
+  // "Por categoría" tiene flex:1 (absorbe hueco): se neutraliza un instante para medir la altura
+  // NATURAL de la izquierda; si no, la propia lista estiraría la referencia y no habría tope.
+  const catCard = document.querySelector('#view-gastos .col:first-child .card:last-child');
+  const recentCard = ul.closest('.card');
+  if (!catCard || !recentCard) return;
+  catCard.style.flex = 'none';
+  const leftBottom = catCard.getBoundingClientRect().bottom;
+  if (leftBottom > 0) {
+    for (let i = RECENT_BASE; i < recentCache.length; i++) {
+      ul.insertAdjacentHTML('beforeend', txRow(recentCache[i], i));
+      if (recentCard.getBoundingClientRect().bottom > leftBottom) { ul.lastElementChild.remove(); break; }
+    }
+  }
+  catCard.style.flex = '';
 }
 
 // "Por categoría": una rueda genérica (todas las cuentas) y una por cada cuenta, con selector.

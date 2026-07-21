@@ -12,6 +12,8 @@ public class ExpenseService(
 {
     internal const int MaxDescriptionLength = 120;
     internal const decimal MaxAmount = 100_000_000m;
+    // El dashboard manda hasta 20 recientes; el front enseña 8 y rellena hasta igualar columnas.
+    internal const int RecentCount = 20;
     private static readonly CultureInfo Spanish = CultureInfo.GetCultureInfo("es-ES");
 
     public async Task<List<CategoryDto>> GetCategoriesAsync(int userId) =>
@@ -136,7 +138,7 @@ public class ExpenseService(
         var recent = items.Select(e => ToTx(e, names))
             .Concat(incomeItems.Select(i => ToTx(i, names)))
             .OrderByDescending(t => t.Date).ThenByDescending(t => t.Id)
-            .Take(8).ToList();
+            .Take(RecentCount).ToList();
 
         return new ExpensesDashboardDto(
             Balance: balance,
