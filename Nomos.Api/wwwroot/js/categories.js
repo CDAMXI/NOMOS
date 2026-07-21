@@ -45,6 +45,7 @@ const ICON_RULES = [
   ['❤️', ['salud', 'health']],
   ['🛠️', ['reparacion', 'herramienta', 'ferreteria', 'hogar', 'repair', 'tools']],
   ['✂️', ['barberia', 'corte', 'barber', 'haircut']],
+  ['⚠️', ['error', 'mistake']],
   ['📦', ['otros', 'otro', 'other', 'varios', 'misc', 'miscelanea']],
 ];
 

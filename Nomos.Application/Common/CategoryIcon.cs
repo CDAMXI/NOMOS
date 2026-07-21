@@ -58,6 +58,7 @@ public static class CategoryIcon
         ("❤️", ["salud"]),
         ("🛠️", ["reparacion", "reparación", "herramienta", "ferreteria", "ferretería", "hogar"]),
         ("✂️", ["barberia", "barbería", "corte"]),
+        ("⚠️", ["error", "mistake"]),
         ("📦", ["otros", "otro", "other", "varios", "misc", "miscelanea", "miscelánea"]),
     ];
 
