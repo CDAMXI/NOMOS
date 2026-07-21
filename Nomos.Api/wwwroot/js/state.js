@@ -6,6 +6,7 @@
 let me = null;             // usuario autenticado {id, username, photoDataUrl}
 let currentView = 'gastos';
 let days = 30;
+let nwRange = 30;          // ventana de la gráfica de Patrimonio: 30, 90 o 'year' (snapshots mensuales)
 let categories = [];
 let recentCache = [];
 let accountsCache = [];

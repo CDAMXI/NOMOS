@@ -42,6 +42,47 @@ public class NetWorthService(
         return new NetWorthDto(net, assets, liabilities, yearDeltaPct, series, accountDtos);
     }
 
+    /// <summary>
+    /// Serie DIARIA del patrimonio neto de los últimos N días, reconstruida hacia atrás desde el
+    /// neto vivo deshaciendo los ingresos/gastos fechados (solo los asignados a cuentas existentes,
+    /// igual que AccountBalances.Live). Aproximación asumida: los ajustes manuales de saldo y las
+    /// ventas de broker se proyectan hacia atrás como si siempre hubieran estado (no hay historial
+    /// de baselines); las compras de broker son neutras para el neto (margen −coste, posición +coste).
+    /// Los snapshots mensuales siguen siendo la verdad para la vista anual.
+    /// </summary>
+    public async Task<List<SeriesPointDto>> GetDailySeriesAsync(int userId, int days, DateOnly today)
+    {
+        var all = await accounts.GetAllAsync(userId);
+        var exps = await expenses.GetAllAsync(userId);
+        var incs = await incomes.GetAllAsync(userId);
+        var live = AccountBalances.Live(all, exps, incs, await holdings.GetAllAsync(userId));
+        var (assets, liabilities) = AccountBalances.SplitAssetsLiabilities(all, live);
+        var net = assets - liabilities;
+
+        var start = today.AddDays(-(days - 1));
+        var ids = all.Select(a => a.Id).ToHashSet();
+
+        // Cambio neto por día dentro de la ventana (delta del día D = ingresos(D) − gastos(D)).
+        var deltaByDay = new Dictionary<DateOnly, decimal>();
+        foreach (var i in incs)
+            if (i.AccountId is int aid && ids.Contains(aid) && i.Date > start && i.Date <= today)
+                deltaByDay[i.Date] = deltaByDay.GetValueOrDefault(i.Date) + i.Amount;
+        foreach (var e in exps)
+            if (e.AccountId is int aid && ids.Contains(aid) && e.Date > start && e.Date <= today)
+                deltaByDay[e.Date] = deltaByDay.GetValueOrDefault(e.Date) - e.Amount;
+
+        // Hacia atrás: neto al cierre de D−1 = neto al cierre de D − delta(D).
+        var points = new SeriesPointDto[days];
+        var running = net;
+        for (var i = days - 1; i >= 0; i--)
+        {
+            var d = start.AddDays(i);
+            points[i] = new SeriesPointDto(d, decimal.Round(running, 2));
+            running -= deltaByDay.GetValueOrDefault(d);
+        }
+        return [.. points];
+    }
+
     /// <summary>Every new user starts with an "Efectivo" cash account so movements have somewhere to go.</summary>
     public async Task SeedDefaultAccountAsync(int userId) =>
         await accounts.AddAsync(new Account

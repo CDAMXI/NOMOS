@@ -331,6 +331,10 @@ api.MapDelete("/incomes/{id:int}", async Task<Results<NoContent, NotFound>>
 api.MapGet("/networth", (ClaimsPrincipal principal, NetWorthService service) =>
     service.GetOverviewAsync(UserId(principal), Today()));
 
+// Serie diaria del neto para la gráfica 30d/90d (la anual sale de los snapshots en /networth).
+api.MapGet("/networth/series", (ClaimsPrincipal principal, NetWorthService service, int days = 30) =>
+    service.GetDailySeriesAsync(UserId(principal), Math.Clamp(days, 7, 365), Today()));
+
 // Cash/bank accounts a movement can be assigned to (the account picker in the app).
 api.MapGet("/accounts", async (ClaimsPrincipal principal, NetWorthService service) =>
     (await service.GetOverviewAsync(UserId(principal), Today())).Accounts);

@@ -42,6 +42,14 @@ document.querySelectorAll('.pill[data-days]').forEach(pill =>
     if (me) loadGastos().catch(e => toast(e.message));
   }));
 
+// Pills de la gráfica de Patrimonio (tolerante a un index.html cacheado sin ellas).
+document.querySelectorAll('.pill[data-nw]').forEach(pill =>
+  pill.addEventListener('click', () => {
+    nwRange = pill.dataset.nw === 'year' ? 'year' : +pill.dataset.nw;
+    paintActive(document, 'nw', pill.dataset.nw);
+    if (me) loadPatrimonio().catch(e => toast(e.message));
+  }));
+
 $('fab').addEventListener('click', () => {
   if (currentView === 'gastos') openTxSheet().catch(e => toast(e.message));
   else if (currentView === 'patrimonio') openAccountSheet();

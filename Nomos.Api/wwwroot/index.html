@@ -95,7 +95,14 @@
     </div>
 
     <section class="card">
-      <h3 data-i18n="annual_evolution">Evolución anual</h3>
+      <div class="card-head">
+        <h3 data-i18n="evolution">Evolución</h3>
+        <div class="pills">
+          <button class="pill active" data-nw="30">30d</button>
+          <button class="pill" data-nw="90">90d</button>
+          <button class="pill" data-nw="year" data-i18n="range_year">Año</button>
+        </div>
+      </div>
       <div id="nwChart" class="chart"></div>
     </section>
 
