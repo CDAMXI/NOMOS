@@ -10,6 +10,8 @@ const ICON_RULES = [
   ['🍔', ['burger', 'hamburguesa', 'pizza', 'kebab', 'mcdonald', 'telepizza', 'comida rapida', 'fast food']],
   ['🎰', ['expendedora', 'vending', 'maquina expendedora']],
   ['🍱', ['comida', 'almuerzo', 'desayuno', 'food', 'lunch', 'dinner']],
+  // Antes de 🚗: «sacar» contiene «car» y la regla del coche se lo llevaría.
+  ['💶', ['efectivo', 'sacar dinero', 'cajero', 'retirada', 'reintegro', 'atm', 'cash', 'withdrawal']],
   ['⛽', ['gasolina', 'combustible', 'diesel', 'repsol', 'cepsa', 'gasolinera', 'fuel', 'gas station', 'petrol']],
   ['🚇', ['metro', 'subway']],
   ['🚌', ['bus', 'autobus', 'abono', 'emt']],

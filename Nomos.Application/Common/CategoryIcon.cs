@@ -20,6 +20,8 @@ public static class CategoryIcon
         ("🍔", ["comida rapida", "comida rápida", "burger", "hamburguesa", "mcdonald", "kfc", "telepizza", "pizza", "kebab"]),
         ("🎰", ["expendedora", "vending", "maquina expendedora"]),
         ("🍱", ["comida", "food", "almuerzo", "desayuno"]),
+        // Antes de 🚗: «sacar» contiene «car» y la regla del coche se lo llevaría.
+        ("💶", ["efectivo", "sacar dinero", "cajero", "retirada", "reintegro", "atm", "cash", "withdrawal"]),
         ("⛽", ["gasolina", "combustible", "diesel", "repsol", "cepsa", "gasolinera"]),
         ("🚇", ["metro", "cercanias", "cercanías"]),
         ("🚌", ["bus", "autobus", "autobús", "abono", "emt"]),
