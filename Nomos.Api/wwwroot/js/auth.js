@@ -38,7 +38,6 @@ function enterApp() {
   authScreen.classList.add('hidden');
   applyUserCurrency();   // fija la divisa del usuario en los formateadores
   renderTopAvatar();
-  applyTripsTab();
   $('fab').classList.remove('hidden');
   refreshCurrent();
 }

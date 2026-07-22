@@ -69,43 +69,12 @@ public record SellRequest(int HoldingId, decimal Shares, decimal Price);
 /// <summary>Mueve dinero entre una cuenta de efectivo y el margen libre del broker.</summary>
 public record BrokerTransferRequest(int CashAccountId, decimal Amount, string Direction);
 
-// --- Viajes (gastos de viaje multi-moneda; registro aparte del patrimonio) ---
-public record TripCurrencyDto(string Code, decimal RateToEur);
-
-public record TripCurrencyInput(string Code, decimal RateToEur);
-
-/// <summary>Un gasto del viaje. AmountEur = Amount × tasa de su moneda. HasReceipt sin la imagen (se pide aparte).</summary>
-public record TripExpenseDto(
-    int Id, string Description, decimal Amount, string CurrencyCode, decimal AmountEur,
-    CategoryDto? Category, DateOnly Date, bool HasReceipt);
-
-/// <summary>Total del viaje en una moneda: suma en su propia unidad y su equivalente en euros.</summary>
-public record CurrencyTotalDto(string Code, decimal RateToEur, decimal Total, decimal TotalEur);
-
-public record TripSummaryDto(
-    decimal TotalEur, int ExpenseCount,
-    List<CurrencyTotalDto> ByCurrency, List<CategoryTotalDto> ByCategory);
-
-/// <summary>Ficha de un viaje en la lista: cifras clave sin el detalle de gastos.</summary>
-public record TripListItemDto(
-    int Id, string Name, string Destinations, List<string> Currencies, int ExpenseCount, decimal TotalEur);
-
-/// <summary>Detalle completo de un viaje: cabecera, monedas, resumen y gastos.</summary>
-public record TripDetailDto(
-    int Id, string Name, string Destinations,
-    List<TripCurrencyDto> Currencies, TripSummaryDto Summary, List<TripExpenseDto> Expenses);
-
-public record SaveTripRequest(string Name, string? Destinations, List<TripCurrencyInput> Currencies);
-
-public record SaveTripExpenseRequest(
-    decimal Amount, string CurrencyCode, int? CategoryId, string? Description, DateOnly? Date, string? ReceiptDataUrl);
-
-public record UserDto(int Id, string Username, string? PhotoDataUrl, bool TripsEnabled, string Currency);
+public record UserDto(int Id, string Username, string? PhotoDataUrl, string Currency);
 
 public record RegisterRequest(string Username, string Password, string? PhotoDataUrl);
 
 public record LoginRequest(string Username, string Password);
 
-public record UpdateProfileRequest(string? Username, string? PhotoDataUrl, bool? TripsEnabled, string? Currency);
+public record UpdateProfileRequest(string? Username, string? PhotoDataUrl, string? Currency);
 
 public record ChangePasswordRequest(string CurrentPassword, string NewPassword);

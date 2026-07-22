@@ -38,18 +38,6 @@ function openProfileSheet() {
           </label>
         </div>
 
-        <p class="section-title">${t('section_features')}</p>
-        <div class="settings-group">
-          <label class="settings-row switch-row">
-            <span class="tx-icon" style="background:${tint('#1b3a8e', .14)}">✈️</span>
-            <span class="settings-label">
-              <span class="settings-title">${t('trips_toggle')}</span>
-              <span class="tx-sub">${t('trips_toggle_hint')}</span>
-            </span>
-            <span class="switch"><input type="checkbox" id="tripsToggle" ${me.tripsEnabled ? 'checked' : ''}><span class="switch-slider"></span></span>
-          </label>
-        </div>
-
         <p class="section-title">${t('change_password')}</p>
         <div class="settings-group password-group">
           <input id="profCurPass" class="text-field" type="password" placeholder="${t('current_password')}" maxlength="128" autocomplete="current-password">
@@ -96,22 +84,6 @@ function openProfileSheet() {
           setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 4000);
           toast(t('export_done'));
         } catch (e) { toast(e.message); }
-      });
-
-      // Activar/desactivar "Gastos de viaje" se aplica al momento (los datos no se borran).
-      $('tripsToggle').addEventListener('change', async e => {
-        const on = e.target.checked;
-        // El guardado y la actualización de la pestaña van por separado: un fallo al pintar la
-        // pestaña (p. ej. index.html cacheado sin ella) NO debe revertir un guardado correcto.
-        try {
-          me = await sendJSON('/api/auth/profile', 'PUT', { tripsEnabled: on });
-        } catch (err) {
-          e.target.checked = !on;
-          toast(err.message);
-          return;
-        }
-        applyTripsTab();
-        toast(t(on ? 'trips_enabled_on' : 'trips_enabled_off'));
       });
 
       $('changePassBtn').addEventListener('click', async () => {

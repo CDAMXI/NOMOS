@@ -5,7 +5,7 @@ using Nomos.Domain.Entities;
 
 namespace Nomos.Application.Services;
 
-public class CategoryService(ICategoryRepository categories, IExpenseRepository expenses, ITripRepository trips)
+public class CategoryService(ICategoryRepository categories, IExpenseRepository expenses)
 {
     private const int MaxNameLength = 40;
 
@@ -63,7 +63,7 @@ public class CategoryService(ICategoryRepository categories, IExpenseRepository 
     {
         var category = await categories.GetByIdAsync(id, userId);
         if (category is null) return false;
-        if (await expenses.AnyForCategoryAsync(id, userId) || await trips.AnyExpenseForCategoryAsync(id, userId))
+        if (await expenses.AnyForCategoryAsync(id, userId))
             throw new ConflictException("No puedes eliminar una categoría que tiene gastos. Reasigna o borra esos gastos primero.");
         await categories.DeleteAsync(category);
         return true;

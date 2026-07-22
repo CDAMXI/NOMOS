@@ -5,9 +5,7 @@
 // ---------- Navegación / tema / sincronización ----------
 function refreshCurrent() {
   if (!me) return Promise.resolve();
-  const load = currentView === 'gastos' ? loadGastos
-    : currentView === 'patrimonio' ? loadPatrimonio
-    : loadViajes;
+  const load = currentView === 'gastos' ? loadGastos : loadPatrimonio;
   return load().catch(e => toast(e.message));
 }
 
@@ -21,19 +19,8 @@ document.querySelectorAll('.tab').forEach(tab =>
     });
     $('view-gastos').classList.toggle('hidden', currentView !== 'gastos');
     $('view-patrimonio').classList.toggle('hidden', currentView !== 'patrimonio');
-    $('view-viajes').classList.toggle('hidden', currentView !== 'viajes');
     refreshCurrent();
   }));
-
-// La pestaña Viajes solo existe si el usuario la activó en el perfil. Al apagarla, si estabas
-// en esa vista, vuelve a Gastos (los datos siguen en el servidor, solo se ocultan).
-function applyTripsTab() {
-  // Tolerante a un index.html cacheado antiguo: si la pestaña aún no existe en el DOM, no rompas.
-  const tab = $('tabViajes');
-  if (tab) tab.classList.toggle('hidden', !me?.tripsEnabled);
-  if (!me?.tripsEnabled && currentView === 'viajes')
-    document.querySelector('.tab[data-view="gastos"]')?.click();
-}
 
 document.querySelectorAll('.pill[data-days]').forEach(pill =>
   pill.addEventListener('click', () => {
@@ -52,8 +39,7 @@ document.querySelectorAll('.pill[data-nw]').forEach(pill =>
 
 $('fab').addEventListener('click', () => {
   if (currentView === 'gastos') openTxSheet().catch(e => toast(e.message));
-  else if (currentView === 'patrimonio') openAccountSheet();
-  else openTripSheet();
+  else openAccountSheet();
 });
 
 $('verTodoBtn').addEventListener('click', () => openAllTxSheet().catch(e => toast(e.message)));

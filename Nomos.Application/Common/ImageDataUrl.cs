@@ -5,7 +5,7 @@ namespace Nomos.Application.Common;
 public static class ImageDataUrl
 {
     // Forma estricta de data-URL de imagen base64: nada de comillas ni caracteres que puedan romper
-    // el atributo src del <img> que pinta el cliente. Compartido por foto de perfil y factura de viaje.
+    // el atributo src del <img> que pinta el cliente (foto de perfil).
     private static readonly Regex Pattern =
         new(@"^data:image/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=\r\n]+$", RegexOptions.Compiled);
 

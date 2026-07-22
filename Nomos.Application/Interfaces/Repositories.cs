@@ -72,22 +72,6 @@ public interface IUnitOfWork
     Task InTransactionAsync(Func<Task> action);
 }
 
-public interface ITripRepository
-{
-    Task<List<Trip>> GetAllAsync(int userId);
-    /// <summary>Un viaje con sus monedas y gastos (incluida la categoría de cada gasto) cargados.</summary>
-    Task<Trip?> GetDetailAsync(int id, int userId);
-    Task<Trip> AddAsync(Trip trip);
-    Task UpdateAsync(Trip trip);
-    Task DeleteAsync(Trip trip);
-
-    Task<bool> AnyExpenseForCategoryAsync(int categoryId, int userId);
-    Task<TripExpense?> GetExpenseAsync(int tripId, int expenseId, int userId);
-    Task<TripExpense> AddExpenseAsync(TripExpense expense);
-    Task UpdateExpenseAsync(TripExpense expense);
-    Task DeleteExpenseAsync(TripExpense expense);
-}
-
 public interface ISnapshotRepository
 {
     Task<List<NetWorthSnapshot>> GetFromAsync(int userId, DateOnly from);

@@ -71,9 +71,6 @@ public partial class AuthService(IUserRepository users)
         if (request.PhotoDataUrl is not null)
             user.PhotoDataUrl = ValidatePhoto(request.PhotoDataUrl);
 
-        if (request.TripsEnabled is bool tripsEnabled)
-            user.TripsEnabled = tripsEnabled;
-
         if (request.Currency is not null)
             user.Currency = ValidateCurrency(request.Currency);
 
@@ -121,5 +118,5 @@ public partial class AuthService(IUserRepository users)
         return c;
     }
 
-    private static UserDto ToDto(User u) => new(u.Id, u.Username, u.PhotoDataUrl, u.TripsEnabled, u.Currency);
+    private static UserDto ToDto(User u) => new(u.Id, u.Username, u.PhotoDataUrl, u.Currency);
 }

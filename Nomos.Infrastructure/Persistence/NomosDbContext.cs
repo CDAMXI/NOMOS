@@ -11,9 +11,6 @@ public class NomosDbContext(DbContextOptions<NomosDbContext> options) : DbContex
     public DbSet<Income> Incomes => Set<Income>();
     public DbSet<Account> Accounts => Set<Account>();
     public DbSet<Holding> Holdings => Set<Holding>();
-    public DbSet<Trip> Trips => Set<Trip>();
-    public DbSet<TripCurrency> TripCurrencies => Set<TripCurrency>();
-    public DbSet<TripExpense> TripExpenses => Set<TripExpense>();
     public DbSet<NetWorthSnapshot> Snapshots => Set<NetWorthSnapshot>();
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -93,47 +90,6 @@ public class NomosDbContext(DbContextOptions<NomosDbContext> options) : DbContex
              .HasForeignKey(h => h.UserId)
              .OnDelete(DeleteBehavior.NoAction);
             e.HasIndex(h => new { h.UserId, h.AccountId });
-        });
-
-        builder.Entity<Trip>(e =>
-        {
-            e.Property(t => t.Name).HasMaxLength(80);
-            e.Property(t => t.Destinations).HasMaxLength(200);
-            e.HasOne<User>()
-             .WithMany()
-             .HasForeignKey(t => t.UserId)
-             .OnDelete(DeleteBehavior.Cascade);
-            e.HasMany(t => t.Currencies)
-             .WithOne()
-             .HasForeignKey(c => c.TripId)
-             .OnDelete(DeleteBehavior.Cascade);
-            e.HasMany(t => t.Expenses)
-             .WithOne()
-             .HasForeignKey(x => x.TripId)
-             .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        builder.Entity<TripCurrency>(e =>
-        {
-            e.Property(c => c.Code).HasMaxLength(8);
-            e.Property(c => c.RateToEur).HasPrecision(20, 6);
-            e.HasIndex(c => new { c.TripId, c.Code }).IsUnique();
-        });
-
-        builder.Entity<TripExpense>(e =>
-        {
-            e.Property(x => x.Description).HasMaxLength(120);
-            e.Property(x => x.CurrencyCode).HasMaxLength(8);
-            e.HasOne(x => x.Category)
-             .WithMany()
-             .HasForeignKey(x => x.CategoryId)
-             .OnDelete(DeleteBehavior.SetNull);
-            // El usuario cascada vía el viaje; evita rutas de cascada múltiples (igual que Holding).
-            e.HasOne<User>()
-             .WithMany()
-             .HasForeignKey(x => x.UserId)
-             .OnDelete(DeleteBehavior.NoAction);
-            e.HasIndex(x => new { x.UserId, x.TripId });
         });
 
         builder.Entity<NetWorthSnapshot>(e =>

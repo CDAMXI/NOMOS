@@ -29,13 +29,11 @@ public sealed class TestHarness : IDisposable
     public ExpenseRepository Expenses => new(Db);
     public IncomeRepository Incomes => new(Db);
     public SnapshotRepository Snapshots => new(Db);
-    public TripRepository Trips => new(Db);
     public CategoryRepository Categories => new(Db);
     public UnitOfWork UnitOfWork => new(Db);
 
     public SnapshotWriter SnapshotWriter => new(Accounts, Snapshots, Expenses, Incomes, Holdings);
     public InvestmentService Investment => new(Accounts, Holdings, Expenses, Incomes, SnapshotWriter, UnitOfWork);
-    public TripService Trip => new(Trips, Categories);
 
     /// <summary>Crea un usuario con una cuenta de efectivo y (opcional) una de inversión.</summary>
     public async Task<(int userId, int cashId, int brokerId)> SeedAsync(decimal cash = 0, decimal margin = 0)
