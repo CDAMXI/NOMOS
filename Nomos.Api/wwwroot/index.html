@@ -147,18 +147,19 @@
 
   <div id="toast" class="toast hidden"></div>
 
-  <!-- app.js troceado en módulos por concern; orden de carga: helpers primero, arranque al final -->
-  <script src="js/i18n.js"></script>
-  <script src="js/format.js"></script>
-  <script src="js/categories.js"></script>
-  <script src="js/net.js"></script>
-  <script src="js/charts.js"></script>
-  <script src="js/state.js"></script>
-  <script src="js/views.js"></script>
-  <script src="js/sheet.js"></script>
-  <script src="js/sheets.js"></script>
-  <script src="js/profile.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/main.js"></script>
+  <!-- Módulos por capa (persistencia / lógica / presentación). El ORDEN de carga es por
+       dependencia (helpers primero, arranque al final), no por capa: no reordenar. -->
+  <script src="js/logica/i18n.js"></script>
+  <script src="js/logica/format.js"></script>
+  <script src="js/logica/categories.js"></script>
+  <script src="js/persistencia/net.js"></script>
+  <script src="js/presentacion/charts.js"></script>
+  <script src="js/logica/state.js"></script>
+  <script src="js/presentacion/views.js"></script>
+  <script src="js/presentacion/sheet.js"></script>
+  <script src="js/presentacion/sheets.js"></script>
+  <script src="js/presentacion/profile.js"></script>
+  <script src="js/presentacion/auth.js"></script>
+  <script src="js/presentacion/main.js"></script>
 </body>
 </html>

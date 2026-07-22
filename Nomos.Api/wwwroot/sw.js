@@ -3,9 +3,11 @@
 // sigue abriendo offline con la última versión vista. La API nunca se cachea.
 const CACHE = 'pluto-v3';
 const ASSETS = ['/', '/index.html', '/styles.css', '/manifest.json', '/icon.svg',
-  '/js/i18n.js', '/js/format.js', '/js/categories.js', '/js/net.js', '/js/charts.js',
-  '/js/state.js', '/js/views.js', '/js/sheet.js', '/js/sheets.js',
-  '/js/profile.js', '/js/auth.js', '/js/main.js'];
+  '/js/logica/i18n.js', '/js/logica/format.js', '/js/logica/categories.js', '/js/logica/state.js',
+  '/js/persistencia/net.js',
+  '/js/presentacion/charts.js', '/js/presentacion/views.js', '/js/presentacion/sheet.js',
+  '/js/presentacion/sheets.js', '/js/presentacion/profile.js', '/js/presentacion/auth.js',
+  '/js/presentacion/main.js'];
 
 self.addEventListener('install', event => {
   self.skipWaiting(); // el SW nuevo toma el control sin esperar a que se cierren las pestañas
