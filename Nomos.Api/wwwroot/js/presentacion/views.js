@@ -56,10 +56,13 @@ function renderRecent() {
   if (!catCard || !recentCard) return;
   catCard.style.flex = 'none';
   const leftBottom = catCard.getBoundingClientRect().bottom;
+  // La tarjeta de Recientes también se estira hasta esa línea (CSS), así que el tope de filas se
+  // mide sobre la LISTA (una tarjeta estirada siempre coincidiría) más su padding inferior.
+  const padBottom = parseFloat(getComputedStyle(recentCard).paddingBottom) || 0;
   if (leftBottom > 0) {
     for (let i = RECENT_BASE; i < recentCache.length; i++) {
       ul.insertAdjacentHTML('beforeend', txRow(recentCache[i], i));
-      if (recentCard.getBoundingClientRect().bottom > leftBottom) { ul.lastElementChild.remove(); break; }
+      if (ul.getBoundingClientRect().bottom + padBottom > leftBottom) { ul.lastElementChild.remove(); break; }
     }
   }
   catCard.style.flex = '';
