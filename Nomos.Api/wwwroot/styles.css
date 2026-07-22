@@ -121,7 +121,8 @@ body {
   padding: calc(18px + env(safe-area-inset-top)) var(--sp-20) var(--sp-6);
 }
 
-.brand {
+/* Marca P L U T O: compartida por el topbar y la pantalla de acceso. */
+.brand, .auth-brand {
   letter-spacing: .5em;
   font-size: var(--fs-13);
   font-weight: 600;
@@ -536,13 +537,9 @@ body {
   gap: var(--sp-13);
 }
 
-.auth-brand {
-  text-align: center;
-  letter-spacing: .5em;
-  font-size: var(--fs-13);
-  font-weight: 600;
-  color: var(--muted);
-}
+.auth-brand { text-align: center; }
+/* La firma del canto, centrada bajo la marca: la seña «cuño» en la puerta de entrada. */
+.auth-card .reed { align-self: center; }
 
 .auth-title { text-align: center; font-size: var(--fs-22); font-weight: 800; margin-bottom: var(--sp-4); }
 
