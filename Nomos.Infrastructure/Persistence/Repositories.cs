@@ -17,6 +17,21 @@ public class UserRepository(NomosDbContext context) : RepositoryBase<User>(conte
         db.Users.AnyAsync(u => u.Username.ToLower() == username.ToLower()
             && (excludeUserId == null || u.Id != excludeUserId));
 
+    public async Task DeleteWithDataAsync(int userId)
+    {
+        // Orden explícito con ExecuteDelete (sin change tracker): la cascada de BD tiene un
+        // "diamante" (User→Categories en cascada vs Expense.CategoryId en Restrict, y
+        // Holding.UserId en NoAction) cuyo orden no está garantizado entre proveedores.
+        await using var tx = await db.Database.BeginTransactionAsync();
+        await db.Holdings.Where(h => h.UserId == userId).ExecuteDeleteAsync();
+        await db.Expenses.Where(e => e.UserId == userId).ExecuteDeleteAsync();
+        await db.Incomes.Where(i => i.UserId == userId).ExecuteDeleteAsync();
+        await db.Categories.Where(c => c.UserId == userId).ExecuteDeleteAsync();
+        await db.Accounts.Where(a => a.UserId == userId).ExecuteDeleteAsync();
+        await db.Snapshots.Where(s => s.UserId == userId).ExecuteDeleteAsync();
+        await db.Users.Where(u => u.Id == userId).ExecuteDeleteAsync();
+        await tx.CommitAsync();
+    }
 }
 
 public class CategoryRepository(NomosDbContext context) : RepositoryBase<Category>(context), ICategoryRepository

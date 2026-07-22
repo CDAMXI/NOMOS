@@ -198,6 +198,20 @@ auth.MapPut("/profile", async (UpdateProfileRequest request, ClaimsPrincipal pri
     catch (DbUpdateException) { return Results.Conflict(UsernameTakenMessage); }
 });
 
+// POST (no DELETE): los minimal APIs no infieren cuerpo en DELETE. Borra el usuario y toda su
+// cascada de datos, previa verificación de contraseña, y cierra la sesión.
+auth.MapPost("/account/delete", async Task<Results<NoContent, BadRequest<string>>>
+    (DeleteAccountRequest request, ClaimsPrincipal principal, AuthService service, HttpContext http) =>
+{
+    try
+    {
+        await service.DeleteAccountAsync(UserId(principal), request);
+        await http.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        return TypedResults.NoContent();
+    }
+    catch (ArgumentException ex) { return TypedResults.BadRequest(ex.Message); }
+});
+
 auth.MapPut("/password", async (ChangePasswordRequest request, ClaimsPrincipal principal, AuthService service) =>
 {
     try

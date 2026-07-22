@@ -9,6 +9,8 @@ public interface IUserRepository
     Task<bool> UsernameTakenAsync(string username, int? excludeUserId = null);
     Task<User> AddAsync(User user);
     Task UpdateAsync(User user);
+    /// <summary>Borra al usuario y TODOS sus datos, en orden explícito (sin fiarse de las cascadas de BD).</summary>
+    Task DeleteWithDataAsync(int userId);
 }
 
 public interface ICategoryRepository

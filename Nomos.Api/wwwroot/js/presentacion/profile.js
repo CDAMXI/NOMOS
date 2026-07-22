@@ -43,9 +43,10 @@ function openProfileSheet() {
           <input id="profCurPass" class="text-field" type="password" placeholder="${t('current_password')}" maxlength="128" autocomplete="current-password">
           <input id="profNewPass" class="text-field" type="password" placeholder="${t('new_password_ph')}" maxlength="128" autocomplete="new-password">
         </div>
-        <button id="changePassBtn" class="pill pill-hover centered">${t('update_password')}</button>
+        <button id="changePassBtn" class="pill pill-action centered">${t('update_password')}</button>
 
-        <button id="logoutBtn" class="pill pill-danger centered prof-logout">${t('logout')}</button>`;
+        <button id="logoutBtn" class="pill pill-action centered prof-logout">${t('logout')}</button>
+        <button id="deleteUserBtn" class="pill pill-danger centered prof-logout">${t('delete_user_account')}</button>`;
 
       $('profUsername').addEventListener('input', refreshSaveState);
 
@@ -102,6 +103,19 @@ function openProfileSheet() {
         try { await fetch('/api/auth/logout', { method: 'POST' }); } catch { /* sin conexión */ }
         closeSheet();
         showAuth();
+      });
+
+      // Borrado de la cuenta: doble confirmación (aviso + contraseña); el servidor la verifica.
+      $('deleteUserBtn').addEventListener('click', async () => {
+        if (!confirm(t('confirm_delete_user'))) return;
+        const pw = prompt(t('delete_user_pw'));
+        if (pw === null) return;
+        try {
+          await sendJSON('/api/auth/account/delete', 'POST', { password: pw });
+          closeSheet();
+          showAuth();
+          toast(t('user_deleted'));
+        } catch (e) { toast(e.message); }
       });
     },
     async onSave() {

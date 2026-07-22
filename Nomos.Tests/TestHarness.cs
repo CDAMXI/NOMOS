@@ -24,6 +24,7 @@ public sealed class TestHarness : IDisposable
         Db.Database.EnsureCreated();
     }
 
+    public UserRepository Users => new(Db);
     public AccountRepository Accounts => new(Db);
     public HoldingRepository Holdings => new(Db);
     public ExpenseRepository Expenses => new(Db);
@@ -32,6 +33,7 @@ public sealed class TestHarness : IDisposable
     public CategoryRepository Categories => new(Db);
     public UnitOfWork UnitOfWork => new(Db);
 
+    public AuthService Auth => new(Users);
     public SnapshotWriter SnapshotWriter => new(Accounts, Snapshots, Expenses, Incomes, Holdings);
     public InvestmentService Investment => new(Accounts, Holdings, Expenses, Incomes, SnapshotWriter, UnitOfWork);
 

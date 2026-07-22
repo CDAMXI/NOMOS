@@ -91,6 +91,19 @@ public partial class AuthService(IUserRepository users)
         await users.UpdateAsync(user);
     }
 
+    /// <summary>
+    /// Borra la cuenta del usuario y, por cascada en BD, TODOS sus datos (categorías, movimientos,
+    /// cuentas, posiciones, snapshots). Exige la contraseña actual como confirmación.
+    /// </summary>
+    public async Task DeleteAccountAsync(int id, DeleteAccountRequest request)
+    {
+        var user = await users.GetByIdAsync(id)
+            ?? throw new ArgumentException("Usuario no encontrado.");
+        if (!PasswordHasher.Verify(request.Password ?? "", user.PasswordHash))
+            throw new ArgumentException("La contraseña no es correcta.");
+        await users.DeleteWithDataAsync(user.Id);
+    }
+
     private static string ValidateUsername(string? username)
     {
         var trimmed = username?.Trim() ?? "";

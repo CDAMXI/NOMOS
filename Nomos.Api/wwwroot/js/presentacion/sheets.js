@@ -314,7 +314,7 @@ async function openBrokerSheet(accountId) {
           </li>`).join('') || `<li class="tx-sub">${t('no_positions')}</li>`}
         </ul>
         <div class="divider"></div>
-        <button id="editBrokerBtn" class="pill pill-hover centered">${t('edit_account')}</button>`;
+        <button id="editBrokerBtn" class="pill pill-action centered">${t('edit_account')}</button>`;
 
       $('buyBtn').addEventListener('click', () => openBuySheet(b, back));
       $('transferBtn').addEventListener('click', () => openBrokerTransferSheet(b, back).catch(e => toast(e.message)));

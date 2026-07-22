@@ -78,3 +78,6 @@ public record LoginRequest(string Username, string Password);
 public record UpdateProfileRequest(string? Username, string? PhotoDataUrl, string? Currency);
 
 public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
+
+/// <summary>Borrado de la cuenta de usuario: exige la contraseña actual como confirmación.</summary>
+public record DeleteAccountRequest(string Password);

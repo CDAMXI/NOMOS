@@ -248,10 +248,10 @@ body {
   cursor: pointer;
 }
 .pill.active { background: var(--accent-soft); color: var(--accent); }
-/* Píldora que solo se "enciende" al pasar el ratón (p. ej. Editar cuenta en el broker). */
-.pill-hover:hover { background: var(--accent-soft); color: var(--accent); }
-/* Variante destructiva: mismo comportamiento pero en rojo (p. ej. Eliminar cuenta). */
-.pill-danger:hover { background: var(--red-soft); color: var(--red); }
+/* Píldoras de acción: color visible en REPOSO (en móvil no hay hover) — acento para acciones
+   (actualizar contraseña, cerrar sesión, editar cuenta) y rojo para las destructivas. */
+.pill-action { background: var(--accent-soft); color: var(--accent); }
+.pill-danger { background: var(--red-soft); color: var(--red); }
 .pill-danger.centered { margin-top: var(--sp-16); }
 
 .chart { position: relative; }
