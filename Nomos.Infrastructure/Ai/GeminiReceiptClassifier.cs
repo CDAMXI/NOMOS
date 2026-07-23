@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using Nomos.Application.DTOs;
 using Nomos.Application.Interfaces;
 
@@ -10,7 +11,8 @@ namespace Nomos.Infrastructure.Ai;
 /// estructurada, temperatura baja). La clave vive en configuración (env Gemini__ApiKey); sin clave,
 /// el escáner responde con un error claro en vez de romper el arranque.
 /// </summary>
-public class GeminiReceiptClassifier(HttpClient http, string? apiKey, string model) : IReceiptClassifier
+public class GeminiReceiptClassifier(HttpClient http, string? apiKey, string model,
+    ILogger<GeminiReceiptClassifier> logger) : IReceiptClassifier
 {
     public async Task<ScanReceiptResult> ClassifyAsync(string base64Image, string mimeType,
         IReadOnlyList<(int Id, string Name)> categories, DateOnly today)
@@ -61,9 +63,19 @@ public class GeminiReceiptClassifier(HttpClient http, string? apiKey, string mod
         msg.Content = JsonContent.Create(body);
 
         using var res = await http.SendAsync(msg);
+        var raw = await res.Content.ReadAsStringAsync();
         if (!res.IsSuccessStatusCode)
-            throw new ArgumentException("No se pudo leer la factura. Inténtalo de nuevo.");
-        return ParseResponse(await res.Content.ReadAsStringAsync());
+        {
+            // El cuerpo del proveedor va SOLO al log (puede traer detalles internos); al usuario, el status.
+            logger.LogWarning("Gemini {Status}: {Body}", (int)res.StatusCode, raw);
+            throw new ArgumentException($"No se pudo leer la factura (proveedor: HTTP {(int)res.StatusCode}).");
+        }
+        try { return ParseResponse(raw); }
+        catch (ArgumentException)
+        {
+            logger.LogWarning("Respuesta de Gemini no parseable: {Body}", raw);
+            throw;
+        }
     }
 
     /// <summary>Extrae el JSON del primer candidato y lo mapea al resultado. Estático para poder testearlo.</summary>

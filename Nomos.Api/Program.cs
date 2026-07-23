@@ -33,7 +33,8 @@ builder.Services.AddHttpClient("gemini");
 builder.Services.AddScoped<IReceiptClassifier>(sp => new GeminiReceiptClassifier(
     sp.GetRequiredService<IHttpClientFactory>().CreateClient("gemini"),
     builder.Configuration["Gemini:ApiKey"],
-    builder.Configuration["Gemini:Model"] ?? "gemini-2.5-flash"));
+    builder.Configuration["Gemini:Model"] ?? "gemini-2.5-flash",
+    sp.GetRequiredService<ILogger<GeminiReceiptClassifier>>()));
 builder.Services.AddScoped<ReceiptScanService>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
