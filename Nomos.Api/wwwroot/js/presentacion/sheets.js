@@ -51,11 +51,10 @@ async function openTxSheet(existing = null, draft = null, back = null) {
           <button class="pill" data-kind="expense">${t('kind_expense')}</button>
           <button class="pill" data-kind="income">${t('kind_income')}</button>
         </div>
-        <button id="scanBtn" class="pill pill-action centered scan-btn">${t('scan_receipt')}</button>
+        <button id="scanBtn" class="link centered scan-btn">${t('scan_receipt')}</button>
         <input id="scanInput" type="file" accept="image/*" hidden>`}
         ${amountBlock(t('amount'))}
-        <div class="chips" id="catChips">${categoriesByUse().map(catChip).join('')}
-          <button class="chip chip-add" id="addCatChip">${t('add_category_chip')}</button></div>
+        <div class="chips" id="catChips"></div>
         ${(cashAccounts.length >= 1 || !isEdit) ? `<p class="tx-sub cat-hint">${t('account_label')}</p>
         <div class="chips" id="accChips">${cashAccounts.map(a => cashChip(a, 'acc')).join('')}
           ${isEdit ? '' : `<button class="chip chip-add" id="addAccChip">${t('add_account_chip')}</button>`}</div>` : ''}
@@ -81,7 +80,7 @@ async function openTxSheet(existing = null, draft = null, back = null) {
             if (r.date) $('dateField').value = r.date;
             if (r.description) $('descField').value = r.description;
             if (r.categoryId != null) selectedCat = r.categoryId;
-            paintChips();
+            renderCatChips(); // re-render: la categoría elegida se muestra aunque no esté en el top
             refreshSaveState();
             toast(t(r.confidence > 0 ? 'scan_done' : 'scan_failed'));
           } catch (e) { toast(e.message); }
@@ -95,15 +94,35 @@ async function openTxSheet(existing = null, draft = null, back = null) {
         $('scanBtn')?.classList.toggle('hidden', kind === 'income'); // escanear = solo gastos
         paintChipGroup(body, 'cat', ch => +ch.dataset.cat === selectedCat, catChipStyle);
       };
-      onChipPick(body, 'cat', v => { selectedCat = +v; paintChips(); refreshSaveState(); });
 
-      const addChip = $('addCatChip');
-      if (addChip) addChip.addEventListener('click', () => {
+      const addCategory = () => {
         const carry = { kind, amount: amountValue(), description: $('descField').value, date: $('dateField').value, accountId: selectedAccount };
         // Se pasa `existing`: si estabas editando, vuelves al MISMO gasto en edición con la nueva
         // categoría ya seleccionada; si era nuevo, sigue siendo nuevo.
         openCategoryEditSheet(null, saved => openTxSheet(existing, { ...carry, categoryId: saved?.id }).catch(e => toast(e.message)));
-      });
+      };
+
+      // Revelado progresivo: las 6 más usadas + «⋯ N más» expande el resto. La seleccionada se
+      // muestra siempre aunque no esté en el top (p. ej. la elige el escáner o venía del draft).
+      const CAT_PREVIEW = 6;
+      let catsExpanded = false;
+      const renderCatChips = () => {
+        const all = categoriesByUse();
+        let shown = catsExpanded ? all : all.slice(0, CAT_PREVIEW);
+        if (selectedCat && !shown.some(c => c.id === selectedCat)) {
+          const sel = all.find(c => c.id === selectedCat);
+          if (sel) shown = [...shown, sel];
+        }
+        const hiddenCount = all.length - shown.length;
+        $('catChips').innerHTML = shown.map(catChip).join('')
+          + (hiddenCount > 0 ? `<button class="chip" id="moreCatsChip">⋯ ${hiddenCount} ${t('more_chip')}</button>` : '')
+          + `<button class="chip chip-add" id="addCatChip">${t('add_category_chip')}</button>`;
+        onChipPick($('catChips'), 'cat', v => { selectedCat = +v; paintChips(); refreshSaveState(); });
+        $('moreCatsChip')?.addEventListener('click', () => { catsExpanded = true; renderCatChips(); });
+        $('addCatChip').addEventListener('click', addCategory);
+        paintChips();
+      };
+      renderCatChips();
 
       const paintAccChips = () => paintChipGroup(body, 'acc', ch => +ch.dataset.acc === selectedAccount);
       onChipPick(body, 'acc', v => { selectedAccount = +v; paintAccChips(); });
