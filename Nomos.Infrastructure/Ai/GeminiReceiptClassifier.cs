@@ -66,11 +66,9 @@ public class GeminiReceiptClassifier(HttpClient http, string? apiKey, string mod
         var raw = await res.Content.ReadAsStringAsync();
         if (!res.IsSuccessStatusCode)
         {
-            var flat = raw.ReplaceLineEndings(" ");
-            logger.LogWarning("Gemini {Status}: {Body}", (int)res.StatusCode, flat);
-            // TODO REVERTIR tras diagnosticar: fragmento del error del proveedor en la respuesta (debug temporal).
-            var snippet = flat.Length > 300 ? flat[..300] : flat;
-            throw new ArgumentException($"No se pudo leer la factura (proveedor: HTTP {(int)res.StatusCode}). DEBUG: {snippet}");
+            // Cuerpo del proveedor SOLO al log, aplanado a una línea (Render trocea las multilínea).
+            logger.LogWarning("Gemini {Status}: {Body}", (int)res.StatusCode, raw.ReplaceLineEndings(" "));
+            throw new ArgumentException($"No se pudo leer la factura (proveedor: HTTP {(int)res.StatusCode}).");
         }
         try { return ParseResponse(raw); }
         catch (ArgumentException)
