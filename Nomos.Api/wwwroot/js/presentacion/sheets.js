@@ -50,7 +50,9 @@ async function openTxSheet(existing = null, draft = null, back = null) {
         ${isEdit ? '' : `<div class="kind-toggle">
           <button class="pill" data-kind="expense">${t('kind_expense')}</button>
           <button class="pill" data-kind="income">${t('kind_income')}</button>
-        </div>`}
+        </div>
+        <button id="scanBtn" class="pill pill-action centered scan-btn">${t('scan_receipt')}</button>
+        <input id="scanInput" type="file" accept="image/*" hidden>`}
         ${amountBlock(t('amount'))}
         <div class="chips" id="catChips">${categoriesByUse().map(catChip).join('')}
           <button class="chip chip-add" id="addCatChip">${t('add_category_chip')}</button></div>
@@ -62,8 +64,35 @@ async function openTxSheet(existing = null, draft = null, back = null) {
         ${isEdit ? `<button id="deleteTx" class="danger-btn">${t(kind === 'income' ? 'delete_income' : 'delete_expense')}</button>` : ''}`;
       bindAmount(body, true);
 
+      // Escanear factura: la IA pre-rellena; el usuario revisa y guarda (nunca autoguardado).
+      const scanBtn = $('scanBtn');
+      if (scanBtn) {
+        scanBtn.addEventListener('click', () => $('scanInput').click());
+        $('scanInput').addEventListener('change', async ev => {
+          const file = ev.target.files[0];
+          if (!file) return;
+          ev.target.value = ''; // permite volver a escanear el mismo fichero
+          scanBtn.disabled = true;
+          scanBtn.textContent = t('scanning');
+          try {
+            const photo = await resizeImage(file, 1100);
+            const r = await sendJSON('/api/expenses/scan', 'POST', { photoDataUrl: photo });
+            if (r.amount != null) $('amountInput').value = String(r.amount).replace('.', decSep());
+            if (r.date) $('dateField').value = r.date;
+            if (r.description) $('descField').value = r.description;
+            if (r.categoryId != null) selectedCat = r.categoryId;
+            paintChips();
+            refreshSaveState();
+            toast(t(r.confidence > 0 ? 'scan_done' : 'scan_failed'));
+          } catch (e) { toast(e.message); }
+          scanBtn.disabled = false;
+          scanBtn.textContent = t('scan_receipt');
+        });
+      }
+
       const paintChips = () => {
         $('catChips').classList.toggle('hidden', kind === 'income');
+        $('scanBtn')?.classList.toggle('hidden', kind === 'income'); // escanear = solo gastos
         paintChipGroup(body, 'cat', ch => +ch.dataset.cat === selectedCat, catChipStyle);
       };
       onChipPick(body, 'cat', v => { selectedCat = +v; paintChips(); refreshSaveState(); });

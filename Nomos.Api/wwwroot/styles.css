@@ -614,6 +614,7 @@ body {
 
 /* ---------- Movimientos: gasto / ingreso ---------- */
 .kind-toggle { display: flex; gap: var(--sp-6); justify-content: center; padding-bottom: var(--sp-16); }
+.scan-btn { margin-bottom: var(--sp-12); }
 
 .hero-sub { font-size: var(--fs-14); color: var(--muted); margin-top: var(--sp-3); }
 .hero-sub b { color: var(--green); font-weight: 600; }

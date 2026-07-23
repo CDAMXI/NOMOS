@@ -81,3 +81,9 @@ public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
 
 /// <summary>Borrado de la cuenta de usuario: exige la contraseña actual como confirmación.</summary>
 public record DeleteAccountRequest(string Password);
+
+/// <summary>Escaneo de factura con IA: la foto viaja como data-URL y NO se persiste.</summary>
+public record ScanReceiptRequest(string PhotoDataUrl);
+
+/// <summary>Sugerencias extraídas de la factura para pre-rellenar el gasto (todo opcional).</summary>
+public record ScanReceiptResult(decimal? Amount, DateOnly? Date, string? Description, int? CategoryId, double Confidence);

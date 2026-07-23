@@ -7,8 +7,10 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Nomos.Application.Common;
 using Nomos.Application.DTOs;
+using Nomos.Application.Interfaces;
 using Nomos.Application.Services;
 using Nomos.Infrastructure;
+using Nomos.Infrastructure.Ai;
 using Nomos.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,6 +26,15 @@ if (!string.IsNullOrWhiteSpace(port))
 var connectionString = builder.Configuration.GetConnectionString("Nomos")
     ?? "Data Source=nomos_local.db";
 builder.Services.AddNomos(connectionString);
+
+// Escáner de facturas (Gemini). La clave va en el env Gemini__ApiKey; sin ella, el endpoint
+// responde con un mensaje claro y el resto de la app funciona igual.
+builder.Services.AddHttpClient("gemini");
+builder.Services.AddScoped<IReceiptClassifier>(sp => new GeminiReceiptClassifier(
+    sp.GetRequiredService<IHttpClientFactory>().CreateClient("gemini"),
+    builder.Configuration["Gemini:ApiKey"],
+    builder.Configuration["Gemini:Model"] ?? "gemini-2.5-flash"));
+builder.Services.AddScoped<ReceiptScanService>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -68,6 +79,11 @@ builder.Services.AddRateLimiter(options =>
             "Demasiados intentos. Espera un momento e inténtalo de nuevo.", ct);
     };
     options.AddPolicy("login", http =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }));
+    // Escáner de facturas: cada llamada cuesta cuota de Gemini; 10/min por IP es de sobra para uso real.
+    options.AddPolicy("scan", http =>
         RateLimitPartition.GetFixedWindowLimiter(
             http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }));
@@ -276,6 +292,14 @@ api.MapGet("/transactions/export", async (ClaimsPrincipal principal, ExpenseServ
 
 api.MapGet("/expenses/dashboard", (ClaimsPrincipal principal, ExpenseService service, int days = 30) =>
     service.GetDashboardAsync(UserId(principal), Math.Clamp(days, 7, 365), Today()));
+
+// Escaneo de factura con IA: la foto NO se guarda; devuelve sugerencias para pre-rellenar la hoja.
+api.MapPost("/expenses/scan", async Task<Results<Ok<ScanReceiptResult>, BadRequest<string>>>
+    (ScanReceiptRequest request, ClaimsPrincipal principal, ReceiptScanService service) =>
+{
+    try { return TypedResults.Ok(await service.ScanAsync(UserId(principal), request, Today())); }
+    catch (ArgumentException ex) { return TypedResults.BadRequest(ex.Message); }
+}).RequireRateLimiting("scan");
 
 api.MapPost("/expenses", async Task<Results<Created<ExpenseDto>, BadRequest<string>>>
     (CreateExpenseRequest request, ClaimsPrincipal principal, ExpenseService service) =>
