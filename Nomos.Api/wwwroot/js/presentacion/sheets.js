@@ -76,7 +76,13 @@ async function openTxSheet(existing = null, draft = null, back = null) {
           try {
             const photo = await resizeImage(file, 1100);
             const r = await sendJSON('/api/expenses/scan', 'POST', { photoDataUrl: photo });
-            if (r.amount != null) $('amountInput').value = String(r.amount).replace('.', decSep());
+            if (r.amount != null) {
+              const amountEl = $('amountInput');
+              amountEl.value = String(r.amount).replace('.', decSep());
+              // El ancho del input y el estado de Guardar se recalculan en el evento 'input';
+              // al rellenar por código hay que dispararlo a mano o el importe se ve recortado.
+              amountEl.dispatchEvent(new Event('input'));
+            }
             if (r.date) $('dateField').value = r.date;
             if (r.description) $('descField').value = r.description;
             if (r.categoryId != null) selectedCat = r.categoryId;
