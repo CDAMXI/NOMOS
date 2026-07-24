@@ -8,7 +8,11 @@ namespace Nomos.Application.Interfaces;
 /// </summary>
 public interface IReceiptClassifier
 {
-    /// <summary>categories = las del usuario (id + nombre) para que elija entre ellas; today acota fechas alucinadas.</summary>
+    /// <summary>
+    /// categories = las del usuario (id + nombre) para que elija entre ellas; examples = su criterio real
+    /// (concepto → categoría de gastos recientes) para imitarlo; today acota fechas alucinadas.
+    /// </summary>
     Task<ScanReceiptResult> ClassifyAsync(string base64Image, string mimeType,
-        IReadOnlyList<(int Id, string Name)> categories, DateOnly today);
+        IReadOnlyList<(int Id, string Name)> categories,
+        IReadOnlyList<(string Description, string CategoryName)> examples, DateOnly today);
 }

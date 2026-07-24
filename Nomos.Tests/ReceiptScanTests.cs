@@ -71,7 +71,7 @@ public class ReceiptScanTests
         await h.Db.SaveChangesAsync();
 
         // El clasificador falso devuelve una categoría que NO es del usuario: debe salir null.
-        var service = new ReceiptScanService(h.Categories, new FakeClassifier(
+        var service = new ReceiptScanService(h.Categories, h.Expenses, new FakeClassifier(
             new ScanReceiptResult(10m, Today, "Bar", 999999, 0.8)));
         var tinyJpeg = "data:image/jpeg;base64," + Convert.ToBase64String(new byte[64]);
 
@@ -84,9 +84,30 @@ public class ReceiptScanTests
             service.ScanAsync(userId, new ScanReceiptRequest("no-es-una-imagen"), Today));
     }
 
+    [Fact]
+    public void BuildExamples_DedupesSkipsNoSignal_AndOrdersRecentFirst()
+    {
+        var comida = new Nomos.Domain.Entities.Category { Id = 1, Name = "Comida" };
+        var compra = new Nomos.Domain.Entities.Category { Id = 2, Name = "Compra" };
+        var all = new List<Nomos.Domain.Entities.Expense>
+        {
+            new() { Id = 1, Description = "Mercadona", Category = compra, Date = Today.AddDays(-3) },
+            new() { Id = 2, Description = "mercadona", Category = compra, Date = Today.AddDays(-2) }, // duplicado (mayúsculas)
+            new() { Id = 3, Description = "Comida", Category = comida, Date = Today.AddDays(-1) },    // sin señal: desc = categoría
+            new() { Id = 4, Description = "Kebab Estambul", Category = comida, Date = Today },
+        };
+
+        var ex = ReceiptScanService.BuildExamples(all);
+
+        Assert.Equal(2, ex.Count);
+        Assert.Equal(("Kebab Estambul", "Comida"), ex[0]); // más reciente primero
+        Assert.Equal(("mercadona", "Compra"), ex[1]);      // se queda la aparición más reciente
+    }
+
     private sealed class FakeClassifier(ScanReceiptResult result) : IReceiptClassifier
     {
         public Task<ScanReceiptResult> ClassifyAsync(string base64Image, string mimeType,
-            IReadOnlyList<(int Id, string Name)> categories, DateOnly today) => Task.FromResult(result);
+            IReadOnlyList<(int Id, string Name)> categories,
+            IReadOnlyList<(string Description, string CategoryName)> examples, DateOnly today) => Task.FromResult(result);
     }
 }

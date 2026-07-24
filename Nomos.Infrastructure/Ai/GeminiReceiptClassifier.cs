@@ -15,12 +15,19 @@ public class GeminiReceiptClassifier(HttpClient http, string? apiKey, string mod
     ILogger<GeminiReceiptClassifier> logger) : IReceiptClassifier
 {
     public async Task<ScanReceiptResult> ClassifyAsync(string base64Image, string mimeType,
-        IReadOnlyList<(int Id, string Name)> categories, DateOnly today)
+        IReadOnlyList<(int Id, string Name)> categories,
+        IReadOnlyList<(string Description, string CategoryName)> examples, DateOnly today)
     {
         if (string.IsNullOrWhiteSpace(apiKey))
             throw new ArgumentException("El escáner de facturas no está configurado todavía.");
 
         var catList = string.Join("\n", categories.Select(c => $"{c.Id}: {c.Name}"));
+        // El criterio no se inventa: son las clasificaciones reales del usuario, para imitarlas.
+        var criteria = examples.Count == 0 ? "" : $"""
+
+            Criterio del usuario — así ha clasificado sus gastos recientes (concepto → categoría). Imítalo al elegir categoryId:
+            {string.Join("\n", examples.Select(e => $"{e.Description} → {e.CategoryName}"))}
+            """;
         var prompt = $"""
             Eres el escáner de tickets de una app de finanzas personales. Analiza la imagen y extrae:
             - amount: importe TOTAL pagado (número con punto decimal, sin símbolo de moneda).
@@ -29,6 +36,7 @@ public class GeminiReceiptClassifier(HttpClient http, string? apiKey, string mod
             - categoryId: el id (entero) de la categoría del usuario que mejor encaje, elegido de esta lista; null si ninguna encaja con claridad:
             {catList}
             - confidence: tu confianza global entre 0 y 1.
+            {criteria}
             Si la imagen NO es un ticket, factura o recibo, devuelve todos los campos null y confidence 0.
             """;
 
