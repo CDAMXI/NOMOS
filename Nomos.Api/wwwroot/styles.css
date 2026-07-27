@@ -281,8 +281,32 @@ body {
 .cat-accounts .chip { padding: var(--sp-6) var(--sp-12); font-size: var(--fs-13); white-space: nowrap; flex: 0 0 auto; }
 .cat-accounts .chip.selected { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
 .cat-wrap { display: flex; align-items: center; gap: var(--sp-22); }
-.donut { width: 164px; flex-shrink: 0; }
+.donut { width: 164px; flex-shrink: 0; position: relative; }
 .donut svg { width: 100%; height: auto; }
+/* Rueda interactiva: tocar un segmento muestra su gasto en el centro y atenúa el resto. */
+.donut svg circle { cursor: pointer; transition: opacity .15s; }
+.donut.has-sel circle:not(.sel) { opacity: .35; }
+.donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  pointer-events: none; /* los toques atraviesan hasta los segmentos */
+  padding: 0 var(--sp-30);
+  min-width: 0;
+}
+.donut-center b { font-size: var(--fs-155); font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.donut-center span {
+  font-size: var(--fs-11);
+  color: var(--muted);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .cat-list { list-style: none; flex: 1; }
 .cat-list li {

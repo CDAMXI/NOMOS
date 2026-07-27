@@ -123,19 +123,41 @@ function bindChartHover(el, points, xy, { W, H, L, iw }, tip) {
   svg.addEventListener('touchcancel', hide);
 }
 
-function renderDonut(el, items) {
+// items: [{id, name, color, value}]. Tocar un segmento muestra en el CENTRO de la rueda el
+// gasto de esa categoría en negrita (y atenúa el resto); tocar el mismo segmento lo limpia.
+// opts.selected = id seleccionado inicial (persiste entre refrescos); opts.onSelect(id|null)
+// notifica cada cambio. La lista contigua sigue siendo la fuente accesible (svg aria-hidden).
+function renderDonut(el, items, opts = {}) {
   const total = items.reduce((s, i) => s + i.value, 0);
   if (!total) { el.innerHTML = ''; return; }
   const r = 52, C = 2 * Math.PI * r;
   // Flat (butt) caps and touching segments render a clean continuous ring instead of rounded pills.
   let off = 0, segs = '';
-  for (const it of items) {
+  items.forEach((it, i) => {
     const len = it.value / total * C;
-    segs += `<circle r="${r}" cx="70" cy="70" fill="none" stroke="${it.color}" stroke-width="26"
+    segs += `<circle data-i="${i}" r="${r}" cx="70" cy="70" fill="none" stroke="${it.color}" stroke-width="26"
       stroke-dasharray="${len.toFixed(2)} ${C.toFixed(2)}"
       stroke-dashoffset="${(-off).toFixed(2)}"/>`;
     off += len;
-  }
-  // Decorativo: los datos ya están en la lista de categorías contigua (accesible).
-  el.innerHTML = `<svg viewBox="0 0 140 140" style="transform:rotate(-90deg)" aria-hidden="true">${segs}</svg>`;
+  });
+  el.innerHTML = `<svg viewBox="0 0 140 140" style="transform:rotate(-90deg)" aria-hidden="true">${segs}</svg>
+    <div class="donut-center" aria-hidden="true"></div>`;
+
+  const center = el.querySelector('.donut-center');
+  let sel = opts.selected != null ? items.findIndex(it => it.id === opts.selected) : -1;
+  const apply = () => {
+    el.classList.toggle('has-sel', sel >= 0);
+    el.querySelectorAll('circle').forEach((c, i) => c.classList.toggle('sel', i === sel));
+    // eurShort: a partir de 10 000 compacta («12 mil €») para caber en el agujero de la rueda.
+    center.innerHTML = sel >= 0
+      ? `<b>${eurShort(items[sel].value)}</b><span>${esc(items[sel].name || '')}</span>`
+      : '';
+  };
+  el.querySelectorAll('circle').forEach(c =>
+    c.addEventListener('click', () => {
+      sel = +c.dataset.i === sel ? -1 : +c.dataset.i; // repetir toque = deseleccionar
+      apply();
+      opts.onSelect?.(sel >= 0 ? items[sel].id : null);
+    }));
+  if (sel >= 0) apply(); // selección heredada de antes del refresco
 }

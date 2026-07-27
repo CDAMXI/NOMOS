@@ -73,6 +73,7 @@ function renderRecent() {
 
 // "Por categoría": una rueda genérica (todas las cuentas) y una por cada cuenta, con selector.
 let catAccountSel;   // 'all' o id de cuenta; se mantiene entre refrescos
+let donutSel = null; // categoría seleccionada tocando la rueda; se mantiene entre refrescos
 
 function renderCategoryCard(d, cash) {
   const box = $('gCatAccounts');
@@ -86,7 +87,9 @@ function renderCategoryCard(d, cash) {
     // Sin gastos: la rueda vacía se oculta y el mensaje se centra en la tarjeta.
     $('gDonut').classList.toggle('hidden', !byCat.length);
     $('gCatList').classList.toggle('empty', !byCat.length);
-    renderDonut($('gDonut'), byCat.map(c => ({ color: c.category.color, value: c.total })));
+    renderDonut($('gDonut'),
+      byCat.map(c => ({ id: c.category.id, name: catName(c.category.name), color: c.category.color, value: c.total })),
+      { selected: donutSel, onSelect: id => { donutSel = id; } });
     $('gCatList').innerHTML = byCat.map(c => `
       <li><span class="dot" style="background:${c.category.color}"></span>
         ${esc(catName(c.category.name))}<span class="amount">${eur(c.total)}</span></li>`).join('')
