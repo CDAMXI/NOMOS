@@ -64,9 +64,24 @@ async function openTxSheet(existing = null, draft = null, back = null) {
         <div class="chips" id="accChips">${cashAccounts.map(a => cashChip(a, 'acc')).join('')}
           ${isEdit ? '' : `<button class="chip chip-add" id="addAccChip">${t('add_account_chip')}</button>`}</div>` : ''}
         <input id="descField" class="text-field" placeholder="${t('description_optional')}" maxlength="120" value="${esc(startDesc)}">
-        <input id="dateField" class="text-field" type="date" value="${(draft && draft.date) ? draft.date : (existing ? existing.date : todayISO())}">
+        <label class="text-field date-field" id="dateWrap">
+          <span id="dateDisplay"></span>
+          <input id="dateField" type="date" aria-label="${t('date_label')}"
+            value="${(draft && draft.date) ? draft.date : (existing ? existing.date : todayISO())}">
+        </label>
         ${isEdit ? `<button id="deleteTx" class="danger-btn">${t(kind === 'income' ? 'delete_income' : 'delete_expense')}</button>` : ''}`;
       bindAmount(body, true);
+
+      // La fecha se muestra SIEMPRE como DD/MM/AAAA (dMed): el input nativo queda invisible
+      // debajo (conserva el calendario del móvil/PC) porque su formato visible depende del
+      // idioma del navegador, no de la app.
+      const dateEl = $('dateField');
+      const paintDate = () => { $('dateDisplay').textContent = dMed(dateEl.value || todayISO()); };
+      ['input', 'change'].forEach(ev => dateEl.addEventListener(ev, paintDate));
+      $('dateWrap').addEventListener('click', () => {
+        try { dateEl.showPicker(); } catch (_) { /* picker ya abierto o sin soporte: el propio input lo abre */ }
+      });
+      paintDate();
 
       // Escanear factura: la IA pre-rellena; el usuario revisa y guarda (nunca autoguardado).
       const scanBtn = $('scanBtn');
@@ -88,7 +103,7 @@ async function openTxSheet(existing = null, draft = null, back = null) {
               // al rellenar por código hay que dispararlo a mano o el importe se ve recortado.
               amountEl.dispatchEvent(new Event('input'));
             }
-            if (r.date) $('dateField').value = r.date;
+            if (r.date) { $('dateField').value = r.date; $('dateField').dispatchEvent(new Event('input')); }
             if (r.description) $('descField').value = r.description;
             if (r.categoryId != null) selectedCat = r.categoryId;
             renderCatChips(); // re-render: la categoría elegida se muestra aunque no esté en el top
