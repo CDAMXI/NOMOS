@@ -22,9 +22,14 @@ function smoothPath(pts) {
   return d;
 }
 
-function renderLineChart(el, points, { id, color, xFmt, yFmt, tip, height }) {
+function renderLineChart(el, points, { id, color, xFmt, yFmt, tip, height, label }) {
   if (!points.length) { el.innerHTML = `<p class="tx-sub">${t('no_data')}</p>`; return; }
-  const W = 600, H = height || 230, L = 46, R = 10, T = 12, B = 26;
+  // El viewBox se ajusta al ancho real del contenedor: las unidades del SVG pasan a ser
+  // píxeles reales y las etiquetas de los ejes quedan legibles también en móvil (con 600
+  // unidades fijas comprimidas a ~340px, el texto de 11 quedaba a ~6px efectivos). La
+  // altura se escala en proporción para conservar el aspecto del diseño original.
+  const W = el.clientWidth || 600, H = Math.round((height || 230) * W / 600);
+  const L = 46, R = 10, T = 12, B = 26;
   const iw = W - L - R, ih = H - T - B;
   const ymax = niceMax(Math.max(...points.map(p => p.y)));
   const xy = points.map((p, i) => [
@@ -39,7 +44,7 @@ function renderLineChart(el, points, { id, color, xFmt, yFmt, tip, height }) {
     axes += `<line x1="${L}" y1="${y}" x2="${W - R}" y2="${y}" stroke="var(--line)" stroke-width="1"/>`;
     axes += `<text x="${L - 7}" y="${y + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${yFmt(ymax * i / Y_INTERVALS)}</text>`;
   }
-  const nLabels = Math.min(6, points.length);
+  const nLabels = Math.min(W < 420 ? 4 : 6, points.length); // en móvil, menos etiquetas y sin solaparse
   for (let i = 0; i < nLabels; i++) {
     const idx = Math.round(i * (points.length - 1) / Math.max(nLabels - 1, 1));
     axes += `<text x="${xy[idx][0]}" y="${H - 6}" text-anchor="middle" font-size="11" fill="var(--muted)">${xFmt(points[idx].x)}</text>`;
@@ -49,7 +54,7 @@ function renderLineChart(el, points, { id, color, xFmt, yFmt, tip, height }) {
   const area = `${line} L ${xy[xy.length - 1][0]} ${T + ih} L ${xy[0][0]} ${T + ih} Z`;
   const hover = tip ? `<line class="lc-cross" x1="0" y1="${T}" x2="0" y2="${T + ih}" stroke="${color}" stroke-width="1" stroke-dasharray="4 3" opacity="0"/>
     <circle class="lc-dot" r="4.5" fill="${color}" stroke="var(--card)" stroke-width="2" opacity="0"/>` : '';
-  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img">
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label || '')}">
     <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="${color}" stop-opacity=".26"/>
       <stop offset="1" stop-color="${color}" stop-opacity="0"/>

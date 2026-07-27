@@ -9,6 +9,14 @@ function refreshCurrent() {
   return load().catch(e => toast(e.message));
 }
 
+// El «+» cambia de acción según la pestaña: su etiqueta accesible debe decirlo.
+function updateFabTitle() {
+  const label = t(currentView === 'gastos' ? 'add_movement' : 'add_account_fab');
+  const fab = $('fab');
+  fab.title = label;
+  fab.setAttribute('aria-label', label);
+}
+
 document.querySelectorAll('.tab').forEach(tab =>
   tab.addEventListener('click', () => {
     currentView = tab.dataset.view;
@@ -19,6 +27,7 @@ document.querySelectorAll('.tab').forEach(tab =>
     });
     $('view-gastos').classList.toggle('hidden', currentView !== 'gastos');
     $('view-patrimonio').classList.toggle('hidden', currentView !== 'patrimonio');
+    updateFabTitle();
     refreshCurrent();
   }));
 
@@ -38,11 +47,11 @@ document.querySelectorAll('.pill[data-nw]').forEach(pill =>
   }));
 
 $('fab').addEventListener('click', () => {
-  if (currentView === 'gastos') openTxSheet().catch(e => toast(e.message));
+  if (currentView === 'gastos') openTxSheet().catch(sheetFail);
   else openAccountSheet();
 });
 
-$('verTodoBtn').addEventListener('click', () => openAllTxSheet().catch(e => toast(e.message)));
+$('verTodoBtn').addEventListener('click', () => openAllTxSheet().catch(sheetFail));
 $('profileBtn').addEventListener('click', openProfileSheet);
 
 const themeBtn = $('themeBtn');
@@ -52,11 +61,13 @@ function applyTheme(theme) {
   localStorage.setItem('nomos-theme', theme);
 }
 themeBtn.addEventListener('click', () => {
+  // Los gráficos usan var(--accent)/var(--line) en el propio SVG: el cambio de tema los
+  // repinta por CSS al instante, sin volver a pedir datos a la red.
   applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
-  refreshCurrent(); // los gráficos SVG toman los colores del tema
 });
 applyTheme(localStorage.getItem('nomos-theme') || 'light');
 applyStaticI18n();
+updateFabTitle();
 
 // Los datos viven en la base de datos: refresca al volver a la pestaña y cada 20 s.
 const AUTO_REFRESH_MS = 20000;

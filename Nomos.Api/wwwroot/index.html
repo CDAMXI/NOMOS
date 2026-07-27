@@ -109,21 +109,26 @@
     <div id="nwSections"></div>
   </main>
 
-  <button id="fab" class="hidden" data-i18n-title="add" title="Añadir">+</button>
+  <button id="fab" class="hidden" title="Añadir movimiento">+</button>
 
   <nav class="tabbar">
-    <button class="tab active" data-view="gastos">💸 <span data-i18n="tab_gastos">Gastos</span></button>
-    <button class="tab" data-view="patrimonio">📊 <span data-i18n="tab_patrimonio">Patrimonio</span></button>
+    <button class="tab active" data-view="gastos"><span aria-hidden="true">💸</span> <span data-i18n="tab_gastos">Gastos</span></button>
+    <button class="tab" data-view="patrimonio"><span aria-hidden="true">📊</span> <span data-i18n="tab_patrimonio">Patrimonio</span></button>
   </nav>
 
-  <!-- ===== Hoja modal (movimientos / cuentas / perfil / ver todo) ===== -->
+  <!-- ===== Hoja modal (movimientos / cuentas / perfil / ver todo) =====
+       En móvil el panel llena la pantalla; en escritorio es un diálogo centrado y el
+       contenedor exterior hace de fondo atenuado (click fuera = cancelar). -->
   <div id="sheet" class="sheet hidden">
-    <div class="sheet-bar">
-      <button id="sheetCancel" class="link" data-i18n="cancel">Cancelar</button>
-      <span id="sheetTitle" class="sheet-title"></span>
-      <button id="sheetSave" class="link save" data-i18n="save" disabled>Guardar</button>
+    <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+      <div class="sheet-bar">
+        <button id="sheetCancel" class="link" data-i18n="cancel">Cancelar</button>
+        <span id="sheetTitle" class="sheet-title"></span>
+        <button id="sheetSave" class="link save" data-i18n="save" disabled>Guardar</button>
+      </div>
+      <p id="sheetError" class="sheet-error" role="alert"></p>
+      <div id="sheetBody" class="sheet-body"></div>
     </div>
-    <div id="sheetBody" class="sheet-body"></div>
   </div>
 
   <!-- ===== Pantalla de acceso ===== -->

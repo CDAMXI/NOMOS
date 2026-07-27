@@ -31,10 +31,23 @@ async function sendJSON(url, method, body) {
 }
 
 let toastTimer;
-function toast(msg) {
+// toast(msg) o toast(msg, {label, fn}): con acción, añade un botón (p. ej. «Deshacer») y
+// alarga la vida del aviso para dar tiempo a pulsarlo.
+function toast(msg, action = null) {
   const el = $('toast');
   el.textContent = msg;
+  if (action) {
+    const btn = document.createElement('button');
+    btn.className = 'toast-action';
+    btn.textContent = action.label;
+    btn.addEventListener('click', () => {
+      el.classList.add('hidden');
+      clearTimeout(toastTimer);
+      action.fn();
+    });
+    el.appendChild(btn);
+  }
   el.classList.remove('hidden');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.add('hidden'), 2600);
+  toastTimer = setTimeout(() => el.classList.add('hidden'), action ? 6000 : 2600);
 }

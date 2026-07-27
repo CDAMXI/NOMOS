@@ -67,12 +67,29 @@ const todayISO = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
-const cssVar = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 function tint(hex, alpha) {
   const n = parseInt(hex.slice(1), 16);
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+}
+
+// Versión legible COMO TEXTO de un color de categoría: los colores los fija el usuario y, sin
+// ajuste, un color muy claro es ilegible sobre fondo claro (y uno muy oscuro, sobre fondo
+// oscuro). Se corrige solo la luminancia; el tono del usuario se conserva.
+function readableColor(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  const dark = document.documentElement.dataset.theme === 'dark';
+  if (!dark && lum > 0.55) {
+    const k = 0.55 / lum;
+    r = Math.round(r * k); g = Math.round(g * k); b = Math.round(b * k);
+  } else if (dark && lum < 0.45) {
+    const s = (0.45 - lum) / (1 - lum);
+    r = Math.round(r + (255 - r) * s); g = Math.round(g + (255 - g) * s); b = Math.round(b + (255 - b) * s);
+  }
+  return `rgb(${r}, ${g}, ${b})`;
 }
 
 // Aplica las traducciones a los textos estáticos del HTML.

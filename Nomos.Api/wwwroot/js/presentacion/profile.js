@@ -46,7 +46,13 @@ function openProfileSheet() {
         <button id="changePassBtn" class="pill pill-action centered">${t('update_password')}</button>
 
         <button id="logoutBtn" class="pill pill-action centered prof-logout">${t('logout')}</button>
-        <button id="deleteUserBtn" class="pill pill-danger centered prof-logout">${t('delete_user_account')}</button>`;
+        <button id="deleteUserBtn" class="pill pill-danger centered prof-logout">${t('delete_user_account')}</button>
+        <div id="dangerZone" class="danger-zone hidden">
+          <p class="danger-text">${t('confirm_delete_user')}</p>
+          <input id="deleteUserPass" class="text-field" type="password" placeholder="${t('current_password')}" maxlength="128" autocomplete="current-password">
+          <p id="deleteUserErr" class="field-hint"></p>
+          <button id="confirmDeleteUser" class="pill pill-danger centered" disabled>${t('confirm_delete_user_btn')}</button>
+        </div>`;
 
       $('profUsername').addEventListener('input', refreshSaveState);
 
@@ -105,17 +111,29 @@ function openProfileSheet() {
         showAuth();
       });
 
-      // Borrado de la cuenta: doble confirmación (aviso + contraseña); el servidor la verifica.
-      $('deleteUserBtn').addEventListener('click', async () => {
-        if (!confirm(t('confirm_delete_user'))) return;
-        const pw = prompt(t('delete_user_pw'));
-        if (pw === null) return;
+      // Borrado de la cuenta: zona de peligro dentro de la hoja (aviso + contraseña
+      // ENMASCARADA), sin confirm()/prompt() nativos. El servidor verifica la contraseña.
+      const dangerZone = $('dangerZone'), delPass = $('deleteUserPass'),
+        delErr = $('deleteUserErr'), delConfirm = $('confirmDeleteUser');
+      $('deleteUserBtn').addEventListener('click', () => {
+        const shown = !dangerZone.classList.toggle('hidden');
+        if (shown) delPass.focus();
+      });
+      delPass.addEventListener('input', () => {
+        delConfirm.disabled = !delPass.value;
+        delErr.textContent = '';
+      });
+      delConfirm.addEventListener('click', async () => {
+        delConfirm.disabled = true;
         try {
-          await sendJSON('/api/auth/account/delete', 'POST', { password: pw });
+          await sendJSON('/api/auth/account/delete', 'POST', { password: delPass.value });
           closeSheet();
           showAuth();
           toast(t('user_deleted'));
-        } catch (e) { toast(e.message); }
+        } catch (e) {
+          delErr.textContent = e.message; // contraseña incorrecta, etc.: motivo a la vista
+          delConfirm.disabled = false;
+        }
       });
     },
     async onSave() {

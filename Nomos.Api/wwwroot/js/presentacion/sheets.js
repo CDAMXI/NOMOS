@@ -21,12 +21,21 @@ function categoriesByUse() {
 
 // --- Nuevo movimiento / editar movimiento (gasto o ingreso) ---
 async function openTxSheet(existing = null, draft = null, back = null) {
-  await ensureCategoriesFresh();
-  const cashAccounts = (await getJSON('/api/accounts')).filter(a => a.type === 'Cash');
   const isEdit = !!existing;
   // draft, cuando existe, gana sobre los valores originales: así, al volver de crear una
   // categoría en medio de una edición, se recupera lo que el usuario ya había tecleado.
   let kind = existing ? existing.kind : (draft?.kind || 'expense');
+
+  const titleFor = () => t(isEdit
+    ? (kind === 'income' ? 'edit_income' : 'edit_expense')
+    : (kind === 'income' ? 'new_income' : 'new_expense'));
+
+  sheetLoading(titleFor(), back);
+  const shell = sheetCtx;
+  await ensureCategoriesFresh();
+  const cashAccounts = (await getJSON('/api/accounts')).filter(a => a.type === 'Cash');
+  if (sheetCtx !== shell) return; // el usuario cerró la hoja mientras cargaba
+
   let selectedCat = draft?.categoryId ?? existing?.category?.id ?? categoriesByUse()[0]?.id;
   // Edits keep exactly the account the movement already had (including "none", so a
   // previously-unassigned movement is never silently reattached on save); only brand-new
@@ -36,10 +45,6 @@ async function openTxSheet(existing = null, draft = null, back = null) {
     : (existing ? (existing.accountId ?? null) : (cashAccounts[0]?.id ?? null));
   setAmount(draft && 'amount' in draft ? draft.amount : (existing ? existing.amount : 0));
   const startDesc = draft && 'description' in draft ? draft.description : (existing ? existing.description : '');
-
-  const titleFor = () => t(isEdit
-    ? (kind === 'income' ? 'edit_income' : 'edit_expense')
-    : (kind === 'income' ? 'new_income' : 'new_expense'));
 
   openSheet({
     title: titleFor(),
@@ -88,8 +93,10 @@ async function openTxSheet(existing = null, draft = null, back = null) {
             if (r.categoryId != null) selectedCat = r.categoryId;
             renderCatChips(); // re-render: la categoría elegida se muestra aunque no esté en el top
             refreshSaveState();
-            toast(t(r.confidence > 0 ? 'scan_done' : 'scan_failed'));
-          } catch (e) { toast(e.message); }
+            // Lectura fallida: aviso persistente en la hoja (el toast se esfuma antes de leerse).
+            if (r.confidence > 0) toast(t('scan_done'));
+            else sheetError.textContent = t('scan_failed');
+          } catch (e) { refreshSaveState(); sheetError.textContent = e.message; }
           scanBtn.disabled = false;
           scanBtn.textContent = t('scan_receipt');
         });
@@ -105,7 +112,7 @@ async function openTxSheet(existing = null, draft = null, back = null) {
         const carry = { kind, amount: amountValue(), description: $('descField').value, date: $('dateField').value, accountId: selectedAccount };
         // Se pasa `existing`: si estabas editando, vuelves al MISMO gasto en edición con la nueva
         // categoría ya seleccionada; si era nuevo, sigue siendo nuevo.
-        openCategoryEditSheet(null, saved => openTxSheet(existing, { ...carry, categoryId: saved?.id }).catch(e => toast(e.message)));
+        openCategoryEditSheet(null, saved => openTxSheet(existing, { ...carry, categoryId: saved?.id }).catch(sheetFail));
       };
 
       // Revelado progresivo: las 6 más usadas + «⋯ N más» expande el resto. La seleccionada se
@@ -137,7 +144,7 @@ async function openTxSheet(existing = null, draft = null, back = null) {
       const addAccChip = $('addAccChip');
       if (addAccChip) addAccChip.addEventListener('click', () => {
         const carry = { kind, amount: amountValue(), description: $('descField').value, date: $('dateField').value, categoryId: selectedCat };
-        openAccountSheet(saved => openTxSheet(null, { ...carry, accountId: saved?.id }).catch(e => toast(e.message)), { cashOnly: true });
+        openAccountSheet(saved => openTxSheet(null, { ...carry, accountId: saved?.id }).catch(sheetFail), { cashOnly: true });
       });
 
       const paintKind = () => {
@@ -152,14 +159,33 @@ async function openTxSheet(existing = null, draft = null, back = null) {
       paintKind();
 
       if (isEdit) {
+        // Borrado con Deshacer: sin diálogo de confirmación — se borra al momento y el toast
+        // ofrece revertirlo (re-crea el movimiento con los mismos datos) durante unos segundos.
         $('deleteTx').addEventListener('click', async () => {
-          if (!confirm(t('confirm_delete', existing.description))) return;
+          const del = $('deleteTx');
+          del.disabled = true;
           try {
             await sendJSON(`/api/${kind === 'income' ? 'incomes' : 'expenses'}/${existing.id}`, 'DELETE');
-            closeSheet();
-            await refreshCurrent();
-            toast(t(kind === 'income' ? 'income_deleted' : 'expense_deleted'));
-          } catch (e) { toast(e.message); }
+          } catch (e) {
+            del.disabled = false;
+            refreshSaveState();
+            sheetError.textContent = e.message;
+            return;
+          }
+          closeSheet();
+          await refreshCurrent();
+          const restore = { amount: existing.amount, description: existing.description, date: existing.date, accountId: existing.accountId ?? null };
+          if (kind !== 'income') restore.categoryId = existing.category?.id;
+          toast(t(kind === 'income' ? 'income_deleted' : 'expense_deleted'), {
+            label: t('undo'),
+            fn: async () => {
+              try {
+                await sendJSON(kind === 'income' ? '/api/incomes' : '/api/expenses', 'POST', restore);
+                await refreshCurrent();
+                toast(t('movement_restored'));
+              } catch (e) { toast(e.message); }
+            }
+          });
         });
       }
     },
@@ -182,7 +208,10 @@ async function openTxSheet(existing = null, draft = null, back = null) {
 
 // --- Ver todo (lista completa de movimientos) ---
 async function openAllTxSheet() {
+  sheetLoading(t('all_movements'));
+  const shell = sheetCtx;
   const items = await getJSON('/api/transactions');
+  if (sheetCtx !== shell) return;
   openSheet({
     title: t('all_movements'),
     build(body) {
@@ -195,7 +224,10 @@ async function openAllTxSheet() {
 
 // --- Gestión de categorías ---
 async function openCategoriesSheet() {
+  sheetLoading(t('categories'), () => openProfileSheet());
+  const shell = sheetCtx;
   await ensureCategoriesFresh();
+  if (sheetCtx !== shell) return;
   openSheet({
     title: t('categories'),
     back: () => openProfileSheet(), // se llega desde el Perfil
@@ -245,16 +277,19 @@ function openCategoryEditSheet(cat = null, onDone = null) {
       if (!isEdit) paintIcon();
 
       if (isEdit) {
-        $('deleteCat').addEventListener('click', async () => {
-          if (!confirm(t('confirm_delete_category', catName(cat.name)))) return;
+        armDelete($('deleteCat'), t('delete_category'), async () => {
           try {
             await sendJSON(`/api/categories/${cat.id}`, 'DELETE');
             await ensureCategoriesFresh();
-            closeSheet();
+            closeSheet(!!onDone); // si se vuelve a la hoja de origen, conserva el historial
             await refreshCurrent();
             toast(t('category_deleted'));
             onDone?.(null);
-          } catch (e) { toast(e.message); }
+          } catch (e) {
+            // P. ej. la categoría tiene gastos (409): el motivo queda a la vista en la hoja.
+            refreshSaveState();
+            sheetError.textContent = e.message;
+          }
         });
       }
     },
@@ -322,7 +357,7 @@ function openAccountEditSheet(id) {
         <button id="deleteAcc" class="pill pill-danger centered">${t('delete_account')}</button>`;
       bindAmount(body, false);
       $('nameField').addEventListener('input', refreshSaveState);
-      bindDelete('deleteAcc', { name: acc.name, url: `/api/accounts/${acc.id}`, doneToast: 'account_deleted' });
+      bindDelete('deleteAcc', { url: `/api/accounts/${acc.id}`, doneToast: 'account_deleted' });
     },
     async onSave() {
       await sendJSON(`/api/accounts/${acc.id}`, 'PUT', {
@@ -339,8 +374,11 @@ function openAccountEditSheet(id) {
 // del margen; vender ingresa en el margen a precio de venta. Cada compra es un lote independiente
 // y se vende tocándolo en la lista.
 async function openBrokerSheet(accountId) {
+  sheetLoading(accountsCache.find(a => a.id === accountId)?.name || '');
+  const shell = sheetCtx;
   const b = await getJSON(`/api/brokers/${accountId}`);
-  const back = () => openBrokerSheet(accountId).catch(e => toast(e.message));
+  if (sheetCtx !== shell) return;
+  const back = () => openBrokerSheet(accountId).catch(sheetFail);
 
   openSheet({
     title: b.name,
@@ -371,7 +409,7 @@ async function openBrokerSheet(accountId) {
         <button id="editBrokerBtn" class="pill pill-action centered">${t('edit_account')}</button>`;
 
       $('buyBtn').addEventListener('click', () => openBuySheet(b, back));
-      $('transferBtn').addEventListener('click', () => openBrokerTransferSheet(b, back).catch(e => toast(e.message)));
+      $('transferBtn').addEventListener('click', () => openBrokerTransferSheet(b, back).catch(sheetFail));
       $('editBrokerBtn').addEventListener('click', () => openBrokerEditSheet(b, back));
       body.querySelectorAll('li[data-h]').forEach(li =>
         li.addEventListener('click', () => openSellSheet(b, b.holdings[+li.dataset.h], back)));
@@ -461,8 +499,11 @@ function openSellSheet(b, h, back) {
 
 // --- Depositar/retirar: mueve dinero entre una cuenta de efectivo y el margen libre ---
 async function openBrokerTransferSheet(b, back) {
+  sheetLoading(t('transfer_title'), back);
+  const shell = sheetCtx;
   const cash = (await getJSON('/api/accounts')).filter(a => a.type === 'Cash');
-  if (!cash.length) { toast(t('need_cash_account')); return; }
+  if (sheetCtx !== shell) return;
+  if (!cash.length) { dismissSheet(); toast(t('need_cash_account')); return; }
   let direction = 'deposit';
   let cashSel = cash[0].id;
   setAmount(0);
@@ -516,7 +557,7 @@ function openBrokerEditSheet(b, back) {
         <button id="deleteAcc" class="pill pill-danger centered">${t('delete_account')}</button>`;
       bindAmount(body, false);
       $('nameField').addEventListener('input', refreshSaveState);
-      bindDelete('deleteAcc', { name: b.name, url: `/api/accounts/${b.accountId}`, doneToast: 'account_deleted' });
+      bindDelete('deleteAcc', { url: `/api/accounts/${b.accountId}`, doneToast: 'account_deleted' });
     },
     async onSave() {
       // Para una cuenta de inversión, el valor introducido es el margen libre (los movimientos

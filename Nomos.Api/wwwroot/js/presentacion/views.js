@@ -20,7 +20,10 @@ async function loadGastos() {
   renderLineChart($('gChart'), d.series.map(p => ({ x: p.date, y: p.value })), {
     id: 'grad-gastos',
     height: 300, // más alta que la de Patrimonio para emparejar la columna con "Recientes"
-    color: cssVar('--accent'),
+    // var(--accent) directo (los atributos SVG lo resuelven en vivo): cambiar de tema
+    // repinta la gráfica por CSS, sin volver a pedir los datos.
+    color: 'var(--accent)',
+    label: t('evolution'),
     xFmt: iso => { const dt = localDate(iso); return dt.getDate() + ' ' + shortMonth(dt); },
     yFmt: v => nf0(Math.round(v)),
     // La serie es acumulada: el gasto de ese día es la diferencia con el punto anterior.
@@ -189,7 +192,8 @@ async function loadPatrimonio() {
   const dayLabel = iso => { const dt = localDate(iso); return dt.getDate() + ' ' + shortMonth(dt); };
   renderLineChart($('nwChart'), (daily ?? d.series).map(p => ({ x: p.date, y: p.value })), {
     id: 'grad-nw',
-    color: cssVar('--accent'),
+    color: 'var(--accent)',
+    label: t('evolution'),
     xFmt: daily ? dayLabel : iso => shortMonth(localDate(iso)),
     yFmt: v => v >= 1000 ? nf0(Math.round(v / 1000)) + 'k' : nf0(Math.round(v)),
     tip: pt => `<b>${eur(pt.y)}</b><div class="d">${daily ? dayLabel(pt.x) : shortMonth(localDate(pt.x))}</div>`
@@ -211,7 +215,7 @@ async function loadPatrimonio() {
   document.querySelectorAll('#nwSections li[data-acc]').forEach(li =>
     li.addEventListener('click', () => {
       const acc = accountsCache.find(x => x.id === +li.dataset.acc);
-      if (acc?.type === 'Investment') openBrokerSheet(acc.id).catch(e => toast(e.message));
+      if (acc?.type === 'Investment') openBrokerSheet(acc.id).catch(sheetFail);
       else openAccountEditSheet(+li.dataset.acc);
     }));
 }

@@ -25,29 +25,51 @@ function onChipPick(scope, attr, handler) {
     ch.addEventListener('click', () => handler(ch.dataset[attr], ch)));
 }
 
-// Estilo del chip de categoría seleccionado: tinte y color propios de la categoría.
+// Estilo del chip de categoría seleccionado: tinte de la categoría y su color ajustado a
+// luminancia legible (el color exacto lo elige el usuario y puede no contrastar como texto).
 const catChipStyle = ch => {
   const c = categories.find(x => x.id === +ch.dataset.cat);
-  return { bg: tint(c.color, .18), color: c.color };
+  return { bg: tint(c.color, .18), color: readableColor(c.color) };
 };
 
 // ---------- Hoja modal ----------
-const sheet = $('sheet'), sheetBody = $('sheetBody'), sheetTitle = $('sheetTitle'), sheetSave = $('sheetSave');
+const sheet = $('sheet'), sheetBody = $('sheetBody'), sheetTitle = $('sheetTitle'),
+  sheetSave = $('sheetSave'), sheetError = $('sheetError');
 let sheetCtx = null;
+let sheetOpener = null;     // elemento con foco antes de abrir la hoja (se restaura al cerrar)
+let sheetInHistory = false; // hay una entrada de historial viva para la hoja (gesto/botón Atrás)
+let ignorePop = false;      // history.back() programático: su popstate no debe volver a cerrar
 
 function openSheet(ctx) {
+  if (!sheetCtx && !sheetOpener) sheetOpener = document.activeElement;
   sheetCtx = ctx;
   sheetTitle.textContent = ctx.title;
+  sheetError.textContent = '';
   sheetSave.style.visibility = ctx.onSave ? 'visible' : 'hidden';
   sheetBody.innerHTML = '';
   ctx.build(sheetBody);
   refreshSaveState();
   sheet.classList.remove('hidden');
+  // Gesto/botón Atrás del móvil: UNA entrada de historial mientras haya hoja abierta (las
+  // encadenadas la comparten); Atrás cierra la hoja en vez de salir de la PWA.
+  if (!sheetInHistory) { history.pushState({ plutoSheet: true }, ''); sheetInHistory = true; }
 }
 
-function closeSheet() { sheet.classList.add('hidden'); sheetCtx = null; }
+// keepHistory=true cuando otra hoja se reabre justo después (guardar/borrar en flujos
+// encadenados): la entrada de historial y el foco pendiente se conservan para la siguiente.
+function closeSheet(keepHistory = false) {
+  sheet.classList.add('hidden');
+  sheetCtx = null;
+  if (keepHistory) return;
+  if (sheetInHistory) { sheetInHistory = false; ignorePop = true; history.back(); }
+  if (sheetOpener && sheetOpener.focus) { try { sheetOpener.focus(); } catch (_) { /* elemento ya no existe */ } }
+  sheetOpener = null;
+}
 
+// refreshSaveState corre en cada input de la hoja: además de recalcular Guardar, retira el
+// error persistente en cuanto el usuario corrige algo.
 function refreshSaveState() {
+  sheetError.textContent = '';
   sheetSave.disabled = !(sheetCtx && sheetCtx.canSave && sheetCtx.canSave());
 }
 
@@ -57,24 +79,59 @@ function dismissSheet() {
   if (back) back(); else closeSheet();
 }
 
+// Abre la hoja con un spinner mientras llegan los datos de red: el toque tiene respuesta
+// inmediata aunque la red vaya lenta. El llamante guarda sheetCtx y comprueba que no haya
+// cambiado tras el await (si el usuario canceló durante la carga, no se reabre).
+function sheetLoading(title, back) {
+  openSheet({ title, back, build(body) { body.innerHTML = '<div class="sheet-loading"><span class="boot-spinner"></span></div>'; } });
+}
+
+// Fallo del fetch inicial de una hoja: cierra el esqueleto (si sigue abierto) y avisa.
+function sheetFail(e) {
+  if (sheetCtx) closeSheet();
+  toast(e.message);
+}
+
 $('sheetCancel').addEventListener('click', dismissSheet);
+// En escritorio la hoja es un diálogo centrado: el click en el fondo atenuado también cierra.
+sheet.addEventListener('click', e => { if (e.target === sheet) dismissSheet(); });
 sheetSave.addEventListener('click', async () => {
   if (sheetSave.disabled || !sheetCtx?.onSave) return;
   const ctx = sheetCtx;
   sheetSave.disabled = true; // evita doble envío mientras la petición está en curso
   try {
     await ctx.onSave();
-    closeSheet();
+    closeSheet(!!(ctx.afterSave || ctx.back)); // si se reabre otra hoja, conserva el historial
     await refreshCurrent();
     // Tras guardar: afterSave (reabre la anterior con el resultado) o, si no, back (vuelve a la anterior).
     if (ctx.afterSave) ctx.afterSave();
     else if (ctx.back) ctx.back();
   } catch (e) {
-    toast(e.message);
+    // El error queda a la vista dentro de la hoja (un toast desaparece antes de leerse).
     refreshSaveState();
+    sheetError.textContent = e.message;
   }
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && sheetCtx) dismissSheet(); });
+
+// Atrás del navegador/móvil: cierra (o retrocede) la hoja. Si la hoja anterior se reabre,
+// openSheet vuelve a crear la entrada consumida.
+window.addEventListener('popstate', () => {
+  if (ignorePop) { ignorePop = false; return; }
+  sheetInHistory = false;
+  if (sheetCtx) dismissSheet();
+});
+
+// Trampa de foco del diálogo (aria-modal real): Tab circula solo dentro de la hoja.
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Tab' || !sheetCtx) return;
+  const els = [...sheet.querySelectorAll('button, input, select, textarea, [tabindex]:not([tabindex="-1"])')]
+    .filter(el => !el.disabled && el.offsetParent !== null);
+  if (!els.length) return;
+  const first = els[0], last = els[els.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
 
 // --- Importe: input numérico nativo (abre el teclado numérico del móvil) ---
 let amountSeed = '';   // valor inicial del input; se fija con setAmount antes de abrir la hoja
@@ -153,15 +210,39 @@ const catChip = c => `<button class="chip" data-cat="${c.id}">${c.icon} ${esc(ca
 const paintActive = (scope, attr, val) => scope.querySelectorAll(`[data-${attr}]`).forEach(p =>
   p.classList.toggle('active', p.dataset[attr] === val));
 
-// Enlaza un boton de borrado: confirmar -> DELETE -> cerrar hoja -> refrescar -> toast.
-function bindDelete(btnId, { name, url, doneToast }) {
-  $(btnId).addEventListener('click', async () => {
-    if (!confirm(t('confirm_delete', name))) return;
+// Confirmación en dos toques SIN diálogo nativo (mantiene la piel de la app): el primer
+// toque «arma» el botón (texto de aviso y estilo intenso); el segundo, dentro de 4 s,
+// ejecuta. Pasado el plazo sin confirmar, el botón vuelve a su estado normal.
+function armDelete(btn, label, onConfirm) {
+  let armed = false, timer = 0;
+  const disarm = () => { armed = false; btn.classList.remove('armed'); btn.textContent = label; };
+  btn.addEventListener('click', () => {
+    if (!armed) {
+      armed = true;
+      btn.classList.add('armed');
+      btn.textContent = t('tap_confirm');
+      clearTimeout(timer);
+      timer = setTimeout(disarm, 4000);
+      return;
+    }
+    clearTimeout(timer);
+    disarm();
+    onConfirm();
+  });
+}
+
+// Enlaza un boton de borrado: armar -> confirmar -> DELETE -> cerrar hoja -> refrescar -> toast.
+function bindDelete(btnId, { url, doneToast }) {
+  const btn = $(btnId);
+  armDelete(btn, btn.textContent, async () => {
     try {
       await sendJSON(url, 'DELETE');
       closeSheet();
       await refreshCurrent();
       toast(t(doneToast));
-    } catch (e) { toast(e.message); }
+    } catch (e) {
+      refreshSaveState();
+      sheetError.textContent = e.message;
+    }
   });
 }
