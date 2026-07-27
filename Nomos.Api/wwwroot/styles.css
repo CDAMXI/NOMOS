@@ -299,13 +299,18 @@ body {
   min-width: 0;
 }
 .donut-center b { font-size: var(--fs-155); font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* El nombre puede partir en DOS líneas dentro del agujero («Máquina expendedora»);
+   solo a partir de ahí se corta con puntos suspensivos. */
 .donut-center span {
   font-size: var(--fs-11);
   color: var(--muted);
+  line-height: 1.2;
   max-width: 100%;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;
 }
 
 .cat-list { list-style: none; flex: 1; }
