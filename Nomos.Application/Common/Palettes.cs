@@ -22,34 +22,35 @@ public static class Palettes
 
     /// <summary>
     /// Paleta única de la app, NO negociable (decisión de Charlie, 2026-07-28): todos los
-    /// usuarios la llevan; el registro la fija en el alta y el backfill migró a los existentes.
+    /// usuarios la llevan; el registro la fija en el alta y el backfill migra a los existentes
+    /// cuando cambia (basta con apuntar aquí a otra entrada del registro).
     /// </summary>
-    public const string DefaultName = "marino";
+    public const string DefaultName = "indigo";
 
     /// <summary>Espejo de PALETTES en categories.js (el front solo necesita Income).</summary>
     public static readonly IReadOnlyDictionary<string, Palette> All =
         new Dictionary<string, Palette>(StringComparer.OrdinalIgnoreCase)
         {
-            // «marino»: la familia de la piel «Cuño» — navys e índigos del acento #1b3a8e y
-            // slates del gris de marca, de oscuro a claro. Compatible por construcción con el
-            // resto de la app; verde y rojo siguen siendo colores de DATO, fuera de la paleta.
+            // «índigo»: variante de la familia «Cuño» desplazada hacia el perivinca — índigos
+            // del acento #1b3a8e virados al violeta y slates fríos, de oscuro a claro.
+            // Compatible por construcción con la app; verde y rojo siguen siendo colores de DATO.
             [DefaultName] = new(
                 [
-                    "#16265c", // navy noche
-                    "#1e3d8f", // marca
-                    "#2f55b0", // azur
-                    "#4470c4", // medio
-                    "#5d8bd9", // claro
-                    "#7ea6e8", // cielo
-                    "#a3bde8", // pálido
-                    "#93a2c4", // slate claro
-                    "#5f6d94", // slate
-                    "#39415f", // slate oscuro
+                    "#1b2447", // medianoche
+                    "#27367d", // índigo profundo
+                    "#3a4cae", // índigo
+                    "#5468cf", // índigo medio
+                    "#7286e0", // perivinca
+                    "#93a5ec", // claro
+                    "#b4c0f0", // pálido
+                    "#8e97b8", // slate lila
+                    "#5c6485", // slate
+                    "#363c57", // slate oscuro
                 ],
                 new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
-                    ["error"] = "#16265c", // el más oscuro y grave de la paleta
-                    ["salud"] = "#7ea6e8", // el registro suave y claro
+                    ["error"] = "#1b2447", // el más oscuro y grave de la paleta
+                    ["salud"] = "#93a5ec", // el registro suave y claro
                 },
                 Income: "#34c759") // el verde de dato de la app ES su color de ingreso
         };
