@@ -35,6 +35,7 @@ public partial class AuthService(IUserRepository users)
             Username = username,
             PasswordHash = PasswordHasher.Hash(request.Password),
             PhotoDataUrl = photo,
+            Palette = Palettes.DefaultName, // paleta única de la app, fijada desde el alta
             CreatedAt = DateTime.UtcNow
         });
         return ToDto(user);

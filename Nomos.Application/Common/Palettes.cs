@@ -20,30 +20,38 @@ public static class Palettes
         IReadOnlyDictionary<string, string> Semantic,
         string Income);
 
+    /// <summary>
+    /// Paleta única de la app, NO negociable (decisión de Charlie, 2026-07-28): todos los
+    /// usuarios la llevan; el registro la fija en el alta y el backfill migró a los existentes.
+    /// </summary>
+    public const string DefaultName = "marino";
+
     /// <summary>Espejo de PALETTES en categories.js (el front solo necesita Income).</summary>
     public static readonly IReadOnlyDictionary<string, Palette> All =
         new Dictionary<string, Palette>(StringComparer.OrdinalIgnoreCase)
         {
-            // «tierra»: los 10 tonos elegidos por Charlie (oscuro → claro).
-            ["tierra"] = new(
+            // «marino»: la familia de la piel «Cuño» — navys e índigos del acento #1b3a8e y
+            // slates del gris de marca, de oscuro a claro. Compatible por construcción con el
+            // resto de la app; verde y rojo siguen siendo colores de DATO, fuera de la paleta.
+            [DefaultName] = new(
                 [
-                    "#582f0e", // dark walnut
-                    "#7f4f24", // saddle brown
-                    "#936639", // toffee brown
-                    "#a68a64", // camel
-                    "#b6ad90", // khaki beige
-                    "#c2c5aa", // dry sage claro
-                    "#a4ac86", // dry sage
-                    "#656d4a", // dusty olive
-                    "#414833", // ebony
-                    "#333d29", // charcoal brown
+                    "#16265c", // navy noche
+                    "#1e3d8f", // marca
+                    "#2f55b0", // azur
+                    "#4470c4", // medio
+                    "#5d8bd9", // claro
+                    "#7ea6e8", // cielo
+                    "#a3bde8", // pálido
+                    "#93a2c4", // slate claro
+                    "#5f6d94", // slate
+                    "#39415f", // slate oscuro
                 ],
                 new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
-                    ["error"] = "#582f0e", // el más oscuro y grave de la paleta
-                    ["salud"] = "#c2c5aa", // dry sage: el registro herbal
+                    ["error"] = "#16265c", // el más oscuro y grave de la paleta
+                    ["salud"] = "#7ea6e8", // el registro suave y claro
                 },
-                Income: "#656d4a") // dusty olive: el «verde» de la paleta
+                Income: "#34c759") // el verde de dato de la app ES su color de ingreso
         };
 
     public static Palette? Get(string? name) =>

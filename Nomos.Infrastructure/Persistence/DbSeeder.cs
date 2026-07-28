@@ -16,6 +16,7 @@ public static class DbSeeder
         {
             Username = "demo",
             PasswordHash = PasswordHasher.Hash("demo123"),
+            Palette = Palettes.DefaultName,
             CreatedAt = DateTime.UtcNow
         };
         db.Users.Add(demo);

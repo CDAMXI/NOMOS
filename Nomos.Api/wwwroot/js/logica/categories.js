@@ -53,7 +53,7 @@ const ICON_RULES = [
 // El tinte del icono de ingreso sigue la paleta del usuario; el «+importe» conserva el verde
 // de DATO (esa semántica no pertenece a la paleta).
 const PALETTES = {
-  tierra: { income: '#656d4a' }, // dusty olive
+  marino: { income: '#34c759' }, // el verde de dato de la app ES su color de ingreso
 };
 const incomeColor = () => PALETTES[me?.palette]?.income || '#34c759';
 
