@@ -12,5 +12,7 @@ public class User
     public decimal InitialBalance { get; set; }
     /// <summary>Divisa principal (ISO 4217, p. ej. "EUR", "USD"). Solo display: no convierte importes.</summary>
     public string Currency { get; set; } = "EUR";
+    /// <summary>Paleta temática de colores de categoría (p. ej. "tierra"), o null = rueda estándar.</summary>
+    public string? Palette { get; set; }
     public DateTime CreatedAt { get; set; }
 }

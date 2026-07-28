@@ -5,7 +5,7 @@ using Nomos.Domain.Entities;
 
 namespace Nomos.Application.Services;
 
-public class CategoryService(ICategoryRepository categories, IExpenseRepository expenses)
+public class CategoryService(ICategoryRepository categories, IExpenseRepository expenses, IUserRepository users)
 {
     private const int MaxNameLength = 40;
     // Tope duro: por encima de ~12 categorías los tonos dejan de ser distinguibles para
@@ -43,7 +43,7 @@ public class CategoryService(ICategoryRepository categories, IExpenseRepository 
             UserId = userId,
             Name = name,
             Icon = CategoryIcon.ForName(name),
-            Color = PickDistinctColor(existing, NormalizeColor(request.Color))
+            Color = await PickColorAsync(userId, name, existing, NormalizeColor(request.Color))
         });
         return ToDto(category);
     }
@@ -61,6 +61,11 @@ public class CategoryService(ICategoryRepository categories, IExpenseRepository 
         category.Icon = CategoryIcon.ForName(name); // icon follows the theme of the name
         var color = NormalizeColor(request.Color);
         if (color is not null) category.Color = color;
+        // Con paleta temática, un renombrado a nombre semántico («error», «salud») arrastra
+        // también su color reservado, igual que el icono sigue al nombre.
+        var palette = Palettes.Get((await users.GetByIdAsync(userId))?.Palette);
+        if (palette is not null && Palettes.SemanticColor(palette, name) is string semantic)
+            category.Color = semantic;
         await categories.UpdateAsync(category);
         return ToDto(category);
     }
@@ -86,11 +91,18 @@ public class CategoryService(ICategoryRepository categories, IExpenseRepository 
     }
 
     /// <summary>
-    /// The preferred colour if it is free and not in a forbidden hue zone; otherwise the
-    /// insertion algorithm places the new hue in the largest angular gap (CategoryColors).
+    /// Con paleta temática del usuario: color semántico si el nombre lo tiene reservado, si no
+    /// el siguiente color de la paleta (la preferencia de la API se ignora: manda la paleta).
+    /// Sin paleta: el preferido si está libre y no cae en zona vetada; si no, la inserción
+    /// angular de <see cref="CategoryColors"/>.
     /// </summary>
-    private static string PickDistinctColor(List<Category> existing, string? preferred)
+    private async Task<string> PickColorAsync(int userId, string name, List<Category> existing, string? preferred)
     {
+        var palette = Palettes.Get((await users.GetByIdAsync(userId))?.Palette);
+        if (palette is not null)
+            return Palettes.SemanticColor(palette, name)
+                ?? Palettes.NextColor(palette, existing.Select(c => c.Color));
+
         var used = existing.Select(c => (c.Color ?? "").ToLowerInvariant()).ToHashSet();
         if (preferred is not null && !used.Contains(preferred.ToLowerInvariant()) && !CategoryColors.IsForbidden(preferred))
             return preferred;

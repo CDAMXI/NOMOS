@@ -61,7 +61,7 @@ public class CategoryColorTests
             h.Db.Categories.Add(new Category { UserId = userId, Name = "C" + i, Icon = "🏷️", Color = "#1e7ce8" });
         await h.Db.SaveChangesAsync();
 
-        var service = new CategoryService(h.Categories, h.Expenses);
+        var service = new CategoryService(h.Categories, h.Expenses, h.Users);
         await Assert.ThrowsAsync<ConflictException>(() =>
             service.CreateAsync(userId, new Application.DTOs.CreateCategoryRequest("Trece", null)));
     }

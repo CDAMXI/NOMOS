@@ -14,7 +14,10 @@ public static class CategoryRecolor
 {
     public static async Task RunAsync(NomosDbContext db)
     {
-        var all = await db.Categories.ToListAsync();
+        // Los usuarios con paleta temática quedan fuera: sus colores los gobierna Palettes,
+        // no la rueda de tonos, y sus zonas vetadas no aplican.
+        var paletteUsers = await db.Users.Where(u => u.Palette != null).Select(u => u.Id).ToListAsync();
+        var all = await db.Categories.Where(c => !paletteUsers.Contains(c.UserId)).ToListAsync();
         var offenders = all.Where(c => CategoryColors.IsForbidden(c.Color)).OrderBy(c => c.Id).ToList();
         if (offenders.Count == 0) return; // ya migrado (o BD limpia): nada que hacer
 

@@ -49,6 +49,14 @@ const ICON_RULES = [
   ['📦', ['otros', 'otro', 'other', 'varios', 'misc', 'miscelanea']],
 ];
 
+// ---------- Paletas temáticas (espejo de Palettes.cs; el front solo necesita `income`) ----------
+// El tinte del icono de ingreso sigue la paleta del usuario; el «+importe» conserva el verde
+// de DATO (esa semántica no pertenece a la paleta).
+const PALETTES = {
+  tierra: { income: '#656d4a' }, // dusty olive
+};
+const incomeColor = () => PALETTES[me?.palette]?.income || '#34c759';
+
 const stripAccents = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '');
 const normKey = s => stripAccents((s || '').toLowerCase().trim());
 function categoryIcon(name) {

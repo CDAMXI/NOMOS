@@ -69,7 +69,7 @@ public record SellRequest(int HoldingId, decimal Shares, decimal Price);
 /// <summary>Mueve dinero entre una cuenta de efectivo y el margen libre del broker.</summary>
 public record BrokerTransferRequest(int CashAccountId, decimal Amount, string Direction);
 
-public record UserDto(int Id, string Username, string? PhotoDataUrl, string Currency);
+public record UserDto(int Id, string Username, string? PhotoDataUrl, string Currency, string? Palette);
 
 public record RegisterRequest(string Username, string Password, string? PhotoDataUrl);
 

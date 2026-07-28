@@ -148,7 +148,7 @@ function renderHeroBalance(cash, total) {
 function txRow(tx, index) {
   const isIncome = tx.kind === 'income';
   const icon = isIncome ? '💶' : tx.category.icon;
-  const bg = isIncome ? tint('#34c759', .16) : tint(tx.category.color, .16);
+  const bg = isIncome ? tint(incomeColor(), .16) : tint(tx.category.color, .16);
   let sub = (isIncome ? t('income_word') : catName(tx.category.name)) + ' · ' + dMed(tx.date);
   if (tx.accountName) sub += ' · ' + tx.accountName;
   const amount = isIncome

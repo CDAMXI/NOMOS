@@ -131,5 +131,5 @@ public partial class AuthService(IUserRepository users)
         return c;
     }
 
-    private static UserDto ToDto(User u) => new(u.Id, u.Username, u.PhotoDataUrl, u.Currency);
+    private static UserDto ToDto(User u) => new(u.Id, u.Username, u.PhotoDataUrl, u.Currency, u.Palette);
 }
