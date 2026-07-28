@@ -39,6 +39,9 @@ public class CategoryColorTests
     {
         Assert.True(CategoryColors.IsForbidden("#34c759"));  // verde de ingreso (legacy Vivienda)
         Assert.True(CategoryColors.IsForbidden("#ff3b30"));  // rojo de gasto (legacy Salud)
+        Assert.True(CategoryColors.IsForbidden("#90d345"));  // lima h88: sigue leyéndose verde
+        Assert.True(CategoryColors.IsForbidden("#b3d345"));  // lima h73: idem
+        Assert.False(CategoryColors.IsForbidden("#c3d345")); // amarillo-oliva h67: permitido
         Assert.False(CategoryColors.IsForbidden("#1e7ce8")); // azul
         Assert.False(CategoryColors.IsForbidden("#8e8e93")); // gris: neutro, nunca vetado
     }

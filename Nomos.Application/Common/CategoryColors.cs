@@ -11,8 +11,12 @@ namespace Nomos.Application.Common;
 /// </summary>
 public static class CategoryColors
 {
-    /// <summary>Arcos de tono permitidos (grados). Su complemento veta el rojo [350°,20°) y el verde (110°,150°).</summary>
-    private static readonly (double From, double To)[] AllowedArcs = [(20, 110), (150, 350)];
+    /// <summary>
+    /// Arcos de tono permitidos (grados). Su complemento veta el rojo [350°,20°) y el verde
+    /// (70°,150°). El verde se veta ancho a propósito: los limas h70-110 siguen leyéndose
+    /// «verde» al ojo humano (comprobado en producción); los amarillos h50-70 sí se permiten.
+    /// </summary>
+    private static readonly (double From, double To)[] AllowedArcs = [(20, 70), (150, 350)];
 
     private const double Saturation = 62;
     private const double Lightness = 55;
