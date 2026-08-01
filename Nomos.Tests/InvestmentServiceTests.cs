@@ -21,6 +21,20 @@ public class InvestmentServiceTests
     }
 
     [Fact]
+    public async Task Buy_WithExplicitDate_UsesIt_AndDefaultsToTodayOtherwise()
+    {
+        using var h = new TestHarness();
+        var (userId, _, brokerId) = await h.SeedAsync(margin: 300);
+
+        var dated = await h.Investment.BuyAsync(brokerId, userId, new BuyRequest("AAPL", 1, 50, new DateOnly(2026, 7, 15)));
+        Assert.Equal(new DateOnly(2026, 7, 15), dated!.Holdings[0].BuyDate);
+
+        var undated = await h.Investment.BuyAsync(brokerId, userId, new BuyRequest("MSFT", 1, 50));
+        // Sin fecha explícita: hoy según el reloj de la app (hora española), no el del sistema.
+        Assert.Equal(Nomos.Application.Common.AppClock.Today(), undated!.Holdings.Single(x => x.Symbol == "MSFT").BuyDate);
+    }
+
+    [Fact]
     public async Task Buy_OverMargin_Throws_AndPersistsNothing()
     {
         using var h = new TestHarness();

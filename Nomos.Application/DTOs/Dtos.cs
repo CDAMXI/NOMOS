@@ -62,7 +62,7 @@ public record HoldingDto(int Id, string Symbol, decimal Shares, decimal BuyPrice
 /// <summary>Estado de una cuenta broker: total = margen libre + coste de las posiciones.</summary>
 public record BrokerDto(int AccountId, string Name, decimal Margin, decimal Invested, decimal Total, List<HoldingDto> Holdings);
 
-public record BuyRequest(string Symbol, decimal Shares, decimal Price);
+public record BuyRequest(string Symbol, decimal Shares, decimal Price, DateOnly? BuyDate = null);
 
 public record SellRequest(int HoldingId, decimal Shares, decimal Price);
 public record UpdateHoldingRequest(string Symbol, decimal Shares, decimal Price, DateOnly? BuyDate);

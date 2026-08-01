@@ -46,7 +46,7 @@ public class InvestmentService(
                 Symbol = request.Symbol.Trim(),
                 Shares = request.Shares,
                 BuyPrice = request.Price,
-                BuyDate = AppClock.Today()
+                BuyDate = request.BuyDate ?? AppClock.Today() // sin fecha explícita: hoy
             });
             broker.Balance -= cost;
             broker.UpdatedAt = DateTime.UtcNow;
