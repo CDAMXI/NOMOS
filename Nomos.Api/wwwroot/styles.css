@@ -186,17 +186,18 @@ body {
   background: var(--reed-grad);
 }
 
-.hero-accounts {
+/* Fila de chips desplazable (selector de cuenta del hero y de Por categoría). */
+.hero-accounts, .cat-accounts {
   display: flex;
   gap: var(--sp-8);
   overflow-x: auto;
-  margin: var(--sp-2) 0 var(--sp-6);
   padding-bottom: var(--sp-2);
   scrollbar-width: none;
 }
-.hero-accounts::-webkit-scrollbar { display: none; }
-.hero-accounts .chip { padding: var(--sp-6) var(--sp-12); font-size: var(--fs-13); white-space: nowrap; flex: 0 0 auto; }
-.hero-accounts .chip.selected { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+.hero-accounts { margin: var(--sp-2) 0 var(--sp-6); }
+.hero-accounts::-webkit-scrollbar, .cat-accounts::-webkit-scrollbar { display: none; }
+.hero-accounts .chip, .cat-accounts .chip { padding: var(--sp-6) var(--sp-12); font-size: var(--fs-13); white-space: nowrap; flex: 0 0 auto; }
+.hero-accounts .chip.selected, .cat-accounts .chip.selected { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
 
 .hero-delta { font-size: var(--fs-14); color: var(--muted); }
 .hero-delta .up { color: var(--red); font-weight: 600; }
@@ -273,13 +274,7 @@ body {
 .lc-tip .d { color: var(--muted); font-size: var(--fs-11); margin-top: var(--sp-1); }
 
 /* ---------- Por categoría ---------- */
-.cat-accounts {
-  display: flex; gap: var(--sp-8); overflow-x: auto;
-  margin: 0 0 var(--sp-14); padding-bottom: var(--sp-2); scrollbar-width: none;
-}
-.cat-accounts::-webkit-scrollbar { display: none; }
-.cat-accounts .chip { padding: var(--sp-6) var(--sp-12); font-size: var(--fs-13); white-space: nowrap; flex: 0 0 auto; }
-.cat-accounts .chip.selected { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+.cat-accounts { margin: 0 0 var(--sp-14); }
 .cat-wrap { display: flex; align-items: center; gap: var(--sp-22); }
 .donut { width: 164px; flex-shrink: 0; position: relative; }
 .donut svg { width: 100%; height: auto; }
@@ -675,14 +670,6 @@ body {
 .avatar-btn .avatar-initial { font-size: var(--fs-17); }
 .avatar-pick .avatar-initial { font-size: var(--fs-36); }
 
-.profile-photo-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--sp-8);
-  padding: var(--sp-6) 0 var(--sp-16);
-}
-
 .divider { border-top: 1px solid var(--line); margin: var(--sp-18) 0 var(--sp-12); }
 
 .centered { display: block; margin: 0 auto; }
@@ -790,7 +777,6 @@ li.clickable { cursor: pointer; }
 }
 .settings-row:last-child { border-bottom: none; }
 .settings-label { flex: 1; display: flex; flex-direction: column; gap: var(--sp-2); min-width: 0; }
-.settings-title { font-weight: 600; }
 .settings-select { border: none; background: none; color: var(--text); font: inherit; font-size: var(--fs-15); padding: var(--sp-4) var(--sp-2); max-width: 62%; cursor: pointer; }
 
 .password-group { padding: var(--sp-2) var(--sp-16); }

@@ -38,7 +38,7 @@ const CURRENCIES = [
   ['GTQ', 'Quetzal'], ['DOP', 'Peso dominicano'],
 ];
 
-const decSep = () => (lang === 'en' ? '.' : ',');
+const decSep = () => ',';
 // Separador de miles = espacio, SOLO para mostrar cifras (los inputs no usan esto). Espacio
 // duro (U+00A0) para que la cifra no se parta de línea. Ej.: 1 234 567,89 €.
 const grpSpace = parts => parts.map(p => p.type === 'group' ? ' ' : p.value).join('');
@@ -46,7 +46,7 @@ const grouped = (nf, v) => grpSpace(nf.formatToParts(v));
 const eur = v => grouped(_cur, v);
 const nf0 = v => grouped(_nf0, v);
 const eurShort = v => Math.abs(v) >= 10000
-  ? (lang === 'en' ? curSymbol + nf0(Math.round(v / 1000)) + 'k' : nf0(Math.round(v / 1000)) + ' mil ' + curSymbol)
+  ? nf0(Math.round(v / 1000)) + ' mil ' + curSymbol
   : (Number.isInteger(v) ? grouped(_curShort, v) : eur(v));
 const pct1 = v => _pct.format(Math.abs(v)) + '%';
 // Número de acciones: hasta 6 decimales (permite fracciones), miles con espacio.
@@ -92,19 +92,4 @@ function readableColor(hex) {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
-// Aplica las traducciones a los textos estáticos del HTML.
-function applyStaticI18n() {
-  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
-  document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
-  document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.dataset.i18nTitle); });
-  document.documentElement.lang = lang;
-}
-
-function setLang(l) {
-  lang = l;
-  localStorage.setItem('nomos-lang', l);
-  buildFormatters();
-  applyStaticI18n();
-  if (me) refreshCurrent();
-}
 

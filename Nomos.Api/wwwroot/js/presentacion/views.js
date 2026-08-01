@@ -154,7 +154,7 @@ function txRow(tx, index) {
   const amount = isIncome
     ? `<span class="tx-amount green">+${eur(tx.amount)}</span>`
     : `<span class="tx-amount">−${eur(tx.amount)}</span>`;
-  return `<li class="clickable" data-i="${index}" data-i18n-title="edit" title="${t('edit')}">
+  return `<li class="clickable" data-i="${index}" title="${t('edit')}">
     <span class="tx-icon" style="background:${bg}">${icon}</span>
     <span class="tx-main">
       <span class="tx-title">${esc(tx.description)}</span>

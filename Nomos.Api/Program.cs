@@ -109,9 +109,7 @@ using (var scope = app.Services.CreateScope())
         else
             db.Database.Migrate();
         await DbSeeder.SeedAsync(db);
-        await LegacyBackfill.RunAsync(db); // give pre-account users a default "Efectivo" account (one-time)
-        await PaletteBackfill.RunAsync(db); // every user gets the app palette ("marino"), non-negotiable
-        await CategoryRecolor.RunAsync(db); // recolour red/green legacy categories out of the forbidden hue zones (one-time)
+        await PaletteBackfill.RunAsync(db); // todo usuario lleva la paleta unica de la app
     }
     catch (Exception ex)
     {

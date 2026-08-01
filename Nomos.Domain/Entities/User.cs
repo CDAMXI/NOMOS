@@ -8,8 +8,6 @@ public class User
     public string PasswordHash { get; set; } = string.Empty;
     /// <summary>Small square avatar stored as a data: URL, or null for the default initial.</summary>
     public string? PhotoDataUrl { get; set; }
-    /// <summary>Baseline used for the running balance: available = InitialBalance + incomes − expenses.</summary>
-    public decimal InitialBalance { get; set; }
     /// <summary>Divisa principal (ISO 4217, p. ej. "EUR", "USD"). Solo display: no convierte importes.</summary>
     public string Currency { get; set; } = "EUR";
     /// <summary>Paleta temática de colores de categoría (p. ej. "tierra"), o null = rueda estándar.</summary>

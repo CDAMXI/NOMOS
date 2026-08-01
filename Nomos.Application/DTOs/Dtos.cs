@@ -2,9 +2,9 @@ namespace Nomos.Application.DTOs;
 
 public record CategoryDto(int Id, string Name, string Icon, string Color);
 
-public record CreateCategoryRequest(string Name, string? Color);
+public record CreateCategoryRequest(string Name);
 
-public record UpdateCategoryRequest(string Name, string? Color);
+public record UpdateCategoryRequest(string Name);
 
 public record ExpenseDto(int Id, string Description, decimal Amount, DateOnly Date, CategoryDto Category, int? AccountId, string? AccountName);
 

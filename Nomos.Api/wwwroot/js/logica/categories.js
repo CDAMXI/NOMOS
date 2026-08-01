@@ -68,38 +68,6 @@ function categoryIcon(name) {
   return ICON_FALLBACK;
 }
 
-// ---------- Traducción de nombres de categorías comunes (en pantalla, según el idioma) ----------
-// Los nombres se guardan tal cual el usuario los escribe; aquí solo se muestran en el idioma
-// activo si coinciden con un término conocido. Los nombres personalizados se muestran igual.
-const CAT_TERMS = [
-  ['Comida', 'Food'], ['Restaurante', 'Restaurant'], ['Restaurantes', 'Restaurants'], ['Café', 'Coffee'],
-  ['Supermercado', 'Groceries'], ['Compra', 'Shopping'], ['Compras', 'Shopping'], ['Bebida', 'Drinks'], ['Bebidas', 'Drinks'],
-  ['Cerveza', 'Beer'], ['Transporte', 'Transport'], ['Gasolina', 'Fuel'], ['Coche', 'Car'], ['Tren', 'Train'],
-  ['Autobús', 'Bus'], ['Taxi', 'Taxi'], ['Metro', 'Metro'], ['Parking', 'Parking'], ['Vuelo', 'Flight'], ['Vuelos', 'Flights'],
-  ['Ocio', 'Leisure'], ['Cine', 'Cinema'], ['Música', 'Music'], ['Juegos', 'Games'], ['Videojuegos', 'Video games'],
-  ['Baile', 'Dance'], ['Fiesta', 'Party'], ['Concierto', 'Concert'], ['Deporte', 'Sport'], ['Deportes', 'Sports'],
-  ['Gimnasio', 'Gym'], ['Vivienda', 'Housing'], ['Alquiler', 'Rent'], ['Hipoteca', 'Mortgage'], ['Hogar', 'Home'],
-  ['Luz', 'Electricity'], ['Agua', 'Water'], ['Gas', 'Gas'], ['Internet', 'Internet'], ['Teléfono', 'Phone'],
-  ['Móvil', 'Mobile'], ['Salud', 'Health'], ['Farmacia', 'Pharmacy'], ['Médico', 'Doctor'], ['Dentista', 'Dentist'],
-  ['Seguro', 'Insurance'], ['Seguros', 'Insurance'], ['Ropa', 'Clothes'], ['Zapatos', 'Shoes'], ['Moda', 'Fashion'],
-  ['Belleza', 'Beauty'], ['Peluquería', 'Hairdresser'], ['Barbería', 'Barber'], ['Educación', 'Education'],
-  ['Universidad', 'University'], ['Estudios', 'Studies'], ['Libros', 'Books'], ['Libro', 'Book'], ['Cursos', 'Courses'],
-  ['Tecnología', 'Technology'], ['Regalos', 'Gifts'], ['Regalo', 'Gift'], ['Mascota', 'Pet'], ['Mascotas', 'Pets'],
-  ['Viaje', 'Travel'], ['Viajes', 'Travel'], ['Vacaciones', 'Holidays'], ['Hotel', 'Hotel'], ['Impuestos', 'Taxes'],
-  ['Impuesto', 'Tax'], ['Multa', 'Fine'], ['Multas', 'Fines'], ['Ahorro', 'Savings'], ['Ahorros', 'Savings'],
-  ['Inversión', 'Investment'], ['Inversiones', 'Investments'], ['Nómina', 'Salary'], ['Sueldo', 'Salary'],
-  ['Salario', 'Salary'], ['Trabajo', 'Work'], ['Suscripciones', 'Subscriptions'], ['Suscripción', 'Subscription'],
-  ['Propina', 'Tip'], ['Donación', 'Donation'], ['Tabaco', 'Tobacco'], ['Reparaciones', 'Repairs'],
-  ['Máquina expendedora', 'Vending machine'], ['Otros', 'Other'], ['Otro', 'Other'], ['Varios', 'Miscellaneous'],
-];
-const TERM_MAP = new Map();
-for (const [es, en] of CAT_TERMS) {
-  const entry = { es, en };
-  TERM_MAP.set(stripAccents(es.toLowerCase()), entry);
-  TERM_MAP.set(stripAccents(en.toLowerCase()), entry);
-}
-/** Muestra el nombre de una categoría en el idioma activo si es un término conocido. */
-function catName(name) {
-  const entry = TERM_MAP.get(normKey(name));
-  return entry ? (lang === 'en' ? entry.en : entry.es) : name;
-}
+// El nombre de la categoría se muestra tal cual lo escribió el usuario (la tabla de
+// traducción ES/EN se retiró con el selector de idioma; vive en el historial de git).
+const catName = name => name;

@@ -16,9 +16,6 @@ public class ExpenseService(
     internal const int RecentCount = 20;
     private static readonly CultureInfo Spanish = CultureInfo.GetCultureInfo("es-ES");
 
-    public async Task<List<CategoryDto>> GetCategoriesAsync(int userId) =>
-        (await categories.GetAllAsync(userId)).Select(ToDto).ToList();
-
     /// <summary>Available balance = sum of the live balances of the user's cash (bank) accounts.</summary>
     public async Task<decimal> GetBalanceAsync(int userId) =>
         await GetBalanceAsync(userId, await accounts.GetAllAsync(userId));

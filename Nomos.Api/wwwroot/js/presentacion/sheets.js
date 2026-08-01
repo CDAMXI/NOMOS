@@ -65,23 +65,14 @@ async function openTxSheet(existing = null, draft = null, back = null) {
           ${isEdit ? '' : `<button class="chip chip-add" id="addAccChip">${t('add_account_chip')}</button>`}</div>` : ''}
         <input id="descField" class="text-field" placeholder="${t('description_optional')}" maxlength="120" value="${esc(startDesc)}">
         <label class="text-field date-field" id="dateWrap">
-          <span id="dateDisplay"></span>
+          <span id="dateFieldDisplay"></span>
           <input id="dateField" type="date" aria-label="${t('date_label')}"
             value="${(draft && draft.date) ? draft.date : (existing ? existing.date : todayISO())}">
         </label>
         ${isEdit ? `<button id="deleteTx" class="danger-btn">${t(kind === 'income' ? 'delete_income' : 'delete_expense')}</button>` : ''}`;
       bindAmount(body, true);
 
-      // La fecha se muestra SIEMPRE como DD/MM/AAAA (dMed): el input nativo queda invisible
-      // debajo (conserva el calendario del móvil/PC) porque su formato visible depende del
-      // idioma del navegador, no de la app.
-      const dateEl = $('dateField');
-      const paintDate = () => { $('dateDisplay').textContent = dMed(dateEl.value || todayISO()); };
-      ['input', 'change'].forEach(ev => dateEl.addEventListener(ev, paintDate));
-      $('dateWrap').addEventListener('click', () => {
-        try { dateEl.showPicker(); } catch (_) { /* picker ya abierto o sin soporte: el propio input lo abre */ }
-      });
-      paintDate();
+      bindDateRow('dateWrap', 'dateField');
 
       // Escanear factura: la IA pre-rellena; el usuario revisa y guarda (nunca autoguardado).
       const scanBtn = $('scanBtn');

@@ -66,7 +66,6 @@ themeBtn.addEventListener('click', () => {
   applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
 });
 applyTheme(localStorage.getItem('nomos-theme') || 'light');
-applyStaticI18n();
 updateFabTitle();
 
 // Los datos viven en la base de datos: refresca al volver a la pestaña y cada 20 s.

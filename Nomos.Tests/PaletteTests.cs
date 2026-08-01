@@ -71,13 +71,27 @@ public class PaletteTests
         await h.Db.SaveChangesAsync();
 
         var service = new CategoryService(h.Categories, h.Expenses, h.Users);
-        var first = await service.CreateAsync(user.Id, new CreateCategoryRequest("Comida", null));
-        var second = await service.CreateAsync(user.Id, new CreateCategoryRequest("Transporte", "#123456"));
-        var semantic = await service.CreateAsync(user.Id, new CreateCategoryRequest("Error", null));
+        var first = await service.CreateAsync(user.Id, new CreateCategoryRequest("Comida"));
+        var second = await service.CreateAsync(user.Id, new CreateCategoryRequest("Transporte"));
+        var semantic = await service.CreateAsync(user.Id, new CreateCategoryRequest("Error"));
 
         Assert.Equal("#1b2447", first.Color);
-        Assert.Equal("#27367d", second.Color); // la preferencia de la API se ignora: manda la paleta
+        Assert.Equal("#27367d", second.Color);
         Assert.Equal("#1b2447", semantic.Color); // semántico, aunque el base ya esté repartido
+    }
+
+    [Fact]
+    public async Task CreateAsync_RejectsThirteenthCategory()
+    {
+        using var h = new TestHarness();
+        var (userId, _, _) = await h.SeedAsync();
+        for (var i = 0; i < 12; i++)
+            h.Db.Categories.Add(new Category { UserId = userId, Name = "C" + i, Icon = "🏷️", Color = "#1e7ce8" });
+        await h.Db.SaveChangesAsync();
+
+        var service = new CategoryService(h.Categories, h.Expenses, h.Users);
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            service.CreateAsync(userId, new CreateCategoryRequest("Trece")));
     }
 
     [Fact]
@@ -88,19 +102,4 @@ public class PaletteTests
         Assert.Equal(Palettes.DefaultName, dto.Palette);
     }
 
-    [Fact]
-    public async Task CategoryRecolor_SkipsPaletteUsers()
-    {
-        using var h = new TestHarness();
-        var user = new User { Username = "CDAMXI", PasswordHash = "x", Palette = Palettes.DefaultName, CreatedAt = DateTime.UtcNow };
-        h.Db.Users.Add(user);
-        await h.Db.SaveChangesAsync();
-        // Verde vetado para la rueda, pero el usuario tiene paleta: no se toca.
-        var cat = new Category { UserId = user.Id, Name = "X", Icon = "🏷️", Color = "#34c759" };
-        h.Db.Categories.Add(cat);
-        await h.Db.SaveChangesAsync();
-
-        await CategoryRecolor.RunAsync(h.Db);
-        Assert.Equal("#34c759", cat.Color);
-    }
 }

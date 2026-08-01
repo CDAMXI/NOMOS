@@ -64,7 +64,8 @@ public static class Palettes
 
     /// <summary>
     /// Siguiente color de la paleta que el usuario no usa todavía: primero los base en orden y,
-    /// agotados, puntos medios entre pares consecutivos (nivel 1), luego cuartos (nivel 2)…
+    /// agotados, puntos medios entre pares consecutivos. Con el tope de 12 categorías y 10 base
+    /// (+9 puntos medios) siempre queda hueco libre.
     /// </summary>
     public static string NextColor(Palette palette, IEnumerable<string?> usedHex)
     {
@@ -72,17 +73,12 @@ public static class Palettes
             .Select(c => c!.ToLowerInvariant()).ToHashSet();
         foreach (var c in palette.Colors)
             if (!used.Contains(c)) return c;
-
-        for (var level = 1; level <= 4; level++)
+        for (var i = 0; i < palette.Colors.Length - 1; i++)
         {
-            var t = 1.0 / (1 << level); // 1/2, 1/4, 1/8, 1/16
-            for (var i = 0; i < palette.Colors.Length - 1; i++)
-            {
-                var mix = Mix(palette.Colors[i], palette.Colors[i + 1], t);
-                if (!used.Contains(mix)) return mix;
-            }
+            var mix = Mix(palette.Colors[i], palette.Colors[i + 1], 0.5);
+            if (!used.Contains(mix)) return mix;
         }
-        return palette.Colors[0]; // inalcanzable con el tope de categorías; por si acaso
+        return palette.Colors[0];
     }
 
     private static string Normalize(string name) =>

@@ -122,7 +122,7 @@ public partial class AuthService(IUserRepository users)
     }
 
     private static string? ValidatePhoto(string? photoDataUrl) =>
-        ImageDataUrl.Validate(photoDataUrl, MaxPhotoLength, "La foto es demasiado grande.", "La foto debe ser una imagen válida.");
+        ImageDataUrl.Validate(photoDataUrl, MaxPhotoLength);
 
     private static string ValidateCurrency(string code)
     {

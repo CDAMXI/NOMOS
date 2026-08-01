@@ -16,8 +16,7 @@ public class ReceiptScanService(ICategoryRepository categories, IExpenseReposito
 
     public async Task<ScanReceiptResult> ScanAsync(int userId, ScanReceiptRequest request, DateOnly today)
     {
-        var dataUrl = ImageDataUrl.Validate(request.PhotoDataUrl, MaxPhotoLength,
-                "La foto es demasiado grande.", "La foto debe ser una imagen válida.")
+        var dataUrl = ImageDataUrl.Validate(request.PhotoDataUrl, MaxPhotoLength)
             ?? throw new ArgumentException("Falta la foto de la factura.");
 
         // data:image/jpeg;base64,XXXX → mime + payload (la forma ya está validada por ImageDataUrl).

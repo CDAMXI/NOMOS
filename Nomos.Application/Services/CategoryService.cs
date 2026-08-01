@@ -43,7 +43,7 @@ public class CategoryService(ICategoryRepository categories, IExpenseRepository 
             UserId = userId,
             Name = name,
             Icon = CategoryIcon.ForName(name),
-            Color = await PickColorAsync(userId, name, existing, NormalizeColor(request.Color))
+            Color = await PickColorAsync(userId, name, existing)
         });
         return ToDto(category);
     }
@@ -59,12 +59,9 @@ public class CategoryService(ICategoryRepository categories, IExpenseRepository 
 
         category.Name = name;
         category.Icon = CategoryIcon.ForName(name); // icon follows the theme of the name
-        var color = NormalizeColor(request.Color);
-        if (color is not null) category.Color = color;
-        // Con paleta temática, un renombrado a nombre semántico («error», «salud») arrastra
-        // también su color reservado, igual que el icono sigue al nombre.
-        var palette = Palettes.Get((await users.GetByIdAsync(userId))?.Palette);
-        if (palette is not null && Palettes.SemanticColor(palette, name) is string semantic)
+        // Un renombrado a nombre semántico («error», «salud») arrastra su color reservado,
+        // igual que el icono sigue al nombre.
+        if (Palettes.SemanticColor(await UserPaletteAsync(userId), name) is string semantic)
             category.Color = semantic;
         await categories.UpdateAsync(category);
         return ToDto(category);
@@ -90,34 +87,17 @@ public class CategoryService(ICategoryRepository categories, IExpenseRepository 
         return trimmed;
     }
 
-    /// <summary>
-    /// Con paleta temática del usuario: color semántico si el nombre lo tiene reservado, si no
-    /// el siguiente color de la paleta (la preferencia de la API se ignora: manda la paleta).
-    /// Sin paleta: el preferido si está libre y no cae en zona vetada; si no, la inserción
-    /// angular de <see cref="CategoryColors"/>.
-    /// </summary>
-    private async Task<string> PickColorAsync(int userId, string name, List<Category> existing, string? preferred)
+    /// <summary>Color semántico si el nombre lo tiene reservado; si no, el siguiente de la paleta.</summary>
+    private async Task<string> PickColorAsync(int userId, string name, List<Category> existing)
     {
-        var palette = Palettes.Get((await users.GetByIdAsync(userId))?.Palette);
-        if (palette is not null)
-            return Palettes.SemanticColor(palette, name)
-                ?? Palettes.NextColor(palette, existing.Select(c => c.Color));
-
-        var used = existing.Select(c => (c.Color ?? "").ToLowerInvariant()).ToHashSet();
-        if (preferred is not null && !used.Contains(preferred.ToLowerInvariant()) && !CategoryColors.IsForbidden(preferred))
-            return preferred;
-        return CategoryColors.Next(existing.Select(c => c.Color));
+        var palette = await UserPaletteAsync(userId);
+        return Palettes.SemanticColor(palette, name)
+            ?? Palettes.NextColor(palette, existing.Select(c => c.Color));
     }
 
-    /// <summary>Accepts a #RGB or #RRGGBB hex colour; returns null when nothing usable was provided.</summary>
-    private static string? NormalizeColor(string? color)
-    {
-        if (string.IsNullOrWhiteSpace(color)) return null;
-        var c = color.Trim();
-        if (!System.Text.RegularExpressions.Regex.IsMatch(c, "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"))
-            throw new ArgumentException("El color no es válido.");
-        return c.ToLowerInvariant();
-    }
+    /// <summary>Todo usuario lleva paleta desde el alta; ante un nombre desconocido, la de la app.</summary>
+    private async Task<Palettes.Palette> UserPaletteAsync(int userId) =>
+        Palettes.Get((await users.GetByIdAsync(userId))?.Palette) ?? Palettes.Get(Palettes.DefaultName)!;
 
     private static CategoryDto ToDto(Category c) => new(c.Id, c.Name, c.Icon, c.Color);
 }
