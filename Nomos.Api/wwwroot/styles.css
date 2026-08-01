@@ -23,6 +23,9 @@
      acentos son claros y el blanco cae a 2.8:1 — ahí el texto debe ser oscuro. */
   --on-accent: #ffffff;
   --on-red: #ffffff;
+  /* Materiales iOS: relleno neutro (segmentados, resaltado de fila) y barra translucida. */
+  --fill: rgba(120, 120, 128, .12);
+  --bar: rgba(246, 247, 249, .8);
 }
 
 [data-theme="dark"] {
@@ -42,6 +45,8 @@
   --bevel-lo: rgba(0, 0, 0, .5);
   --on-accent: #0d0d0d; /* 7.0:1 sobre #6e9bf0 */
   --on-red: #0d0d0d;    /* 7.7:1 sobre #f0857a */
+  --fill: rgba(120, 120, 128, .28);
+  --bar: rgba(13, 13, 13, .72);
 }
 :root {
   /* Escala de diseno tokenizada (valores exactos: cero cambio visual). */
@@ -123,9 +128,15 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  /* Material translucido iOS: el contenido se desliza por debajo desenfocado. */
+  background: var(--bar);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
   /* +safe-area: respeta el notch/isla en móviles que lo tienen (0 donde no lo hay). */
-  padding: calc(18px + env(safe-area-inset-top)) var(--sp-20) var(--sp-6);
+  padding: calc(12px + env(safe-area-inset-top)) var(--sp-20) var(--sp-10);
 }
 
 /* Marca P L U T O: compartida por el topbar y la pantalla de acceso. */
@@ -247,18 +258,27 @@ body {
   cursor: pointer;
 }
 
-.pills { display: flex; gap: var(--sp-6); }
+/* Control segmentado iOS: contenedor de relleno neutro, segmento activo elevado. */
+.pills, .kind-toggle {
+  display: flex;
+  gap: var(--sp-2);
+  background: var(--fill);
+  padding: var(--sp-2);
+  border-radius: var(--r-10);
+  width: fit-content;
+}
+.kind-toggle { margin: 0 auto var(--sp-16); }
 .pill {
   border: none;
-  background: var(--bg);
+  background: none;
   color: var(--muted);
-  border-radius: var(--r-20);
+  border-radius: var(--r-8);
   padding: var(--sp-5) var(--sp-13);
   font-size: var(--fs-13);
   font-weight: 600;
   cursor: pointer;
 }
-.pill.active { background: var(--accent-soft); color: var(--accent); }
+.pill.active { background: var(--card); color: var(--text); box-shadow: 0 1px 4px rgba(0, 0, 0, .16); }
 /* Píldoras de acción: color visible en REPOSO (en móvil no hay hover) — acento para acciones
    (actualizar contraseña, cerrar sesión, editar cuenta) y rojo para las destructivas. */
 .pill-action { background: var(--accent-soft); color: var(--accent); }
@@ -335,9 +355,17 @@ body {
   align-items: center;
   gap: var(--sp-12);
   padding: var(--sp-12) 0;
+  position: relative;
+}
+/* Separador inset iOS: arranca donde arranca el texto (tras la columna del icono). */
+.tx-list li:not(:last-child)::after, .acc-list li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 54px;
+  right: 0;
+  bottom: 0;
   border-bottom: 1px solid var(--line);
 }
-.tx-list li:last-child, .acc-list li:last-child { border-bottom: none; }
 
 .tx-icon {
   width: 42px;
@@ -390,15 +418,13 @@ body {
 
 .acc-list { list-style: none; background: var(--card); border-radius: var(--r-16); padding: var(--sp-2) var(--sp-16); box-shadow: var(--shadow); }
 .acc-list li { cursor: pointer; }
-.acc-chevron { color: var(--muted); font-size: var(--fs-18); }
+.acc-chevron { color: var(--muted); opacity: .55; font-size: var(--fs-18); font-weight: 600; }
 
 /* ---------- FAB y tab bar ---------- */
 #fab {
   position: fixed;
   right: var(--sp-26);
-  /* Suelo de 24px: con navegación de 3 botones env(safe-area-inset-bottom)=0 y el FAB
-     se quedaba abajo (S22 Ultra); con max() despega igual que con gestos (S25+). */
-  bottom: calc(96px + max(env(safe-area-inset-bottom, 0px), 24px));
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px)); /* por encima de la tabbar iOS */
   width: 58px;
   height: 58px;
   border: none;
@@ -412,33 +438,38 @@ body {
   z-index: 30;
 }
 
+/* Tabbar iOS: barra translucida a todo lo ancho pegada abajo, icono sobre etiqueta;
+   la pestaña activa se distingue por TINTE, no por fondo. */
 .tabbar {
   position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  /* Mismo suelo de 24px que el FAB, para que el bloque inferior sea consistente entre
-     dispositivos (gestos vs 3 botones) y no se pegue a la barra del sistema. */
-  bottom: calc(18px + max(env(safe-area-inset-bottom, 0px), 24px));
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
-  gap: var(--sp-4);
-  background: var(--card);
-  padding: var(--sp-5);
-  border-radius: var(--r-26);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, .12);
+  justify-content: space-around;
+  background: var(--bar);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-top: 1px solid var(--line);
+  padding: var(--sp-6) var(--sp-16) calc(var(--sp-6) + env(safe-area-inset-bottom, 0px));
   z-index: 30;
 }
 
 .tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
   border: none;
   background: none;
   color: var(--muted);
-  font-size: var(--fs-15);
-  font-weight: 600;
-  padding: var(--sp-9) var(--sp-18);
-  border-radius: var(--r-20);
+  font-size: var(--fs-11);
+  font-weight: 500;
+  padding: var(--sp-2) var(--sp-18);
   cursor: pointer;
 }
-.tab.active { background: var(--accent-soft); color: var(--accent); }
+.tab span[aria-hidden] { font-size: var(--fs-22); line-height: 1.1; }
+.tab.active { color: var(--accent); font-weight: 600; }
 
 /* ---------- Hoja modal ---------- */
 .sheet {
@@ -446,22 +477,38 @@ body {
   inset: 0;
   z-index: 50;
   display: flex;
+  align-items: flex-end;
+  background: rgba(13, 13, 13, .45); /* fondo atenuado tambien en movil (page sheet) */
 }
 
 .sheet-panel {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   background: var(--card);
-  animation: sheet-in .22s ease-out;
+  /* Page sheet iOS: arranca bajo la barra de estado con esquinas superiores redondeadas. */
+  height: calc(100% - env(safe-area-inset-top, 0px) - 12px);
+  border-radius: var(--r-16) var(--r-16) 0 0;
+  animation: sheet-in .45s cubic-bezier(0.32, 0.72, 0, 1); /* curva de muelle de Apple */
+}
+
+/* Grabber: el asa de las hojas iOS. */
+.sheet-panel::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 36px;
+  height: 5px;
+  border-radius: var(--r-pill);
+  background: var(--line);
+  margin: var(--sp-8) auto 0;
 }
 
 /* En escritorio, diálogo centrado sobre fondo atenuado en vez de takeover a pantalla
    completa (mismo breakpoint que el layout de dos columnas). */
 @media (min-width: 821px) {
   .sheet {
-    background: rgba(13, 13, 13, .45);
     align-items: center;
     justify-content: center;
     padding: var(--sp-24);
@@ -469,16 +516,24 @@ body {
   .sheet-panel {
     flex: 0 1 auto;
     width: 100%;
+    height: auto;
     max-width: 720px;
     max-height: 88vh;
     border-radius: var(--r-20);
     box-shadow: 0 18px 48px rgba(0, 0, 0, .3);
+    animation: sheet-pop .22s ease-out;
   }
+  .sheet-panel::before { display: none; } /* el grabber es de las hojas moviles */
+}
+
+@keyframes sheet-pop {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: none; opacity: 1; }
 }
 
 @keyframes sheet-in {
-  from { transform: translateY(30px); opacity: 0; }
-  to { transform: none; opacity: 1; }
+  from { transform: translateY(100%); }
+  to { transform: none; }
 }
 
 /* Error persistente de la hoja (guardar/borrar/escanear): visible hasta que se corrige. */
@@ -497,7 +552,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: calc(16px + env(safe-area-inset-top)) var(--sp-18) var(--sp-16);
+  padding: var(--sp-10) var(--sp-18) var(--sp-14);
 }
 
 .sheet-title { font-weight: 700; font-size: var(--fs-16); }
@@ -643,9 +698,9 @@ body {
   border: none;
   background: var(--accent);
   color: var(--on-accent);
-  font-size: var(--fs-16);
+  font-size: var(--fs-17);
   font-weight: 600;
-  padding: var(--sp-13);
+  padding: var(--sp-14);
   border-radius: var(--r-12);
   cursor: pointer;
 }
@@ -682,7 +737,6 @@ body {
 .centered { display: block; margin: 0 auto; }
 
 /* ---------- Movimientos: gasto / ingreso ---------- */
-.kind-toggle { display: flex; gap: var(--sp-6); justify-content: center; padding-bottom: var(--sp-16); }
 .scan-btn { margin-bottom: var(--sp-12); }
 
 .hero-sub { font-size: var(--fs-14); color: var(--muted); margin-top: var(--sp-3); }
@@ -777,10 +831,17 @@ li.clickable { cursor: pointer; }
 .settings-group { background: var(--card); border-radius: var(--r-16); padding: 0 var(--sp-16); box-shadow: var(--shadow); margin-bottom: var(--sp-16); }
 .settings-row {
   width: 100%; display: flex; align-items: center; gap: var(--sp-12); padding: var(--sp-12) 0;
-  border: none; border-bottom: 1px solid var(--line); background: none;
+  border: none; background: none; position: relative;
   color: var(--text); font: inherit; font-size: var(--fs-16); text-align: left; cursor: pointer;
 }
-.settings-row:last-child { border-bottom: none; }
+.settings-row:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 54px;
+  right: 0;
+  bottom: 0;
+  border-bottom: 1px solid var(--line);
+}
 .settings-label { flex: 1; display: flex; flex-direction: column; gap: var(--sp-2); min-width: 0; }
 .settings-select { border: none; background: none; color: var(--text); font: inherit; font-size: var(--fs-15); padding: var(--sp-4) var(--sp-2); max-width: 62%; cursor: pointer; }
 
@@ -861,7 +922,7 @@ li.clickable { cursor: pointer; }
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(64px + max(env(safe-area-inset-bottom, 0px), 24px));
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
   background: var(--text);
   color: var(--bg);
   padding: var(--sp-10) var(--sp-18);
@@ -903,7 +964,7 @@ li.clickable { cursor: pointer; }
   inset: calc(-1 * var(--sp-6));
 }
 
-/* Respuesta táctil en reposo→pulsado (en móvil no hay hover). */
-.chip:active, .pill:active, .icon-btn:active, .primary-btn:active, #fab:active { transform: scale(.96); }
-.link:active, .tab:active, .settings-row:active, .danger-btn:active,
-li.clickable:active, .acc-list li:active { opacity: .7; }
+/* Respuesta al toque estilo iOS: las filas se iluminan con relleno, los botones se atenuan. */
+li.clickable:active, .acc-list li:active, .settings-row:active { background: var(--fill); }
+.chip:active, .pill:active, .icon-btn:active, .primary-btn:active, #fab:active,
+.link:active, .tab:active, .danger-btn:active { opacity: .55; }
