@@ -1,4 +1,4 @@
-# NOMOS — ASP.NET Core (.NET 10) API + web front end, backed by Supabase PostgreSQL.
+# PLUTO (nombre tecnico: nomos) — ASP.NET Core (.NET 10) API + web front end, backed by Supabase PostgreSQL.
 # Works on any container host (Render, Railway, Fly.io, Google Cloud Run, Azure).
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build

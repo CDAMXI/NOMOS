@@ -1,9 +1,15 @@
 # PLUTO
 
+**Acceso: https://pluto-git-main-cdamxis-projects.vercel.app/**
+
 Personal finance tracker: monthly expenses, incomes and net worth, in the spirit of the
 original mockups. Layered .NET architecture with a web front end served by the API itself.
 Multi-user: cookie login, per-user data, editable profile with avatar, and a **Supabase
 (PostgreSQL)** database.
+
+> Technical/internal name: **nomos**. Project names, C# namespaces, the Supabase project and
+> other infrastructure identifiers keep it (renaming them would break the deployment); the
+> product name everywhere users can see it is **PLUTO**.
 
 ## Architecture
 
@@ -79,4 +85,3 @@ categories**, logout), full-screen sheets with a numeric keypad for new/edited m
 (Gasto ↔ Ingreso toggle, category chips, date field) and accounts, hand-rolled SVG charts,
 persisted dark mode. Dates are shown as **DD/MM/YYYY**. Tap any row in "Recientes" / "Ver todo"
 to edit or delete it. Creating or editing a category auto-picks an emoji icon from its name.
-# NOMOS
