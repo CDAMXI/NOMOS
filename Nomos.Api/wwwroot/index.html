@@ -133,6 +133,8 @@
        contenedor exterior hace de fondo atenuado (click fuera = cancelar). -->
   <div id="sheet" class="sheet hidden">
     <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" tabindex="-1">
+      <!-- Asa real (no pseudo-elemento): es la zona de arrastre del gesto de descarte. -->
+      <div class="sheet-grabber" aria-hidden="true"></div>
       <div class="sheet-bar">
         <button id="sheetCancel" class="link">Cancelar</button>
         <span id="sheetTitle" class="sheet-title"></span>

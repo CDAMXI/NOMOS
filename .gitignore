@@ -7,3 +7,6 @@ obj/
 *.db-wal
 # Contains the Supabase database password — keep out of version control.
 appsettings.Development.json
+
+# Config local para previsualizar la app (ruta absoluta de la maquina)
+.claude/launch.json

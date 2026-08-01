@@ -135,9 +135,20 @@ body {
   background: var(--bar);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   backdrop-filter: saturate(180%) blur(20px);
-  border-bottom: .5px solid var(--line);
   /* +safe-area: respeta el notch/isla en móviles que lo tienen (0 donde no lo hay). */
   padding: calc(12px + env(safe-area-inset-top)) var(--sp-20) var(--sp-10);
+}
+
+/* Borde de scroll: el contenido se desvanece bajo la barra en vez de chocar con una linea. */
+.topbar::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 12px;
+  background: linear-gradient(var(--bar), transparent);
+  pointer-events: none;
 }
 
 /* Marca P L U T O: compartida por el topbar y la pantalla de acceso. */
@@ -175,7 +186,7 @@ body {
 .hero-amount {
   font-size: var(--fs-44);
   font-weight: 800;
-  letter-spacing: -1px;
+  letter-spacing: -.022em; /* en em: el ajuste acompana al cuerpo cuando la cifra encoge */
   margin: var(--sp-2) 0 var(--sp-4);
 }
 
@@ -401,7 +412,7 @@ body {
 .two-cards { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-14); margin-bottom: var(--sp-16); }
 /* Rótulos de sección en la hoja del broker con el tratamiento "cuño" (section-title). */
 .muted-label { margin-bottom: var(--sp-6); }
-.big-figure { font-size: var(--fs-26); font-weight: 700; }
+.big-figure { font-size: var(--fs-26); font-weight: 700; letter-spacing: -.01em; }
 .green { color: var(--green); }
 .red { color: var(--red); }
 
@@ -470,9 +481,10 @@ body {
 .tab-ico { width: 24px; height: 24px; }
 .tab.active { color: var(--accent); font-weight: 600; }
 
-/* Al subir una hoja, la vista de detras retrocede (profundidad de page sheet iOS). */
-main.view { transition: transform .45s cubic-bezier(0.32, 0.72, 0, 1); transform-origin: 50% 0; }
-body.sheet-open main.view { transform: scale(.945); }
+/* Profundidad de page sheet: la vista de detras retrocede al subir la hoja y vuelve hacia
+   el usuario a medida que se arrastra hacia abajo (mismo --sheet-p, sin transicion CSS:
+   lo escribe el gesto/muelle en cada frame, asi que es interrumpible por definicion). */
+body.sheet-open main.view { transform: scale(calc(1 - .055 * var(--sheet-p, 1))); transform-origin: 50% 0; }
 
 /* ---------- Hoja modal ---------- */
 .sheet {
@@ -481,7 +493,8 @@ body.sheet-open main.view { transform: scale(.945); }
   z-index: 50;
   display: flex;
   align-items: flex-end;
-  background: rgba(13, 13, 13, .45); /* fondo atenuado tambien en movil (page sheet) */
+  /* La atenuacion sigue al gesto 1:1 (--sheet-p: 1 presentada, 0 fuera). */
+  background: rgba(13, 13, 13, calc(.45 * var(--sheet-p, 1)));
 }
 
 .sheet-panel {
@@ -494,19 +507,25 @@ body.sheet-open main.view { transform: scale(.945); }
   /* Page sheet iOS: arranca bajo la barra de estado con esquinas superiores redondeadas. */
   height: calc(100% - env(safe-area-inset-top, 0px) - 12px);
   border-radius: var(--r-16) var(--r-16) 0 0;
-  animation: sheet-in .45s cubic-bezier(0.32, 0.72, 0, 1); /* curva de muelle de Apple */
 }
 
-/* Grabber: el asa de las hojas iOS. */
-.sheet-panel::before {
-  content: '';
+/* Asa de las hojas iOS: zona de arrastre real del gesto de descarte. */
+.sheet-grabber {
   flex: 0 0 auto;
+  padding: var(--sp-8) 0 var(--sp-2);
+  touch-action: none;   /* el gesto es nuestro: nada de scroll/pull-to-refresh nativo */
+  cursor: grab;
+}
+.sheet-grabber::after {
+  content: '';
+  display: block;
   width: 36px;
   height: 5px;
   border-radius: var(--r-pill);
   background: var(--line);
-  margin: var(--sp-8) auto 0;
+  margin: 0 auto;
 }
+.sheet-bar { touch-action: none; }
 
 /* En escritorio, diálogo centrado sobre fondo atenuado en vez de takeover a pantalla
    completa (mismo breakpoint que el layout de dos columnas). */
@@ -526,17 +545,12 @@ body.sheet-open main.view { transform: scale(.945); }
     box-shadow: 0 18px 48px rgba(0, 0, 0, .3);
     animation: sheet-pop .22s ease-out;
   }
-  .sheet-panel::before { display: none; } /* el grabber es de las hojas moviles */
+  .sheet-grabber { display: none; } /* el asa es de las hojas moviles */
 }
 
 @keyframes sheet-pop {
   from { transform: translateY(30px); opacity: 0; }
   to { transform: none; opacity: 1; }
-}
-
-@keyframes sheet-in {
-  from { transform: translateY(100%); }
-  to { transform: none; }
 }
 
 /* Error persistente de la hoja (guardar/borrar/escanear): visible hasta que se corrige. */
@@ -584,7 +598,7 @@ body.sheet-open main.view { transform: scale(.945); }
 
 .amount-block { text-align: center; padding: var(--sp-10) 0 var(--sp-22); }
 .amount-label { color: var(--muted); font-size: var(--fs-14); margin-bottom: var(--sp-4); }
-.amount-display { display: flex; align-items: baseline; justify-content: center; font-size: var(--fs-52); font-weight: 800; letter-spacing: -1px; }
+.amount-display { display: flex; align-items: baseline; justify-content: center; font-size: var(--fs-52); font-weight: 800; letter-spacing: -.02em; }
 .amount-input {
   font: inherit; letter-spacing: inherit; color: var(--text);
   border: none; background: none; outline: none; padding: 0; margin: 0;
@@ -999,3 +1013,24 @@ li.clickable { cursor: pointer; }
 li.clickable:active, .acc-list li:active, .settings-row:active { background: var(--fill); }
 .chip:active, .pill:active, .icon-btn:active, .primary-btn:active, #fab:active,
 .link:active, .tab:active, .danger-btn:active { opacity: .55; }
+
+/* ---------- Preferencias de accesibilidad ---------- */
+/* Movimiento reducido: se conserva el feedback, se quitan los desplazamientos vestibulares
+   (el muelle de la hoja ya se salta solo en JS; aqui van las transiciones CSS). */
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  body.sheet-open main.view { transform: none; }
+  .chip:active, .pill:active, .icon-btn:active, .primary-btn:active, #fab:active { transform: none; }
+}
+
+/* Transparencia reducida: las barras se vuelven solidas (sin desenfoque). */
+@media (prefers-reduced-transparency: reduce) {
+  .topbar, .tabbar { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .topbar::after { display: none; }
+}
+
+/* Contraste alto: superficies solidas con borde definido. */
+@media (prefers-contrast: more) {
+  .card, .settings-group, .acc-list, .sheet-panel { border: 1px solid var(--line); }
+  .chip { outline: 1px solid var(--line); }
+}

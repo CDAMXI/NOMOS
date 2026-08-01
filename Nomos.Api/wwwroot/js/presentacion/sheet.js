@@ -40,8 +40,56 @@ let sheetOpener = null;     // elemento con foco antes de abrir la hoja (se rest
 let sheetInHistory = false; // hay una entrada de historial viva para la hoja (gesto/botón Atrás)
 let ignorePop = false;      // history.back() programático: su popstate no debe volver a cerrar
 
+// ---------- Movimiento de la hoja: muelle interrumpible + arrastre 1:1 ----------
+// Un muelle en vez de una transición CSS porque puede AGARRARSE a media animación: arranca
+// siempre del valor vivo en pantalla y hereda la velocidad del dedo, así no hay costura entre
+// el gesto y la animación. Sin dependencias: ~30 líneas sobre requestAnimationFrame.
+const sheetPanel = sheet.querySelector('.sheet-panel');
+const mobileSheet = () => !window.matchMedia('(min-width: 821px)').matches;
+const noMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let sheetAnim = null;    // muelle en curso (cancelable e interrogable)
+let sheetY = 0;          // desplazamiento vivo del panel en px (0 = presentada)
+let sheetReleaseV = 0;   // velocidad del dedo al soltar, para el muelle de salida
+
+function setSheetY(y) {
+  sheetY = y;
+  const h = sheetPanel.offsetHeight || 1;
+  sheetPanel.style.transform = y ? `translate3d(0, ${y.toFixed(1)}px, 0)` : '';
+  // Progreso 1 = presentada, 0 = fuera. El scrim y el retroceso de la vista de detrás lo
+  // siguen 1:1: al arrastrar hacia abajo, el fondo vuelve hacia el usuario.
+  document.body.style.setProperty('--sheet-p', Math.max(0, 1 - y / h).toFixed(3));
+}
+
+// Muelle con la parametrización de Apple: respuesta (s) y amortiguación (1 = sin rebote).
+function springSheet(to, v0 = 0, { response = 0.4, damping = 1 } = {}, onEnd) {
+  sheetAnim?.cancel();
+  if (noMotion()) { setSheetY(to); onEnd?.(); return; }
+  const w = 2 * Math.PI / response;
+  let x = sheetY, v = v0, last = performance.now(), raf = 0;
+  const step = now => {
+    const dt = Math.min((now - last) / 1000, 1 / 30);
+    last = now;
+    v += (-w * w * (x - to) - 2 * damping * w * v) * dt;
+    x += v * dt;
+    if (Math.abs(x - to) < 0.5 && Math.abs(v) < 24) { setSheetY(to); sheetAnim = null; onEnd?.(); return; }
+    setSheetY(x);
+    raf = requestAnimationFrame(step);
+  };
+  raf = requestAnimationFrame(step);
+  sheetAnim = { cancel: () => cancelAnimationFrame(raf), get v() { return v; } };
+}
+
+function hideSheetNow() {
+  sheet.classList.add('hidden');
+  document.body.classList.remove('sheet-open');
+  sheetAnim?.cancel(); sheetAnim = null;
+  setSheetY(0);
+  document.body.style.setProperty('--sheet-p', '0');
+}
+
 function openSheet(ctx) {
   if (!sheetCtx && !sheetOpener) sheetOpener = document.activeElement;
+  const wasVisible = !sheet.classList.contains('hidden');
   sheetCtx = ctx;
   sheetTitle.textContent = ctx.title;
   sheetError.textContent = '';
@@ -51,9 +99,19 @@ function openSheet(ctx) {
   refreshSaveState();
   sheet.classList.remove('hidden');
   document.body.classList.add('sheet-open'); // la vista de detrás retrocede (profundidad iOS)
+  if (mobileSheet()) {
+    // Si estaba saliendo, el muelle de entrada arranca de donde esté AHORA y con su velocidad:
+    // agarrar una hoja a medio cerrar la trae de vuelta sin salto.
+    const v0 = sheetAnim ? sheetAnim.v : 0;
+    const from = wasVisible ? sheetY : sheetPanel.offsetHeight;
+    if (from !== 0 || sheetAnim) { setSheetY(from); springSheet(0, v0, { response: 0.4, damping: 1 }); }
+  } else {
+    setSheetY(0);
+    document.body.style.setProperty('--sheet-p', '1');
+  }
   // El foco entra al diálogo al abrirse (lo anuncia el lector y el primer Tab ya está dentro);
   // las hojas con importe lo re-enfocan después a su input (bindAmount).
-  sheet.querySelector('.sheet-panel').focus();
+  sheetPanel.focus();
   // Gesto/botón Atrás del móvil: UNA entrada de historial mientras haya hoja abierta (las
   // encadenadas la comparten); Atrás cierra la hoja en vez de salir de la PWA.
   if (!sheetInHistory) { history.pushState({ plutoSheet: true }, ''); sheetInHistory = true; }
@@ -62,10 +120,8 @@ function openSheet(ctx) {
 // keepHistory=true cuando otra hoja se reabre justo después (guardar/borrar en flujos
 // encadenados): la entrada de historial y el foco pendiente se conservan para la siguiente.
 function closeSheet(keepHistory = false) {
-  sheet.classList.add('hidden');
   sheetCtx = null;
-  if (keepHistory) return; // otra hoja se reabre ya mismo: el fondo sigue retirado
-  document.body.classList.remove('sheet-open');
+  if (keepHistory) { hideSheetNow(); return; } // otra hoja entra ya mismo: sin animación
   // Consumir la entrada SOLO si de verdad estamos en ella (si un diálogo nativo la
   // desincronizó, un back() a ciegas sacaría al usuario de la app).
   if (sheetInHistory) {
@@ -74,7 +130,68 @@ function closeSheet(keepHistory = false) {
   }
   if (sheetOpener && sheetOpener.focus) { try { sheetOpener.focus(); } catch (_) { /* elemento ya no existe */ } }
   sheetOpener = null;
+  // La salida es solo visual: el estado lógico ya está cerrado, así que una hoja nueva puede
+  // abrirse encima en cualquier momento (openSheet cancela este muelle y re-presenta).
+  if (mobileSheet() && !sheet.classList.contains('hidden')) {
+    springSheet(sheetPanel.offsetHeight, Math.max(sheetReleaseV, 0), { response: 0.35, damping: 1 }, hideSheetNow);
+  } else {
+    hideSheetNow();
+  }
 }
+
+// ---------- Gesto: arrastrar el asa/barra para descartar ----------
+// El asa deja de ser decorativa: la hoja sigue al dedo 1:1, resiste con goma hacia arriba y al
+// soltar PROYECTA el impulso (deceleración iOS) para decidir si se va o vuelve.
+const projectMomentum = v => (v / 1000) * 0.998 / (1 - 0.998); // ≈ v·0.499
+const rubberband = (over, dim, c = 0.55) => (over * dim * c) / (dim + c * Math.abs(over));
+let sheetDrag = null;
+
+sheetPanel.addEventListener('pointerdown', e => {
+  if (!mobileSheet() || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  // Solo desde el asa o la barra (en el cuerpo, arrastrar = desplazar el contenido).
+  if (!e.target.closest('.sheet-grabber, .sheet-bar')) return;
+  if (e.target.closest('button, input, select, textarea, a')) return;
+  sheetAnim?.cancel(); sheetAnim = null; // se puede agarrar a media animación
+  sheetDrag = { id: e.pointerId, startY: e.clientY, y0: sheetY, hist: [[performance.now(), e.clientY]] };
+  sheetPanel.setPointerCapture(e.pointerId);
+  sheetPanel.style.willChange = 'transform';
+});
+
+sheetPanel.addEventListener('pointermove', e => {
+  if (!sheetDrag || e.pointerId !== sheetDrag.id) return;
+  const raw = sheetDrag.y0 + (e.clientY - sheetDrag.startY);
+  const h = sheetPanel.offsetHeight || 1;
+  setSheetY(raw >= 0 ? raw : -rubberband(-raw, h)); // hacia arriba: resistencia progresiva
+  sheetDrag.hist.push([performance.now(), e.clientY]);
+  if (sheetDrag.hist.length > 5) sheetDrag.hist.shift();
+});
+
+function endSheetDrag(e) {
+  if (!sheetDrag || e.pointerId !== sheetDrag.id) return;
+  // Velocidad INSTANTÁNEA reciente (~30 ms), no el promedio de toda la ventana: si el dedo
+  // cambió de dirección dentro del historial, el promedio daría una velocidad falsa y la hoja
+  // saldría disparada en contra del gesto.
+  const { hist } = sheetDrag;
+  const last = hist[hist.length - 1];
+  let ref = hist[0];
+  for (let i = hist.length - 2; i >= 0; i--) { ref = hist[i]; if (last[0] - hist[i][0] >= 30) break; }
+  const dt = (last[0] - ref[0]) / 1000;
+  const v = dt > 0.008 ? (last[1] - ref[1]) / dt : 0; // px/s del dedo al soltar
+  sheetDrag = null;
+  sheetPanel.style.willChange = '';
+  const h = sheetPanel.offsetHeight || 1;
+  if (sheetY + projectMomentum(v) > h * 0.35) {
+    // Se va: el muelle continúa a la velocidad del dedo (closeSheet la recoge).
+    sheetReleaseV = v;
+    dismissSheet();
+    sheetReleaseV = 0;
+  } else {
+    // Vuelve a su sitio con un punto de rebote, porque el gesto traía impulso.
+    springSheet(0, v, { response: 0.4, damping: 0.8 });
+  }
+}
+sheetPanel.addEventListener('pointerup', endSheetDrag);
+sheetPanel.addEventListener('pointercancel', endSheetDrag);
 
 // refreshSaveState corre en cada input de la hoja: además de recalcular Guardar, retira el
 // error persistente en cuanto el usuario corrige algo.
