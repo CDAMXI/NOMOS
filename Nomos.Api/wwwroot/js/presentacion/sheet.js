@@ -61,7 +61,12 @@ function closeSheet(keepHistory = false) {
   sheet.classList.add('hidden');
   sheetCtx = null;
   if (keepHistory) return;
-  if (sheetInHistory) { sheetInHistory = false; ignorePop = true; history.back(); }
+  // Consumir la entrada SOLO si de verdad estamos en ella (si un diálogo nativo la
+  // desincronizó, un back() a ciegas sacaría al usuario de la app).
+  if (sheetInHistory) {
+    sheetInHistory = false;
+    if (history.state && history.state.plutoSheet) { ignorePop = true; history.back(); }
+  }
   if (sheetOpener && sheetOpener.focus) { try { sheetOpener.focus(); } catch (_) { /* elemento ya no existe */ } }
   sheetOpener = null;
 }
@@ -115,9 +120,21 @@ sheetSave.addEventListener('click', async () => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && sheetCtx) dismissSheet(); });
 
 // Atrás del navegador/móvil: cierra (o retrocede) la hoja. Si la hoja anterior se reabre,
-// openSheet vuelve a crear la entrada consumida.
+// openSheet vuelve a crear la entrada consumida. Dos guardas contra «Atrás fantasma»:
+// (1) si tras el pop seguimos EN la entrada de la hoja, el pop no fue nuestro (diálogos
+// nativos de fecha/teclado manipulan el historial en algunos Android) → ignorar;
+// (2) si hay un campo de la hoja con foco (teclado abierto), el Atrás iba dirigido al
+// teclado: se cierra el teclado y se repone la entrada, no se cierra la hoja.
 window.addEventListener('popstate', () => {
   if (ignorePop) { ignorePop = false; return; }
+  if (history.state && history.state.plutoSheet) return; // pop espurio: la entrada sigue viva
+  const focused = document.activeElement;
+  if (sheetCtx && sheet.contains(focused) && /^(INPUT|SELECT|TEXTAREA)$/.test(focused.tagName)) {
+    focused.blur();
+    history.pushState({ plutoSheet: true }, '');
+    sheetInHistory = true;
+    return;
+  }
   sheetInHistory = false;
   if (sheetCtx) dismissSheet();
 });
