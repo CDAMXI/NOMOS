@@ -1,4 +1,4 @@
-# NOMOS
+# PLUTO
 
 Personal finance tracker: monthly expenses, incomes and net worth, in the spirit of the
 original mockups. Layered .NET architecture with a web front end served by the API itself.
