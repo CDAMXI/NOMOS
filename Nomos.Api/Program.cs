@@ -453,4 +453,15 @@ api.MapPost("/brokers/{id:int}/transfer", async Task<Results<Ok<BrokerDto>, NotF
     catch (ArgumentException ex) { return TypedResults.BadRequest(ex.Message); }
 });
 
+api.MapPut("/brokers/{id:int}/holdings/{holdingId:int}", async Task<Results<Ok<BrokerDto>, NotFound, BadRequest<string>>>
+    (int id, int holdingId, UpdateHoldingRequest request, ClaimsPrincipal principal, InvestmentService service) =>
+{
+    try
+    {
+        var broker = await service.UpdateHoldingAsync(id, UserId(principal), holdingId, request);
+        return broker is null ? TypedResults.NotFound() : TypedResults.Ok(broker);
+    }
+    catch (ArgumentException ex) { return TypedResults.BadRequest(ex.Message); }
+});
+
 app.Run();

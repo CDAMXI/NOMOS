@@ -65,6 +65,7 @@ public record BrokerDto(int AccountId, string Name, decimal Margin, decimal Inve
 public record BuyRequest(string Symbol, decimal Shares, decimal Price);
 
 public record SellRequest(int HoldingId, decimal Shares, decimal Price);
+public record UpdateHoldingRequest(string Symbol, decimal Shares, decimal Price, DateOnly? BuyDate);
 
 /// <summary>Mueve dinero entre una cuenta de efectivo y el margen libre del broker.</summary>
 public record BrokerTransferRequest(int CashAccountId, decimal Amount, string Direction);

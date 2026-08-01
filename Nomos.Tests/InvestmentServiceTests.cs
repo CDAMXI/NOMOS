@@ -34,6 +34,62 @@ public class InvestmentServiceTests
     }
 
     [Fact]
+    public async Task UpdateHolding_AdjustsMarginByCostDifference_BothWays()
+    {
+        using var h = new TestHarness();
+        var (userId, _, brokerId) = await h.SeedAsync(margin: 300);
+        var bought = await h.Investment.BuyAsync(brokerId, userId, new BuyRequest("AAPL", 2, 100));
+        var lotId = bought!.Holdings[0].Id; // margen 100, coste 200
+
+        // Corrección al alza (2×120=240): el margen absorbe los 40 de diferencia.
+        var up = await h.Investment.UpdateHoldingAsync(brokerId, userId, lotId,
+            new UpdateHoldingRequest("MSFT", 2, 120, new DateOnly(2026, 7, 1)));
+        Assert.Equal(60m, up!.Margin);
+        Assert.Equal(240m, up.Invested);
+        Assert.Equal(300m, up.Total); // el total del broker se conserva: solo se movió margen↔posición
+        Assert.Equal("MSFT", up.Holdings[0].Symbol);
+        Assert.Equal(new DateOnly(2026, 7, 1), up.Holdings[0].BuyDate);
+
+        // Corrección a la baja (1×100=100): devuelve 140 al margen.
+        var down = await h.Investment.UpdateHoldingAsync(brokerId, userId, lotId,
+            new UpdateHoldingRequest("MSFT", 1, 100, null));
+        Assert.Equal(200m, down!.Margin);
+        Assert.Equal(100m, down.Invested);
+        Assert.Equal(new DateOnly(2026, 7, 1), down.Holdings[0].BuyDate); // sin fecha: conserva la anterior
+    }
+
+    [Fact]
+    public async Task UpdateHolding_BeyondMargin_Throws_AndPersistsNothing()
+    {
+        using var h = new TestHarness();
+        var (userId, _, brokerId) = await h.SeedAsync(margin: 300);
+        var bought = await h.Investment.BuyAsync(brokerId, userId, new BuyRequest("AAPL", 2, 100));
+        var lotId = bought!.Holdings[0].Id; // margen 100
+
+        // Nuevo coste 350: necesita 150 más que los 100 de margen libre.
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await h.Investment.UpdateHoldingAsync(brokerId, userId, lotId,
+                new UpdateHoldingRequest("AAPL", 3.5m, 100, null)));
+
+        var broker = await h.Accounts.GetByIdAsync(brokerId, userId);
+        Assert.Equal(100m, broker!.Balance); // nada quedó a medias
+    }
+
+    [Fact]
+    public async Task UpdateHolding_WrongAccountOrLot_ReturnsNull()
+    {
+        using var h = new TestHarness();
+        var (userId, cashId, brokerId) = await h.SeedAsync(margin: 300);
+        var bought = await h.Investment.BuyAsync(brokerId, userId, new BuyRequest("AAPL", 1, 100));
+        var lotId = bought!.Holdings[0].Id;
+
+        Assert.Null(await h.Investment.UpdateHoldingAsync(cashId, userId, lotId,
+            new UpdateHoldingRequest("AAPL", 1, 100, null))); // la cuenta no es un broker
+        Assert.Null(await h.Investment.UpdateHoldingAsync(brokerId, userId, lotId + 999,
+            new UpdateHoldingRequest("AAPL", 1, 100, null))); // lote inexistente
+    }
+
+    [Fact]
     public async Task Sell_MoreThanOwned_Throws()
     {
         using var h = new TestHarness();

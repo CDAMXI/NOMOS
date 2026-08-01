@@ -88,6 +88,46 @@ public class InvestmentService(
         return await ToDtoAsync(broker, userId);
     }
 
+    /// <summary>
+    /// Corrige una compra registrada con error (símbolo, cantidad, precio o fecha), como si se
+    /// hubiera anotado bien desde el principio: el margen libre absorbe la diferencia de coste
+    /// (una compra corregida al alza descuenta más margen; a la baja, lo devuelve).
+    /// </summary>
+    public async Task<BrokerDto?> UpdateHoldingAsync(int accountId, int userId, int holdingId, UpdateHoldingRequest request)
+    {
+        var broker = await GetBrokerAsync(accountId, userId);
+        if (broker is null) return null;
+
+        var lot = await holdings.GetByIdAsync(holdingId, userId);
+        if (lot is null || lot.AccountId != accountId) return null;
+
+        if (string.IsNullOrWhiteSpace(request.Symbol))
+            throw new ArgumentException("El nombre de la acción es obligatorio.");
+        if (request.Shares <= 0 || request.Price <= 0)
+            throw new ArgumentException("El precio y la cantidad deben ser mayores que cero.");
+
+        var oldCost = decimal.Round(lot.Shares * lot.BuyPrice, 2);
+        var newCost = decimal.Round(request.Shares * request.Price, 2);
+        var delta = newCost - oldCost;
+        if (delta > broker.Balance)
+            throw new ArgumentException($"Margen libre insuficiente: la corrección necesita {delta:0.##} € más y tienes {broker.Balance:0.##} €.");
+
+        // Atómico: corregir el lote y ajustar el margen van juntos o no van.
+        await unitOfWork.InTransactionAsync(async () =>
+        {
+            lot.Symbol = request.Symbol.Trim();
+            lot.Shares = request.Shares;
+            lot.BuyPrice = request.Price;
+            if (request.BuyDate is DateOnly d) lot.BuyDate = d;
+            broker.Balance -= delta;
+            broker.UpdatedAt = DateTime.UtcNow;
+            await holdings.UpdateAsync(lot);
+            await accounts.UpdateAsync(broker);
+            await snapshotWriter.RefreshAsync(userId, AppClock.Today());
+        });
+        return await ToDtoAsync(broker, userId);
+    }
+
     public async Task<BrokerDto?> TransferAsync(int accountId, int userId, BrokerTransferRequest request)
     {
         var broker = await GetBrokerAsync(accountId, userId);

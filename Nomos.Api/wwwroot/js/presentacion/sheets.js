@@ -487,7 +487,12 @@ function openSellSheet(b, h, back) {
         <input id="sharesField" class="text-field" inputmode="decimal" autocomplete="off" placeholder="${t('num_shares')}" autofocus>
         <input id="priceField" class="text-field" inputmode="decimal" autocomplete="off" placeholder="${t('sell_price', curSymbol)}">
         <div class="calc-line"><span>${t('total_proceeds')}</span><b id="sellTotal">—</b></div>
-        <p class="field-hint" id="sellHint"></p>`;
+        <p class="field-hint" id="sellHint"></p>
+        <div class="divider"></div>
+        <button id="editLotBtn" class="pill pill-action centered">${t('edit_lot')}</button>`;
+
+      // ¿La compra se registró mal? Se corrige el lote en vez de venderlo.
+      $('editLotBtn').addEventListener('click', () => openEditLotSheet(b, h, back));
 
       const paint = () => {
         const { sh, pr } = readSharesPrice();
@@ -507,6 +512,69 @@ function openSellSheet(b, h, back) {
         price: decValue($('priceField'))
       });
       toast(t('sell_saved'));
+    },
+    back, afterSave: back
+  });
+}
+
+// --- Editar una compra registrada con error: símbolo, cantidad, precio y fecha del lote ---
+// El margen libre absorbe la diferencia de coste (corregir al alza descuenta; a la baja devuelve).
+function openEditLotSheet(b, h, back) {
+  // Máximo coste admisible: el margen actual MÁS lo que ya costó este lote (que se devuelve al corregir).
+  const maxCost = round2(b.margin + h.cost);
+  const seed = v => String(v).replace('.', decSep());
+
+  openSheet({
+    title: t('edit_lot_title', h.symbol),
+    canSave: () => {
+      const { sh, pr } = readSharesPrice();
+      return !!$('symField')?.value.trim() && sh > 0 && pr > 0 && round2(sh * pr) <= maxCost;
+    },
+    build(body) {
+      body.innerHTML = `
+        <input id="symField" class="text-field" maxlength="40" value="${esc(h.symbol)}">
+        <input id="sharesField" class="text-field" inputmode="decimal" autocomplete="off" placeholder="${t('num_shares')}" value="${seed(h.shares)}">
+        <input id="priceField" class="text-field" inputmode="decimal" autocomplete="off" placeholder="${t('price_per_share', curSymbol)}" value="${seed(h.buyPrice)}">
+        <label class="text-field date-field" id="lotDateWrap">
+          <span id="lotDateDisplay"></span>
+          <input id="lotDateField" type="date" aria-label="${t('buy_date_label')}" value="${h.buyDate}">
+        </label>
+        <div class="calc-line"><span>${t('total_cost')}</span><b id="lotCost">—</b></div>
+        <div class="calc-line"><span>${t('margin_after')}</span><b id="lotMargin">—</b></div>
+        <p class="field-hint" id="lotHint"></p>`;
+
+      // Fecha visible SIEMPRE como DD/MM/AAAA (mismo patrón que la hoja de movimiento).
+      const dateEl = $('lotDateField');
+      const paintDate = () => { $('lotDateDisplay').textContent = dMed(dateEl.value || h.buyDate); };
+      ['input', 'change'].forEach(ev => dateEl.addEventListener(ev, paintDate));
+      $('lotDateWrap').addEventListener('click', () => {
+        try { dateEl.showPicker(); } catch (_) { /* picker ya abierto o sin soporte */ }
+      });
+      paintDate();
+
+      const paint = () => {
+        const { sh, pr } = readSharesPrice();
+        const cost = round2(sh * pr);
+        const ok = sh > 0 && pr > 0;
+        $('lotCost').textContent = ok ? eur(cost) : '—';
+        $('lotMargin').textContent = ok ? eur(round2(maxCost - cost)) : '—';
+        $('lotHint').textContent =
+          sh < 0 || pr < 0 ? t('must_be_positive')
+          : ok && cost > maxCost ? t('insufficient_margin', eur(maxCost))
+          : '';
+        refreshSaveState();
+      };
+      ['symField', 'sharesField', 'priceField'].forEach(id => $(id).addEventListener('input', paint));
+      paint();
+    },
+    async onSave() {
+      await sendJSON(`/api/brokers/${b.accountId}/holdings/${h.id}`, 'PUT', {
+        symbol: $('symField').value,
+        shares: decValue($('sharesField')),
+        price: decValue($('priceField')),
+        buyDate: $('lotDateField').value || null
+      });
+      toast(t('lot_updated'));
     },
     back, afterSave: back
   });
