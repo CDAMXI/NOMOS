@@ -21,17 +21,16 @@ function openProfileSheet() {
         <p class="section-title">${t('section_general')}</p>
         <div class="settings-group">
           <button class="settings-row" id="manageCatsBtn">
-            <span class="tx-icon" style="background:${tint('#1b3a8e', .14)}">🏷️</span>
+            <span class="tx-icon tx-icon-accent">🏷️</span>
             <span class="settings-label">${t('manage_categories')}</span>
             <span class="acc-chevron">›</span>
           </button>
           <button class="settings-row" id="exportCsvBtn">
-            <span class="tx-icon" style="background:${tint('#1b3a8e', .14)}">⬇️</span>
+            <span class="tx-icon tx-icon-accent">📄</span>
             <span class="settings-label">${t('export_csv')}</span>
-            <span class="acc-chevron">›</span>
           </button>
           <label class="settings-row" for="currencySel">
-            <span class="tx-icon" style="background:${tint('#1b3a8e', .14)}">💱</span>
+            <span class="tx-icon tx-icon-accent">💱</span>
             <span class="settings-label">${t('currency_label_setting')}</span>
             <select id="currencySel" class="settings-select">${CURRENCIES.map(c =>
               `<option value="${c[0]}"${c[0] === me.currency ? ' selected' : ''}>${c[0]} — ${esc(c[1])}</option>`).join('')}</select>
@@ -42,10 +41,17 @@ function openProfileSheet() {
         <div class="settings-group password-group">
           <input id="profCurPass" class="text-field" type="password" placeholder="${t('current_password')}" maxlength="128" autocomplete="current-password">
           <input id="profNewPass" class="text-field" type="password" placeholder="${t('new_password_ph')}" maxlength="128" autocomplete="new-password">
+          <button id="changePassBtn" class="settings-row accent">
+            <span class="settings-label">${t('update_password')}</span>
+          </button>
         </div>
-        <button id="changePassBtn" class="pill pill-action centered">${t('update_password')}</button>
 
-        <button id="logoutBtn" class="pill pill-action centered prof-logout">${t('logout')}</button>
+        <div class="settings-group prof-logout">
+          <button id="logoutBtn" class="settings-row accent">
+            <span class="tx-icon tx-icon-accent">🚪</span>
+            <span class="settings-label">${t('logout')}</span>
+          </button>
+        </div>
         <button id="deleteUserBtn" class="pill pill-danger centered prof-logout">${t('delete_user_account')}</button>
         <div id="dangerZone" class="danger-zone hidden">
           <p class="danger-text">${t('confirm_delete_user')}</p>

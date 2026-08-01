@@ -56,12 +56,13 @@ async function openTxSheet(existing = null, draft = null, back = null) {
           <button class="pill" data-kind="expense">${t('kind_expense')}</button>
           <button class="pill" data-kind="income">${t('kind_income')}</button>
         </div>
-        <button id="scanBtn" class="link centered scan-btn">${t('scan_receipt')}</button>
+        <button id="scanBtn" class="pill pill-action centered scan-btn">${t('scan_receipt')}</button>
         <input id="scanInput" type="file" accept="image/*" hidden>`}
         ${amountBlock(t('amount'))}
+        <p class="group-label" id="catLabel">${t('category_label')}</p>
         <div class="chips" id="catChips"></div>
-        ${(cashAccounts.length >= 1 || !isEdit) ? `<p class="tx-sub cat-hint">${t('account_label')}</p>
-        <div class="chips" id="accChips">${cashAccounts.map(a => cashChip(a, 'acc')).join('')}
+        ${(cashAccounts.length >= 1 || !isEdit) ? `<p class="group-label">${t('account_label')}</p>
+        <div class="chips" id="accChips">${cashAccounts.map(a => cashChip(a, 'acc', cashAccounts)).join('')}
           ${isEdit ? '' : `<button class="chip chip-add" id="addAccChip">${t('add_account_chip')}</button>`}</div>` : ''}
         <input id="descField" class="text-field" placeholder="${t('description_optional')}" maxlength="120" value="${esc(startDesc)}">
         <label class="text-field date-field" id="dateWrap">
@@ -110,6 +111,7 @@ async function openTxSheet(existing = null, draft = null, back = null) {
 
       const paintChips = () => {
         $('catChips').classList.toggle('hidden', kind === 'income');
+        $('catLabel').classList.toggle('hidden', kind === 'income');
         $('scanBtn')?.classList.toggle('hidden', kind === 'income'); // escanear = solo gastos
         paintChipGroup(body, 'cat', ch => +ch.dataset.cat === selectedCat, catChipStyle);
       };
@@ -275,7 +277,7 @@ function openCategoryEditSheet(cat = null, onDone = null) {
           <p class="tx-sub cat-hint">${t('icon_auto_hint')}</p>
           <input id="catName" class="text-field" placeholder="${t('category_name_ph')}" maxlength="40" value="${cat ? esc(catName(cat.name)) : ''}">
         </div>
-        ${isEdit ? `<button id="deleteCat" class="danger-btn">${t('delete_category')}</button>` : ''}`;
+        ${isEdit ? `<button id="deleteCat" class="pill pill-danger centered">${t('delete_category')}</button>` : ''}`;
 
       const nameEl = $('catName'), preview = $('catIconPreview');
       const paintIcon = () => { preview.textContent = categoryIcon(nameEl.value); };
@@ -391,7 +393,7 @@ async function openBrokerSheet(accountId) {
     build(body) {
       body.innerHTML = `
         <div class="broker-hero">
-          <p class="amount-label">${t('broker_total')}</p>
+          <p class="eyebrow">${t('broker_total')}</p>
           <div class="big-figure">${eur(b.total)}</div>
           <p class="broker-sub">${t('free_margin')}: <b>${eur(b.margin)}</b> · ${t('invested')}: <b>${eur(b.invested)}</b></p>
         </div>
@@ -399,10 +401,10 @@ async function openBrokerSheet(accountId) {
           <button id="buyBtn" class="pill active">🛒 ${t('buy')}</button>
           <button id="transferBtn" class="pill">🔁 ${t('deposit')} / ${t('withdraw')}</button>
         </div>
-        <p class="muted-label">${t('positions')}</p>
+        <p class="section-title">${t('positions')}</p>
         <ul class="sheet-list tx-list">${b.holdings.map((h, i) => `
-          <li class="clickable" data-h="${i}" title="${t('sell')}">
-            <span class="tx-icon" style="background:${tint('#1b3a8e', .14)}">📈</span>
+          <li class="clickable" data-h="${i}" tabindex="0" role="button" title="${t('sell')}">
+            <span class="tx-icon tx-icon-accent">📈</span>
             <span class="tx-main">
               <span class="tx-title">${esc(h.symbol)}</span>
               <div class="tx-sub">${nfShares(h.shares)} × ${eur(h.buyPrice)} · ${dMed(h.buyDate)}</div>
@@ -550,7 +552,7 @@ function bindLotModeToggle(toEdit, toSell) {
 
 // Cabecera del lote: la MISMA fila que el usuario tocó en Posiciones (continuidad visual).
 const lotHead = h => `<div class="lot-head">
-  <span class="tx-icon" style="background:${tint('#1b3a8e', .14)}">📈</span>
+  <span class="tx-icon tx-icon-accent">📈</span>
   <span class="tx-main">
     <span class="tx-title">${esc(h.symbol)}</span>
     <div class="tx-sub">${nfShares(h.shares)} × ${eur(h.buyPrice)} · ${dMed(h.buyDate)}</div>
@@ -680,8 +682,8 @@ async function openBrokerTransferSheet(b, back) {
           <button class="pill" data-dir="withdraw">⬆️ ${t('withdraw')}</button>
         </div>
         ${amountBlock(t('amount'))}
-        <p class="tx-sub cat-hint">${t('cash_account_label')}</p>
-        <div class="chips">${cash.map(a => cashChip(a, 'acc')).join('')}</div>
+        <p class="group-label">${t('cash_account_label')}</p>
+        <div class="chips">${cash.map(a => cashChip(a, 'acc', cash)).join('')}</div>
         <div class="calc-line"><span>${t('free_margin')}</span><b>${eur(b.margin)}</b></div>`;
       bindAmount(body, true);
 

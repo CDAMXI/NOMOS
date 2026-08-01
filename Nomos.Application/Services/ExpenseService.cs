@@ -1,4 +1,3 @@
-using System.Globalization;
 using Nomos.Application.Common;
 using Nomos.Application.DTOs;
 using Nomos.Application.Interfaces;
@@ -14,7 +13,6 @@ public class ExpenseService(
     internal const decimal MaxAmount = 100_000_000m;
     // El dashboard manda hasta 20 recientes; el front enseña 8 y rellena hasta igualar columnas.
     internal const int RecentCount = 20;
-    private static readonly CultureInfo Spanish = CultureInfo.GetCultureInfo("es-ES");
 
     /// <summary>Available balance = sum of the live balances of the user's cash (bank) accounts.</summary>
     public async Task<decimal> GetBalanceAsync(int userId) =>
@@ -85,24 +83,16 @@ public class ExpenseService(
     public async Task<ExpensesDashboardDto> GetDashboardAsync(int userId, int windowDays, DateOnly today)
     {
         var accs = await accounts.GetAllAsync(userId);
-        var monthStart = new DateOnly(today.Year, today.Month, 1);
-        var prevMonthStart = monthStart.AddMonths(-1);
+        // El resumen del hero cubre la MISMA ventana que la gráfica y la rueda: mezclar mes
+        // natural con ventana móvil hacía que el día 1 el dashboard pareciera contradictorio
+        // («Gastos 0,00 €» sobre una rueda llena).
         var windowStart = today.AddDays(-(windowDays - 1));
-        var from = windowStart < prevMonthStart ? windowStart : prevMonthStart;
 
-        var items = await expenses.GetBetweenAsync(userId, from, today);
-        var incomeItems = await incomes.GetBetweenAsync(userId, from, today);
-
-        var monthTotal = items.Where(e => e.Date >= monthStart).Sum(e => e.Amount);
-        var prevMonthTotal = items.Where(e => e.Date >= prevMonthStart && e.Date < monthStart).Sum(e => e.Amount);
-        double? deltaPct = prevMonthTotal > 0
-            ? (double)((monthTotal - prevMonthTotal) / prevMonthTotal * 100)
-            : null;
-
-        var monthIncome = incomeItems.Where(i => i.Date >= monthStart).Sum(i => i.Amount);
+        var items = await expenses.GetBetweenAsync(userId, windowStart, today);
+        var incomeItems = await incomes.GetBetweenAsync(userId, windowStart, today);
         var balance = await GetBalanceAsync(userId, accs);
 
-        var inWindow = items.Where(e => e.Date >= windowStart).ToList();
+        var inWindow = items;
 
         // Cumulative daily spend across the window (what the evolution chart plots).
         var byDay = inWindow.GroupBy(e => e.Date).ToDictionary(g => g.Key, g => g.Sum(e => e.Amount));
@@ -139,13 +129,8 @@ public class ExpenseService(
 
         return new ExpensesDashboardDto(
             Balance: balance,
-            MonthDate: monthStart,
-            MonthLabel: Capitalize(monthStart.ToString("MMMM yyyy", Spanish)),
-            PrevMonthLabel: prevMonthStart.ToString("MMMM", Spanish),
-            MonthTotal: monthTotal,
-            PrevMonthTotal: prevMonthTotal,
-            DeltaPct: deltaPct,
-            MonthIncome: monthIncome,
+            WindowTotal: inWindow.Sum(e => e.Amount),
+            WindowIncome: incomeItems.Sum(i => i.Amount),
             Series: series,
             ByCategory: byCategory,
             ByAccount: byAccount,
@@ -178,8 +163,6 @@ public class ExpenseService(
         return text;
     }
 
-    private static string Capitalize(string s) =>
-        s.Length == 0 ? s : char.ToUpper(s[0], Spanish) + s[1..];
 
     private static string? NameOf(int? id, Dictionary<int, string> names) =>
         id is int x && names.TryGetValue(x, out var n) ? n : null;

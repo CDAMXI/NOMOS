@@ -69,6 +69,8 @@ async function submitAuth() {
 
   const btn = $('authSubmit');
   btn.disabled = true;
+  const prevLabel = btn.textContent;
+  btn.textContent = t('one_moment'); // ocupado visible: el cold start de Render tarda decenas de segundos
   try {
     me = authMode === 'register'
       ? await sendJSON('/api/auth/register', 'POST', { username, password, photoDataUrl: authPhoto })
@@ -78,6 +80,7 @@ async function submitAuth() {
     errorEl.textContent = e.message;
   } finally {
     btn.disabled = false;
+    btn.textContent = prevLabel;
   }
 }
 

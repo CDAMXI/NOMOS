@@ -18,6 +18,11 @@
   --shadow: inset 0 1px 0 var(--bevel-hi), 0 1px 0 var(--bevel-lo);
   /* Firma "canto": degradado marino estriado (reutilizado en .reed y bajo los totales). */
   --reed-grad: repeating-linear-gradient(90deg, var(--accent) 0 1.5px, transparent 1.5px 4px);
+  --reed-w: 168px;
+  /* Texto SOBRE acento/rojo: en claro el blanco contrasta (10.3:1) pero en oscuro los
+     acentos son claros y el blanco cae a 2.8:1 — ahí el texto debe ser oscuro. */
+  --on-accent: #ffffff;
+  --on-red: #ffffff;
 }
 
 [data-theme="dark"] {
@@ -35,6 +40,8 @@
   --key-active: #3d3d44;
   --bevel-hi: rgba(255, 255, 255, .05);
   --bevel-lo: rgba(0, 0, 0, .5);
+  --on-accent: #0d0d0d; /* 7.0:1 sobre #6e9bf0 */
+  --on-red: #0d0d0d;    /* 7.7:1 sobre #f0857a */
 }
 :root {
   /* Escala de diseno tokenizada (valores exactos: cero cambio visual). */
@@ -153,7 +160,6 @@ body {
 .hidden { display: none !important; }
 
 .hero { padding: var(--sp-8) var(--sp-4) var(--sp-18); }
-.hero-label { color: var(--muted); font-size: var(--fs-15); }
 
 .hero-amount {
   font-size: var(--fs-44);
@@ -169,7 +175,7 @@ body {
 /* Canto estriado: la firma "cuño" bajo el saldo (repeating-linear-gradient marino). */
 .reed {
   height: 5px;
-  width: 168px;
+  width: var(--reed-w);
   margin: var(--sp-5) 0 var(--sp-2);
   border-radius: var(--r-1);
   background: var(--reed-grad);
@@ -179,7 +185,7 @@ body {
 .broker-hero .big-figure::after {
   content: '';
   display: block;
-  width: 168px; /* misma anchura de firma que .reed bajo saldo/patrimonio */
+  width: var(--reed-w);
   height: 5px;
   margin: var(--sp-7) auto 0;
   border-radius: var(--r-1);
@@ -196,7 +202,7 @@ body {
 }
 .hero-accounts { margin: var(--sp-2) 0 var(--sp-6); }
 .hero-accounts::-webkit-scrollbar, .cat-accounts::-webkit-scrollbar { display: none; }
-.hero-accounts .chip, .cat-accounts .chip { padding: var(--sp-6) var(--sp-12); font-size: var(--fs-13); white-space: nowrap; flex: 0 0 auto; }
+.hero-accounts .chip, .cat-accounts .chip { padding: var(--sp-6) var(--sp-12); font-size: var(--fs-13); white-space: nowrap; flex: 0 0 auto; max-width: 60vw; overflow: hidden; text-overflow: ellipsis; }
 .hero-accounts .chip.selected, .cat-accounts .chip.selected { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
 
 .hero-delta { font-size: var(--fs-14); color: var(--muted); }
@@ -347,6 +353,7 @@ body {
 .tx-main { flex: 1; min-width: 0; }
 .tx-title { font-weight: 600; font-size: var(--fs-15); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tx-sub { color: var(--muted); font-size: var(--fs-13); margin-top: var(--sp-1); }
+.tx-main .tx-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tx-amount { font-weight: 600; font-size: var(--fs-15); white-space: nowrap; }
 
 /* ---------- Patrimonio ---------- */
@@ -367,19 +374,19 @@ body {
 
 .two-cards { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-14); margin-bottom: var(--sp-16); }
 /* Rótulos de sección en la hoja del broker con el tratamiento "cuño" (section-title). */
-.muted-label { color: var(--muted); font-size: var(--fs-12); font-weight: 600; text-transform: uppercase; letter-spacing: .18em; margin-bottom: var(--sp-6); }
+.muted-label { margin-bottom: var(--sp-6); }
 .big-figure { font-size: var(--fs-26); font-weight: 700; }
 .green { color: var(--green); }
 .red { color: var(--red); }
 
-.section-title {
+.section-title, .muted-label {
   text-transform: uppercase;
   letter-spacing: .18em;
   font-size: var(--fs-12);
   font-weight: 600;
   color: var(--muted);
-  margin: var(--sp-22) var(--sp-6) var(--sp-8);
 }
+.section-title { margin: var(--sp-22) var(--sp-6) var(--sp-8); }
 
 .acc-list { list-style: none; background: var(--card); border-radius: var(--r-16); padding: var(--sp-2) var(--sp-16); box-shadow: var(--shadow); }
 .acc-list li { cursor: pointer; }
@@ -397,7 +404,7 @@ body {
   border: none;
   border-radius: 50%;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-size: var(--fs-30);
   line-height: 1;
   cursor: pointer;
@@ -490,7 +497,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: calc(16px + env(safe-area-inset-top)) 18px 16px;
+  padding: calc(16px + env(safe-area-inset-top)) var(--sp-18) var(--sp-16);
 }
 
 .sheet-title { font-weight: 700; font-size: var(--fs-16); }
@@ -498,13 +505,13 @@ body {
 /* Guardar como píldora azul sólida con texto blanco (Cancelar queda como enlace de texto). */
 .sheet-bar .save {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   border-radius: var(--r-20);
   padding: var(--sp-7) var(--sp-15);
   font-size: var(--fs-145);
   font-weight: 600;
 }
-.sheet-bar .save:disabled { color: #fff; opacity: .4; cursor: default; }
+.sheet-bar .save:disabled { color: var(--on-accent); opacity: .4; cursor: default; }
 
 .sheet-body {
   flex: 1;
@@ -513,7 +520,7 @@ body {
   max-width: 720px;
   width: 100%;
   margin: 0 auto;
-  padding: 0 18px calc(18px + env(safe-area-inset-bottom));
+  padding: 0 var(--sp-18) calc(var(--sp-18) + env(safe-area-inset-bottom));
   overflow-y: auto;
 }
 
@@ -579,7 +586,7 @@ body {
 }
 
 /* Botón de borrado "armado" (primer toque dado, esperando confirmación). */
-.danger-btn.armed, .pill-danger.armed { background: var(--red); color: #fff; }
+.danger-btn.armed, .pill-danger.armed { background: var(--red); color: var(--on-red); }
 
 .sheet-list { list-style: none; }
 
@@ -635,7 +642,7 @@ body {
 .primary-btn {
   border: none;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-size: var(--fs-16);
   font-weight: 600;
   padding: var(--sp-13);
@@ -708,8 +715,6 @@ li.clickable { cursor: pointer; }
 /* ---------- Hoja del broker (inversiones) ---------- */
 .broker-hero { text-align: center; padding: var(--sp-2) 0 var(--sp-14); }
 .broker-hero .big-figure { font-size: var(--fs-34); }
-/* Rótulo del total con tratamiento "cuño" (eyebrow: mayúsculas espaciadas), como en Patrimonio. */
-.broker-hero .amount-label { text-transform: uppercase; letter-spacing: .25em; font-size: var(--fs-115); font-weight: 600; }
 .broker-sub { color: var(--muted); font-size: var(--fs-14); margin-top: var(--sp-4); }
 .broker-sub b { color: var(--text); font-weight: 600; }
 .calc-line { display: flex; justify-content: space-between; color: var(--muted); font-size: var(--fs-14); padding: var(--sp-7) var(--sp-2); }
@@ -821,12 +826,42 @@ li.clickable { cursor: pointer; }
 @keyframes boot-spin { to { transform: rotate(360deg); } }
 .boot-msg { color: var(--muted); font-size: var(--fs-145); text-align: center; max-width: 280px; line-height: 1.4; }
 
+
+/* Icono de fila en tinte de ACENTO (verde/rojo quedan reservados a los datos). */
+.tx-icon-accent { background: var(--accent-soft); }
+
+/* Rotulo de un grupo de chips en la hoja (Categoria / Cuenta), alineado a la izquierda. */
+.group-label { color: var(--muted); font-size: var(--fs-14); margin-bottom: var(--sp-8); }
+
+/* Fila de ajustes que ES una accion (actualizar contrasena, cerrar sesion). */
+.settings-row.accent .settings-label { color: var(--accent); font-weight: 600; }
+
+/* Primera carga / error persistente de la vista activa (con Reintentar). */
+.view-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-12);
+  padding: var(--sp-30) var(--sp-18);
+  text-align: center;
+}
+
+/* Los chips de los formularios truncan en vez de crecer en pildoras multilinea gigantes. */
+.chips .chip { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Franja 821-960px: la fila donut+lista se estrangula; se apilan dentro de la tarjeta. */
+@media (min-width: 821px) and (max-width: 960px) {
+  .cat-wrap { flex-direction: column; }
+  .cat-wrap .donut { align-self: center; }
+  .cat-list { width: 100%; }
+}
+
 /* ---------- Toast ---------- */
 .toast {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: 84px;
+  bottom: calc(64px + max(env(safe-area-inset-bottom, 0px), 24px));
   background: var(--text);
   color: var(--bg);
   padding: var(--sp-10) var(--sp-18);

@@ -13,8 +13,9 @@ async function loadGastos() {
   // Hero: balance of ONE cash account at a time (switchable); d.balance is the all-accounts total.
   renderHeroBalance(cash, d.balance);
 
-  let summary = `${monthYearLabel(d.monthDate)} · <span class="sum-out">${t('summary_expenses')} ${eur(d.monthTotal)}</span>`;
-  if (d.monthIncome > 0) summary += ` · <span class="sum-in">${t('summary_income')} +${eur(d.monthIncome)}</span>`;
+  // El resumen habla de la MISMA ventana que la gráfica y la rueda (30d/90d).
+  let summary = `${t('last_days', days)} · <span class="sum-out">${t('summary_expenses')} ${eur(d.windowTotal)}</span>`;
+  if (d.windowIncome > 0) summary += ` · <span class="sum-in">${t('summary_income')} +${eur(d.windowIncome)}</span>`;
   $('gMonthSummary').innerHTML = summary;
 
   renderLineChart($('gChart'), d.series.map(p => ({ x: p.date, y: p.value })), {
@@ -94,15 +95,18 @@ function renderCategoryCard(d, cash) {
       <li><span class="dot" style="background:${c.category.color}"></span>
         ${esc(catName(c.category.name))}<span class="amount">${eur(c.total)}</span></li>`).join('')
       || `<li class="tx-sub">${t('no_expenses_period')}</li>`;
-    box.querySelectorAll('[data-catacc]').forEach(ch =>
-      ch.classList.toggle('selected', ch.dataset.catacc === String(catAccountSel)));
+    box.querySelectorAll('[data-catacc]').forEach(ch => {
+      const sel = ch.dataset.catacc === String(catAccountSel);
+      ch.classList.toggle('selected', sel);
+      ch.setAttribute('aria-pressed', sel ? 'true' : 'false');
+    });
   };
 
   // El selector solo aparece con 2+ cuentas de efectivo (con una, la genérica ya es esa cuenta).
   if (cash.length < 2) { box.classList.add('hidden'); box.innerHTML = ''; catAccountSel = 'all'; paint(); return; }
   box.classList.remove('hidden');
   box.innerHTML = `<button class="chip" data-catacc="all">${t('all_accounts')}</button>`
-    + cash.map(a => cashChip(a, 'catacc')).join('');
+    + cash.map(a => cashChip(a, 'catacc', cash)).join('');
   box.querySelectorAll('[data-catacc]').forEach(ch =>
     ch.addEventListener('click', () => { catAccountSel = ch.dataset.catacc === 'all' ? 'all' : +ch.dataset.catacc; paint(); }));
   paint();
@@ -113,8 +117,9 @@ function renderCategoryCard(d, cash) {
 function renderHeroBalance(cash, total) {
   const box = $('gBalanceAccounts');
   const ids = cash.map(a => a.id);
-  // Default to (or repair to) the first account; keep a valid prior choice or 'all'.
-  if (heroAccountSel !== 'all' && !ids.includes(heroAccountSel)) heroAccountSel = ids[0] ?? 'all';
+  // El aterrizaje honesto es el TOTAL ('Todas'): aterrizar en la cuenta más vieja enseñaba
+  // el número menos significativo (p. ej. la «Efectivo» vacía del alta) como primer saldo.
+  if (heroAccountSel !== 'all' && !ids.includes(heroAccountSel)) heroAccountSel = 'all';
 
   const paint = () => {
     const bal = heroAccountSel === 'all'
@@ -122,9 +127,14 @@ function renderHeroBalance(cash, total) {
       : (cash.find(a => a.id === heroAccountSel)?.balance ?? total);
     const el = $('gBalance');
     el.textContent = eur(bal);
+    // Cifras de 7+ dígitos desbordan el hero a --fs-44: se compacta la fuente, no el dato.
+    el.style.fontSize = el.textContent.length > 12 ? 'var(--fs-30)' : '';
     el.classList.toggle('red', bal < 0);
-    box.querySelectorAll('[data-bal]').forEach(ch =>
-      ch.classList.toggle('selected', ch.dataset.bal === String(heroAccountSel)));
+    box.querySelectorAll('[data-bal]').forEach(ch => {
+      const sel = ch.dataset.bal === String(heroAccountSel);
+      ch.classList.toggle('selected', sel);
+      ch.setAttribute('aria-pressed', sel ? 'true' : 'false');
+    });
   };
 
   // Only offer the switcher when there is more than one cash account.
@@ -135,8 +145,8 @@ function renderHeroBalance(cash, total) {
     return;
   }
   box.classList.remove('hidden');
-  box.innerHTML = cash.map(a => cashChip(a, 'bal')).join('')
-    + `<button class="chip" data-bal="all">${t('all_accounts')}</button>`;
+  box.innerHTML = `<button class="chip" data-bal="all">${t('all_accounts')}</button>`
+    + cash.map(a => cashChip(a, 'bal', cash)).join('');
   box.querySelectorAll('[data-bal]').forEach(ch =>
     ch.addEventListener('click', () => {
       heroAccountSel = ch.dataset.bal === 'all' ? 'all' : +ch.dataset.bal;
@@ -154,13 +164,15 @@ function txRow(tx, index) {
   const amount = isIncome
     ? `<span class="tx-amount green">+${eur(tx.amount)}</span>`
     : `<span class="tx-amount">−${eur(tx.amount)}</span>`;
-  return `<li class="clickable" data-i="${index}" title="${t('edit')}">
+  // tabindex+role: fila operable por teclado (Enter/Espacio via el listener global de main.js).
+  return `<li class="clickable" data-i="${index}" tabindex="0" role="button" title="${t('edit')}">
     <span class="tx-icon" style="background:${bg}">${icon}</span>
     <span class="tx-main">
       <span class="tx-title">${esc(tx.description)}</span>
       <div class="tx-sub">${esc(sub)}</div>
     </span>
     ${amount}
+    <span class="acc-chevron">›</span>
   </li>`;
 }
 
@@ -177,7 +189,9 @@ async function loadPatrimonio() {
   const d = await getJSON('/api/networth');
   accountsCache = d.accounts;
 
-  $('nwTotal').textContent = eur(d.net);
+  const nwEl = $('nwTotal');
+  nwEl.textContent = eur(d.net);
+  nwEl.style.fontSize = nwEl.textContent.length > 12 ? 'var(--fs-30)' : '';
   const deltaEl = $('nwDelta');
   deltaEl.classList.add('invert');
   if (d.yearDeltaPct === null || d.yearDeltaPct === undefined) {
@@ -225,8 +239,9 @@ async function loadPatrimonio() {
 
 function accRow(a) {
   const isLiab = a.type === 'Liability';
-  return `<li data-acc="${a.id}" class="clickable">
-    <span class="tx-icon" style="background:${tint(isLiab ? '#e8332a' : '#34c759', .14)}">${TYPE_ICON[a.type]}</span>
+  // Icono en tinte de ACENTO: verde/rojo son colores de dato (la cifra), no decoración.
+  return `<li data-acc="${a.id}" class="clickable" tabindex="0" role="button">
+    <span class="tx-icon tx-icon-accent">${TYPE_ICON[a.type]}</span>
     <span class="tx-main">
       <span class="tx-title">${esc(a.name)}</span>
       <div class="tx-sub">${t('updated_prefix')} ${dMed(a.updatedAt)}</div>

@@ -50,6 +50,9 @@ function openSheet(ctx) {
   ctx.build(sheetBody);
   refreshSaveState();
   sheet.classList.remove('hidden');
+  // El foco entra al diálogo al abrirse (lo anuncia el lector y el primer Tab ya está dentro);
+  // las hojas con importe lo re-enfocan después a su input (bindAmount).
+  sheet.querySelector('.sheet-panel').focus();
   // Gesto/botón Atrás del móvil: UNA entrada de historial mientras haya hoja abierta (las
   // encadenadas la comparten); Atrás cierra la hoja en vez de salir de la PWA.
   if (!sheetInHistory) { history.pushState({ plutoSheet: true }, ''); sheetInHistory = true; }
@@ -104,6 +107,8 @@ sheetSave.addEventListener('click', async () => {
   if (sheetSave.disabled || !sheetCtx?.onSave) return;
   const ctx = sheetCtx;
   sheetSave.disabled = true; // evita doble envío mientras la petición está en curso
+  const saveLabel = sheetSave.textContent;
+  sheetSave.textContent = t('saving'); // estado ocupado visible (red lenta / Render dormido)
   try {
     await ctx.onSave();
     closeSheet(!!(ctx.afterSave || ctx.back)); // si se reabre otra hoja, conserva el historial
@@ -115,9 +120,19 @@ sheetSave.addEventListener('click', async () => {
     // El error queda a la vista dentro de la hoja (un toast desaparece antes de leerse).
     refreshSaveState();
     sheetError.textContent = e.message;
+  } finally {
+    sheetSave.textContent = saveLabel;
   }
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && sheetCtx) dismissSheet(); });
+
+// Filas-boton de las listas (Recientes, cuentas, lotes): Enter/Espacio equivalen al toque.
+document.addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('li.clickable[role="button"]')) {
+    e.preventDefault();
+    e.target.click();
+  }
+});
 
 // Atrás del navegador/móvil: cierra (o retrocede) la hoja. Si la hoja anterior se reabre,
 // openSheet vuelve a crear la entrada consumida. Dos guardas contra «Atrás fantasma»:
@@ -220,12 +235,20 @@ function decValue(el) {
 }
 
 // Markup de chip reutilizado en varias hojas/vistas (cuenta de efectivo y categoria).
-const cashChip = (a, attr) => `<button class="chip" data-${attr}="${a.id}">${TYPE_ICON.Cash} ${esc(a.name)}</button>`;
+// Si el nombre esta repetido entre las cuentas dadas, se anade el saldo: dos cuentas
+// homonimas producian chips gemelos indistinguibles.
+const cashChip = (a, attr, all) => {
+  const dup = all && all.filter(x => x.name === a.name).length > 1;
+  return `<button class="chip" data-${attr}="${a.id}">${TYPE_ICON.Cash} ${esc(a.name)}${dup ? ` · ${eurShort(a.balance)}` : ''}</button>`;
+};
 const catChip = c => `<button class="chip" data-cat="${c.id}">${c.icon} ${esc(catName(c.name))}</button>`;
 
 // Marca activo el boton cuyo data-<attr> coincide con `val`, dentro de `scope`.
-const paintActive = (scope, attr, val) => scope.querySelectorAll(`[data-${attr}]`).forEach(p =>
-  p.classList.toggle('active', p.dataset[attr] === val));
+const paintActive = (scope, attr, val) => scope.querySelectorAll(`[data-${attr}]`).forEach(p => {
+  const active = p.dataset[attr] === val;
+  p.classList.toggle('active', active);
+  p.setAttribute('aria-pressed', active ? 'true' : 'false');
+});
 
 // Confirmación en dos toques SIN diálogo nativo (mantiene la piel de la app): el primer
 // toque «arma» el botón (texto de aviso y estilo intenso); el segundo, dentro de 4 s,

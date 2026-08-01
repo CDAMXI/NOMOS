@@ -131,15 +131,24 @@ function renderDonut(el, items, opts = {}) {
   const total = items.reduce((s, i) => s + i.value, 0);
   if (!total) { el.innerHTML = ''; return; }
   const r = 52, C = 2 * Math.PI * r;
-  // Flat (butt) caps and touching segments render a clean continuous ring instead of rounded pills.
-  let off = 0, segs = '';
+  // Hueco de 1.5 unidades entre segmentos: colores índigo adyacentes eran indistinguibles
+  // sin un límite visible (el fondo de la tarjeta hace de separador).
+  const GAP = items.length > 1 ? 1.5 : 0;
+  let off = 0, segs = '', hits = '';
   items.forEach((it, i) => {
     const len = it.value / total * C;
+    const seg = Math.max(len - GAP, 0.8); // las astillas conservan un mínimo visible
     segs += `<circle data-i="${i}" r="${r}" cx="70" cy="70" fill="none" stroke="${it.color}" stroke-width="26"
-      stroke-dasharray="${len.toFixed(2)} ${C.toFixed(2)}"
+      stroke-dasharray="${seg.toFixed(2)} ${C.toFixed(2)}"
+      stroke-dashoffset="${(-off).toFixed(2)}"/>`;
+    // Gemelo invisible más gordo: área de toque mínima para segmentos-astilla (~2px).
+    hits += `<circle data-i="${i}" r="${r}" cx="70" cy="70" fill="none" stroke="${it.color}" stroke-opacity="0"
+      stroke-width="40" pointer-events="visibleStroke"
+      stroke-dasharray="${Math.max(len, 6).toFixed(2)} ${C.toFixed(2)}"
       stroke-dashoffset="${(-off).toFixed(2)}"/>`;
     off += len;
   });
+  segs += hits; // los gemelos van encima: capturan el toque sin pintar nada
   el.innerHTML = `<svg viewBox="0 0 140 140" style="transform:rotate(-90deg)" aria-hidden="true">${segs}</svg>
     <div class="donut-center" aria-hidden="true"></div>`;
 
@@ -147,10 +156,11 @@ function renderDonut(el, items, opts = {}) {
   let sel = opts.selected != null ? items.findIndex(it => it.id === opts.selected) : -1;
   const apply = () => {
     el.classList.toggle('has-sel', sel >= 0);
-    el.querySelectorAll('circle').forEach((c, i) => c.classList.toggle('sel', i === sel));
-    // eurShort: a partir de 10 000 compacta («12 mil €») para caber en el agujero de la rueda.
+    el.querySelectorAll('circle').forEach(c => c.classList.toggle('sel', +c.dataset.i === sel));
+    // Compacta para el agujero (~104px): sin céntimos desde 1 000, «12 mil €» desde 10 000.
+    const v = items[sel]?.value;
     center.innerHTML = sel >= 0
-      ? `<b>${eurShort(items[sel].value)}</b><span>${esc(items[sel].name || '')}</span>`
+      ? `<b>${eurShort(v >= 1000 ? Math.round(v) : v)}</b><span>${esc(items[sel].name || '')}</span>`
       : '';
   };
   el.querySelectorAll('circle').forEach(c =>

@@ -30,13 +30,8 @@ public record AccountBreakdownDto(int AccountId, List<CategoryTotalDto> ByCatego
 
 public record ExpensesDashboardDto(
     decimal Balance,
-    DateOnly MonthDate,
-    string MonthLabel,
-    string PrevMonthLabel,
-    decimal MonthTotal,
-    decimal PrevMonthTotal,
-    double? DeltaPct,
-    decimal MonthIncome,
+    decimal WindowTotal,
+    decimal WindowIncome,
     List<SeriesPointDto> Series,
     List<CategoryTotalDto> ByCategory,
     List<AccountBreakdownDto> ByAccount,

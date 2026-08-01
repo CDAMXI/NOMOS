@@ -61,7 +61,6 @@ const dMed = iso => {
 // Interpreta la fecha ISO como medianoche LOCAL (evita el desfase de zona con new Date(iso), que la trata como UTC).
 const localDate = iso => new Date(String(iso).slice(0, 10) + 'T00:00:00');
 const shortMonth = dt => cap(new Intl.DateTimeFormat(localeCode(), { month: 'short' }).format(dt).replace('.', ''));
-const monthYearLabel = iso => cap(new Intl.DateTimeFormat(localeCode(), { month: 'long', year: 'numeric' }).format(localDate(iso)));
 
 const todayISO = () => {
   const d = new Date();
@@ -74,22 +73,27 @@ function tint(hex, alpha) {
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
 }
 
-// Versión legible COMO TEXTO de un color de categoría: los colores los fija el usuario y, sin
-// ajuste, un color muy claro es ilegible sobre fondo claro (y uno muy oscuro, sobre fondo
-// oscuro). Se corrige solo la luminancia; el tono del usuario se conserva.
+// Versión legible COMO TEXTO de un color de categoría sobre su propio tinte (fondo del chip:
+// tint(color, .18) compuesto sobre la tarjeta del tema). Ajusta SOLO la luminancia, escalando
+// hacia negro (tema claro) o blanco (oscuro) hasta alcanzar el contraste AA de 4.5:1 real
+// (fórmula WCAG de luminancia relativa; el clamp anterior por luminancia simple se quedaba
+// en 2.8-3.9:1 en media paleta).
+const _lin = c => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+const _relLum = (r, g, b) => 0.2126 * _lin(r) + 0.7152 * _lin(g) + 0.0722 * _lin(b);
+const _contrast = (l1, l2) => (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+
 function readableColor(hex) {
   const n = parseInt(hex.slice(1), 16);
   let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
-  const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
   const dark = document.documentElement.dataset.theme === 'dark';
-  if (!dark && lum > 0.55) {
-    const k = 0.55 / lum;
-    r = Math.round(r * k); g = Math.round(g * k); b = Math.round(b * k);
-  } else if (dark && lum < 0.45) {
-    const s = (0.45 - lum) / (1 - lum);
-    r = Math.round(r + (255 - r) * s); g = Math.round(g + (255 - g) * s); b = Math.round(b + (255 - b) * s);
+  const card = dark ? [26, 26, 32] : [255, 255, 255]; // --card de cada tema
+  const A = 0.18; // alpha de tint() en los chips
+  const bgLum = _relLum(...[r, g, b].map((c, i) => c * A + card[i] * (1 - A)));
+  for (let i = 0; i < 24 && _contrast(_relLum(r, g, b), bgLum) < 4.5; i++) {
+    if (dark) { r += (255 - r) * 0.12; g += (255 - g) * 0.12; b += (255 - b) * 0.12; }
+    else { r *= 0.88; g *= 0.88; b *= 0.88; }
   }
-  return `rgb(${r}, ${g}, ${b})`;
+  return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
 }
 
 

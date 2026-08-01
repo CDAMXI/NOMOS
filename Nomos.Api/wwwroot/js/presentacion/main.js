@@ -3,10 +3,29 @@
 
 
 // ---------- Navegación / tema / sincronización ----------
+// Primera pintura de cada vista: spinner mientras llega la red; fallo = estado de error
+// PERSISTENTE con Reintentar (un toast se esfuma y dejaba la vista en blanco sin salida).
+// Con datos ya pintados, un fallo de refresco solo avisa (y nunca en bucle estando offline).
+const viewLoaded = {};
 function refreshCurrent() {
   if (!me) return Promise.resolve();
-  const load = currentView === 'gastos' ? loadGastos : loadPatrimonio;
-  return load().catch(e => toast(e.message));
+  const view = currentView;
+  const load = view === 'gastos' ? loadGastos : loadPatrimonio;
+  const loader = $('viewLoader');
+  if (!viewLoaded[view]) {
+    loader.classList.remove('hidden');
+    loader.innerHTML = '<span class="boot-spinner"></span>';
+  }
+  return load().then(() => {
+    viewLoaded[view] = true;
+    if (view === currentView) loader.classList.add('hidden');
+  }).catch(e => {
+    if (viewLoaded[view]) { toast(e.message); return; }
+    loader.classList.remove('hidden');
+    loader.innerHTML = `<p class="tx-sub">${esc(e.message)}</p>
+      <button id="retryBtn" class="pill pill-action">${t('retry')}</button>`;
+    $('retryBtn').addEventListener('click', refreshCurrent);
+  });
 }
 
 // El «+» cambia de acción según la pestaña: su etiqueta accesible debe decirlo.
@@ -34,7 +53,11 @@ document.querySelectorAll('.tab').forEach(tab =>
 document.querySelectorAll('.pill[data-days]').forEach(pill =>
   pill.addEventListener('click', () => {
     days = +pill.dataset.days;
-    document.querySelectorAll('.pill[data-days]').forEach(p => p.classList.toggle('active', p === pill));
+    document.querySelectorAll('.pill[data-days]').forEach(p => {
+      const active = p === pill;
+      p.classList.toggle('active', active);
+      p.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
     if (me) loadGastos().catch(e => toast(e.message));
   }));
 
@@ -69,8 +92,9 @@ applyTheme(localStorage.getItem('nomos-theme') || 'light');
 updateFabTitle();
 
 // Los datos viven en la base de datos: refresca al volver a la pestaña y cada 20 s.
+// Sin red no se intenta: evita el bucle de toasts de error cada 20 s estando offline.
 const AUTO_REFRESH_MS = 20000;
-const canAutoRefresh = () => !sheetCtx && me && !chartHovering;
+const canAutoRefresh = () => !sheetCtx && me && !chartHovering && navigator.onLine;
 window.addEventListener('focus', () => { if (canAutoRefresh()) refreshCurrent(); });
 setInterval(() => { if (canAutoRefresh()) refreshCurrent(); }, AUTO_REFRESH_MS);
 
@@ -90,6 +114,13 @@ setInterval(() => { if (canAutoRefresh()) refreshCurrent(); }, AUTO_REFRESH_MS);
     }
   }
   clearTimeout(slow);
+  // Offline con sesión desconocida: mejor decirlo y esperar a la red que enseñar el login.
+  if (!responded && !navigator.onLine) {
+    const m = $('bootMsg');
+    if (m) m.textContent = t('offline_msg');
+    window.addEventListener('online', () => location.reload(), { once: true });
+    return;
+  }
   if (user) { me = user; enterApp(); } else { showAuth(); }
   $('bootLoader')?.classList.add('hidden');
 })();
