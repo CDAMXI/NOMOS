@@ -464,4 +464,11 @@ api.MapPut("/brokers/{id:int}/holdings/{holdingId:int}", async Task<Results<Ok<B
     catch (ArgumentException ex) { return TypedResults.BadRequest(ex.Message); }
 });
 
+api.MapDelete("/brokers/{id:int}/holdings/{holdingId:int}", async Task<Results<Ok<BrokerDto>, NotFound>>
+    (int id, int holdingId, ClaimsPrincipal principal, InvestmentService service) =>
+{
+    var broker = await service.DeleteHoldingAsync(id, UserId(principal), holdingId);
+    return broker is null ? TypedResults.NotFound() : TypedResults.Ok(broker);
+});
+
 app.Run();

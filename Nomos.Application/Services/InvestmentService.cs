@@ -128,6 +128,30 @@ public class InvestmentService(
         return await ToDtoAsync(broker, userId);
     }
 
+    /// <summary>
+    /// Deshace una compra registrada por error: elimina el lote y devuelve su coste íntegro
+    /// al margen libre, como si la compra nunca se hubiera anotado.
+    /// </summary>
+    public async Task<BrokerDto?> DeleteHoldingAsync(int accountId, int userId, int holdingId)
+    {
+        var broker = await GetBrokerAsync(accountId, userId);
+        if (broker is null) return null;
+
+        var lot = await holdings.GetByIdAsync(holdingId, userId);
+        if (lot is null || lot.AccountId != accountId) return null;
+
+        // Atómico: borrar el lote y devolver el margen van juntos o no van.
+        await unitOfWork.InTransactionAsync(async () =>
+        {
+            broker.Balance += decimal.Round(lot.Shares * lot.BuyPrice, 2);
+            broker.UpdatedAt = DateTime.UtcNow;
+            await holdings.DeleteAsync(lot);
+            await accounts.UpdateAsync(broker);
+            await snapshotWriter.RefreshAsync(userId, AppClock.Today());
+        });
+        return await ToDtoAsync(broker, userId);
+    }
+
     public async Task<BrokerDto?> TransferAsync(int accountId, int userId, BrokerTransferRequest request)
     {
         var broker = await GetBrokerAsync(accountId, userId);

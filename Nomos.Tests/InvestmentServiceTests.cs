@@ -76,6 +76,36 @@ public class InvestmentServiceTests
     }
 
     [Fact]
+    public async Task DeleteHolding_RefundsFullCostToMargin_AndRemovesLot()
+    {
+        using var h = new TestHarness();
+        var (userId, _, brokerId) = await h.SeedAsync(margin: 300);
+        var bought = await h.Investment.BuyAsync(brokerId, userId, new BuyRequest("AAPL", 2, 100));
+        var lotId = bought!.Holdings[0].Id; // margen 100, coste 200
+
+        var dto = await h.Investment.DeleteHoldingAsync(brokerId, userId, lotId);
+
+        Assert.Equal(300m, dto!.Margin); // la compra deshecha: el coste vuelve integro
+        Assert.Equal(0m, dto.Invested);
+        Assert.Empty(dto.Holdings);
+    }
+
+    [Fact]
+    public async Task DeleteHolding_WrongAccountOrLot_ReturnsNull()
+    {
+        using var h = new TestHarness();
+        var (userId, cashId, brokerId) = await h.SeedAsync(margin: 300);
+        var bought = await h.Investment.BuyAsync(brokerId, userId, new BuyRequest("AAPL", 1, 100));
+        var lotId = bought!.Holdings[0].Id;
+
+        Assert.Null(await h.Investment.DeleteHoldingAsync(cashId, userId, lotId));
+        Assert.Null(await h.Investment.DeleteHoldingAsync(brokerId, userId, lotId + 999));
+
+        var broker = await h.Accounts.GetByIdAsync(brokerId, userId);
+        Assert.Equal(200m, broker!.Balance); // nada cambio
+    }
+
+    [Fact]
     public async Task UpdateHolding_WrongAccountOrLot_ReturnsNull()
     {
         using var h = new TestHarness();

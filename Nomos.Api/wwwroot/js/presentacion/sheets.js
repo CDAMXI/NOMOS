@@ -483,16 +483,13 @@ function openSellSheet(b, h, back) {
     },
     build(body) {
       body.innerHTML = `
+        ${lotModeToggle('sell')}
         <p class="tx-sub cat-hint">${t('lot_summary', nfShares(h.shares), eur(h.buyPrice), dMed(h.buyDate))}</p>
         <input id="sharesField" class="text-field" inputmode="decimal" autocomplete="off" placeholder="${t('num_shares')}" autofocus>
         <input id="priceField" class="text-field" inputmode="decimal" autocomplete="off" placeholder="${t('sell_price', curSymbol)}">
         <div class="calc-line"><span>${t('total_proceeds')}</span><b id="sellTotal">—</b></div>
-        <p class="field-hint" id="sellHint"></p>
-        <div class="divider"></div>
-        <button id="editLotBtn" class="pill pill-action centered">${t('edit_lot')}</button>`;
-
-      // ¿La compra se registró mal? Se corrige el lote en vez de venderlo.
-      $('editLotBtn').addEventListener('click', () => openEditLotSheet(b, h, back));
+        <p class="field-hint" id="sellHint"></p>`;
+      bindLotModeToggle(() => openEditLotSheet(b, h, back), null);
 
       const paint = () => {
         const { sh, pr } = readSharesPrice();
@@ -517,8 +514,20 @@ function openSellSheet(b, h, back) {
   });
 }
 
+// Toggle Vender/Editar de la hoja de lote: las dos acciones visibles desde el primer toque
+// (cambiar de modo re-abre la otra hoja; comparten la entrada de historial).
+const lotModeToggle = mode => `<div class="kind-toggle">
+  <button class="pill${mode === 'sell' ? ' active' : ''}" id="lotSellTab">💱 ${t('sell')}</button>
+  <button class="pill${mode === 'edit' ? ' active' : ''}" id="lotEditTab">${t('edit_lot')}</button>
+</div>`;
+function bindLotModeToggle(toEdit, toSell) {
+  if (toEdit) $('lotEditTab').addEventListener('click', toEdit);
+  if (toSell) $('lotSellTab').addEventListener('click', toSell);
+}
+
 // --- Editar una compra registrada con error: símbolo, cantidad, precio y fecha del lote ---
-// El margen libre absorbe la diferencia de coste (corregir al alza descuenta; a la baja devuelve).
+// El margen libre absorbe la diferencia de coste (corregir al alza descuenta; a la baja
+// devuelve). Borrar la compra la deshace del todo: elimina el lote y devuelve su coste al margen.
 function openEditLotSheet(b, h, back) {
   // Máximo coste admisible: el margen actual MÁS lo que ya costó este lote (que se devuelve al corregir).
   const maxCost = round2(b.margin + h.cost);
@@ -532,6 +541,7 @@ function openEditLotSheet(b, h, back) {
     },
     build(body) {
       body.innerHTML = `
+        ${lotModeToggle('edit')}
         <input id="symField" class="text-field" maxlength="40" value="${esc(h.symbol)}">
         <input id="sharesField" class="text-field" inputmode="decimal" autocomplete="off" placeholder="${t('num_shares')}" value="${seed(h.shares)}">
         <input id="priceField" class="text-field" inputmode="decimal" autocomplete="off" placeholder="${t('price_per_share', curSymbol)}" value="${seed(h.buyPrice)}">
@@ -541,7 +551,23 @@ function openEditLotSheet(b, h, back) {
         </label>
         <div class="calc-line"><span>${t('total_cost')}</span><b id="lotCost">—</b></div>
         <div class="calc-line"><span>${t('margin_after')}</span><b id="lotMargin">—</b></div>
-        <p class="field-hint" id="lotHint"></p>`;
+        <p class="field-hint" id="lotHint"></p>
+        <button id="deleteLot" class="danger-btn">${t('delete_lot')}</button>`;
+      bindLotModeToggle(null, () => openSellSheet(b, h, back));
+
+      // Borrar la compra = deshacerla: el lote desaparece y su coste vuelve al margen.
+      armDelete($('deleteLot'), t('delete_lot'), async () => {
+        try {
+          await sendJSON(`/api/brokers/${b.accountId}/holdings/${h.id}`, 'DELETE');
+          closeSheet(!!back);
+          await refreshCurrent();
+          toast(t('lot_deleted'));
+          back?.();
+        } catch (e) {
+          refreshSaveState();
+          sheetError.textContent = e.message;
+        }
+      });
 
       // Fecha visible SIEMPRE como DD/MM/AAAA (mismo patrón que la hoja de movimiento).
       const dateEl = $('lotDateField');
