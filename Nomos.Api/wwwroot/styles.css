@@ -419,21 +419,22 @@ body {
 .acc-chevron { color: var(--muted); opacity: .55; font-size: var(--fs-18); font-weight: 600; }
 
 /* ---------- FAB y tab bar ---------- */
-/* El "+" de añadir vive en la barra, como en Recordatorios/Calendario. */
-.nav-add {
-  position: absolute;
-  right: var(--sp-18);
-  top: var(--sp-12);
-  width: 38px;
-  height: 38px;
+/* El botón de añadir, flotante sobre la tabbar (donde siempre — preferencia de Charlie). */
+#fab {
+  position: fixed;
+  right: var(--sp-26);
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  width: 58px;
+  height: 58px;
   border: none;
-  background: none;
-  color: var(--accent);
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
   font-size: var(--fs-30);
-  font-weight: 600;
   line-height: 1;
-  padding: 0;
   cursor: pointer;
+  box-shadow: 0 6px 16px rgba(27, 58, 142, .32);
+  z-index: 30;
 }
 
 /* Tabbar iOS: barra translucida a todo lo ancho pegada abajo, icono sobre etiqueta;

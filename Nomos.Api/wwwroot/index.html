@@ -32,9 +32,6 @@
   <header class="topbar">
     <button id="profileBtn" class="icon-btn avatar-btn hidden" title="Perfil" aria-label="Perfil"></button>
     <span class="brand">P&thinsp;L&thinsp;U&thinsp;T&thinsp;O</span>
-    <!-- El «+» vive en la barra de navegación, como en las apps de Apple (el FAB es Material).
-         El tema se cambia desde el Perfil. -->
-    <button id="fab" class="nav-add hidden" title="Añadir movimiento">＋</button>
   </header>
 
   <!-- Primera carga / error de la vista activa (las hojas tienen su propio spinner). -->
@@ -114,6 +111,9 @@
 
     <div id="nwSections"></div>
   </main>
+
+  <!-- El botón de añadir, flotante donde siempre (preferencia de Charlie). -->
+  <button id="fab" class="hidden" title="Añadir movimiento">+</button>
 
   <!-- Glifos monocromos (trazo currentColor, espíritu SF Symbols): el emoji en la tabbar
        delataba Material. -->
