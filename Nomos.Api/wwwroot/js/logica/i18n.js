@@ -8,7 +8,6 @@ const I18N = {
   waking_server: 'Despertando el servidor… puede tardar hasta 1 minuto la primera vez.',
   evolution: 'Evolución',
   summary_expenses: 'Gastos', summary_income: 'Ingresos', income_word: 'Ingreso',
-  last_days: 'Últimos {0} días',
   saving: 'Guardando…', one_moment: 'Un momento…', retry: 'Reintentar',
   offline_msg: 'Sin conexión. Se reintentará al recuperar la red.',
   category_label: 'Categoría',

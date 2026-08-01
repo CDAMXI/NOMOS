@@ -83,16 +83,18 @@ public class ExpenseService(
     public async Task<ExpensesDashboardDto> GetDashboardAsync(int userId, int windowDays, DateOnly today)
     {
         var accs = await accounts.GetAllAsync(userId);
-        // El resumen del hero cubre la MISMA ventana que la gráfica y la rueda: mezclar mes
-        // natural con ventana móvil hacía que el día 1 el dashboard pareciera contradictorio
-        // («Gastos 0,00 €» sobre una rueda llena).
+        // El RESUMEN habla del mes natural (así se leen los gastos: el día 1 se ve solo lo
+        // de hoy, porque el mes arranca — decisión de Charlie). La gráfica y la rueda siguen
+        // la ventana móvil de sus pastillas (30/90 días).
+        var monthStart = new DateOnly(today.Year, today.Month, 1);
         var windowStart = today.AddDays(-(windowDays - 1));
+        var from = windowStart < monthStart ? windowStart : monthStart;
 
-        var items = await expenses.GetBetweenAsync(userId, windowStart, today);
-        var incomeItems = await incomes.GetBetweenAsync(userId, windowStart, today);
+        var items = await expenses.GetBetweenAsync(userId, from, today);
+        var incomeItems = await incomes.GetBetweenAsync(userId, from, today);
         var balance = await GetBalanceAsync(userId, accs);
 
-        var inWindow = items;
+        var inWindow = items.Where(e => e.Date >= windowStart).ToList();
 
         // Cumulative daily spend across the window (what the evolution chart plots).
         var byDay = inWindow.GroupBy(e => e.Date).ToDictionary(g => g.Key, g => g.Sum(e => e.Amount));
@@ -129,8 +131,8 @@ public class ExpenseService(
 
         return new ExpensesDashboardDto(
             Balance: balance,
-            WindowTotal: inWindow.Sum(e => e.Amount),
-            WindowIncome: incomeItems.Sum(i => i.Amount),
+            MonthTotal: items.Where(e => e.Date >= monthStart).Sum(e => e.Amount),
+            MonthIncome: incomeItems.Where(i => i.Date >= monthStart).Sum(i => i.Amount),
             Series: series,
             ByCategory: byCategory,
             ByAccount: byAccount,

@@ -61,6 +61,7 @@ const dMed = iso => {
 // Interpreta la fecha ISO como medianoche LOCAL (evita el desfase de zona con new Date(iso), que la trata como UTC).
 const localDate = iso => new Date(String(iso).slice(0, 10) + 'T00:00:00');
 const shortMonth = dt => cap(new Intl.DateTimeFormat(localeCode(), { month: 'short' }).format(dt).replace('.', ''));
+const monthYearLabel = iso => cap(new Intl.DateTimeFormat(localeCode(), { month: 'long', year: 'numeric' }).format(localDate(iso)));
 
 const todayISO = () => {
   const d = new Date();

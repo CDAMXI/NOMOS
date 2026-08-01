@@ -13,9 +13,10 @@ async function loadGastos() {
   // Hero: balance of ONE cash account at a time (switchable); d.balance is the all-accounts total.
   renderHeroBalance(cash, d.balance);
 
-  // El resumen habla de la MISMA ventana que la gráfica y la rueda (30d/90d).
-  let summary = `${t('last_days', days)} · <span class="sum-out">${t('summary_expenses')} ${eur(d.windowTotal)}</span>`;
-  if (d.windowIncome > 0) summary += ` · <span class="sum-in">${t('summary_income')} +${eur(d.windowIncome)}</span>`;
+  // El resumen habla del MES NATURAL (el día 1 muestra solo lo de hoy: el mes arranca);
+  // la gráfica y la rueda siguen la ventana de sus pastillas.
+  let summary = `${monthYearLabel(todayISO())} · <span class="sum-out">${t('summary_expenses')} ${eur(d.monthTotal)}</span>`;
+  if (d.monthIncome > 0) summary += ` · <span class="sum-in">${t('summary_income')} +${eur(d.monthIncome)}</span>`;
   $('gMonthSummary').innerHTML = summary;
 
   renderLineChart($('gChart'), d.series.map(p => ({ x: p.date, y: p.value })), {
