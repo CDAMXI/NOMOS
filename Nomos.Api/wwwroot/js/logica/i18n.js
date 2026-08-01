@@ -41,6 +41,7 @@ const I18N = {
   account_created: 'Cuenta creada', delete_account: 'Eliminar cuenta', account_deleted: 'Cuenta eliminada',
   account_label: 'Cuenta', add_account_chip: '＋ cuenta', all_accounts: 'Todas',
   profile: 'Perfil', change_photo: 'Cambiar foto', username: 'Nombre de usuario',
+  dark_mode: 'Tema oscuro',
   manage_categories: 'Gestionar categorías',
   section_general: 'General',
   export_csv: 'Exportar movimientos (Excel)', export_done: 'Descarga iniciada',

@@ -32,7 +32,9 @@
   <header class="topbar">
     <button id="profileBtn" class="icon-btn avatar-btn hidden" title="Perfil" aria-label="Perfil"></button>
     <span class="brand">P&thinsp;L&thinsp;U&thinsp;T&thinsp;O</span>
-    <button id="themeBtn" class="icon-btn" title="Cambiar tema" aria-label="Cambiar tema">🌙</button>
+    <!-- El «+» vive en la barra de navegación, como en las apps de Apple (el FAB es Material).
+         El tema se cambia desde el Perfil. -->
+    <button id="fab" class="nav-add hidden" title="Añadir movimiento">＋</button>
   </header>
 
   <!-- Primera carga / error de la vista activa (las hojas tienen su propio spinner). -->
@@ -48,21 +50,22 @@
       <p class="hero-sub" id="gMonthSummary"></p>
     </section>
 
+    <!-- Rótulos de sección FUERA de los grupos (patrón de listas agrupadas de iOS). -->
     <div class="grid">
       <div class="col">
-        <section class="card">
-          <div class="card-head">
-            <h3>Evolución</h3>
-            <div class="pills">
-              <button class="pill active" data-days="30">30d</button>
-              <button class="pill" data-days="90">90d</button>
-            </div>
+        <div class="section-head">
+          <p class="section-title">Evolución</p>
+          <div class="pills">
+            <button class="pill active" data-days="30">30d</button>
+            <button class="pill" data-days="90">90d</button>
           </div>
+        </div>
+        <section class="card">
           <div id="gChart" class="chart"></div>
         </section>
 
+        <div class="section-head"><p class="section-title">Por categoría</p></div>
         <section class="card">
-          <h3>Por categoría</h3>
           <div class="cat-accounts hidden" id="gCatAccounts"></div>
           <div class="cat-wrap">
             <div id="gDonut" class="donut"></div>
@@ -72,11 +75,11 @@
       </div>
 
       <div class="col">
+        <div class="section-head">
+          <p class="section-title">Recientes</p>
+          <button id="verTodoBtn" class="link">Ver todo</button>
+        </div>
         <section class="card">
-          <div class="card-head">
-            <h3>Recientes</h3>
-            <button id="verTodoBtn" class="link">Ver todo</button>
-          </div>
           <ul id="gRecent" class="tx-list"></ul>
         </section>
       </div>
@@ -97,26 +100,32 @@
       <section class="card"><p class="muted-label">Pasivos</p><p id="nwLiab" class="big-figure red"></p></section>
     </div>
 
-    <section class="card">
-      <div class="card-head">
-        <h3>Evolución</h3>
-        <div class="pills">
-          <button class="pill active" data-nw="30">30d</button>
-          <button class="pill" data-nw="90">90d</button>
-          <button class="pill" data-nw="year">Año</button>
-        </div>
+    <div class="section-head">
+      <p class="section-title">Evolución</p>
+      <div class="pills">
+        <button class="pill active" data-nw="30">30d</button>
+        <button class="pill" data-nw="90">90d</button>
+        <button class="pill" data-nw="year">Año</button>
       </div>
+    </div>
+    <section class="card">
       <div id="nwChart" class="chart"></div>
     </section>
 
     <div id="nwSections"></div>
   </main>
 
-  <button id="fab" class="hidden" title="Añadir movimiento">+</button>
-
+  <!-- Glifos monocromos (trazo currentColor, espíritu SF Symbols): el emoji en la tabbar
+       delataba Material. -->
   <nav class="tabbar">
-    <button class="tab active" data-view="gastos"><span aria-hidden="true">💸</span> <span>Gastos</span></button>
-    <button class="tab" data-view="patrimonio"><span aria-hidden="true">📊</span> <span>Patrimonio</span></button>
+    <button class="tab active" data-view="gastos">
+      <svg class="tab-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.75" y="5.25" width="18.5" height="13.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="2.75" y1="9.75" x2="21.25" y2="9.75" stroke="currentColor" stroke-width="1.8"/><line x1="6" y1="15.25" x2="10.5" y2="15.25" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <span>Gastos</span>
+    </button>
+    <button class="tab" data-view="patrimonio">
+      <svg class="tab-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 19.5V12.5 M9.5 19.5V6 M14.5 19.5V10 M19.5 19.5V4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <span>Patrimonio</span>
+    </button>
   </nav>
 
   <!-- ===== Hoja modal (movimientos / cuentas / perfil / ver todo) =====

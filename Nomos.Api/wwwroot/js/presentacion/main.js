@@ -77,17 +77,12 @@ $('fab').addEventListener('click', () => {
 $('verTodoBtn').addEventListener('click', () => openAllTxSheet().catch(sheetFail));
 $('profileBtn').addEventListener('click', openProfileSheet);
 
-const themeBtn = $('themeBtn');
+// El tema se cambia desde el interruptor del Perfil; aquí solo se aplica y persiste.
+// Los gráficos usan var(--accent)/var(--line) en el propio SVG: repintan por CSS al instante.
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
-  themeBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
   localStorage.setItem('nomos-theme', theme);
 }
-themeBtn.addEventListener('click', () => {
-  // Los gráficos usan var(--accent)/var(--line) en el propio SVG: el cambio de tema los
-  // repinta por CSS al instante, sin volver a pedir datos a la red.
-  applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
-});
 applyTheme(localStorage.getItem('nomos-theme') || 'light');
 updateFabTitle();
 

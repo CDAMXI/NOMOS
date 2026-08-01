@@ -135,6 +135,7 @@ body {
   background: var(--bar);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: .5px solid var(--line);
   /* +safe-area: respeta el notch/isla en móviles que lo tienen (0 donde no lo hay). */
   padding: calc(12px + env(safe-area-inset-top)) var(--sp-20) var(--sp-10);
 }
@@ -155,8 +156,7 @@ body {
   height: 38px;
   border: none;
   border-radius: 50%;
-  background: var(--card);
-  box-shadow: var(--shadow);
+  background: var(--fill);
   font-size: var(--fs-17);
   cursor: pointer;
 }
@@ -235,20 +235,18 @@ body {
 
 .card {
   background: var(--card);
-  border-radius: var(--r-16);
+  border-radius: var(--r-20);
   padding: var(--sp-16) var(--sp-18);
-  box-shadow: var(--shadow);
 }
 
-.card h3 { font-size: var(--fs-16); margin-bottom: var(--sp-10); }
-
-.card-head {
+/* Rotulo de seccion FUERA del grupo, con su control al otro lado (iOS agrupado). */
+.section-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--sp-10);
+  margin: var(--sp-20) var(--sp-6) var(--sp-8);
 }
-.card-head h3 { margin-bottom: 0; }
+.section-head .section-title { margin: 0; }
 
 .link {
   border: none;
@@ -364,7 +362,7 @@ body {
   left: 54px;
   right: 0;
   bottom: 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: .5px solid var(--line);
 }
 
 .tx-icon {
@@ -416,26 +414,26 @@ body {
 }
 .section-title { margin: var(--sp-22) var(--sp-6) var(--sp-8); }
 
-.acc-list { list-style: none; background: var(--card); border-radius: var(--r-16); padding: var(--sp-2) var(--sp-16); box-shadow: var(--shadow); }
+.acc-list { list-style: none; background: var(--card); border-radius: var(--r-20); padding: var(--sp-2) var(--sp-16); }
 .acc-list li { cursor: pointer; }
 .acc-chevron { color: var(--muted); opacity: .55; font-size: var(--fs-18); font-weight: 600; }
 
 /* ---------- FAB y tab bar ---------- */
-#fab {
-  position: fixed;
-  right: var(--sp-26);
-  bottom: calc(72px + env(safe-area-inset-bottom, 0px)); /* por encima de la tabbar iOS */
-  width: 58px;
-  height: 58px;
+/* El "+" de añadir vive en la barra, como en Recordatorios/Calendario. */
+.nav-add {
+  position: absolute;
+  right: var(--sp-18);
+  top: var(--sp-12);
+  width: 38px;
+  height: 38px;
   border: none;
-  border-radius: 50%;
-  background: var(--accent);
-  color: var(--on-accent);
+  background: none;
+  color: var(--accent);
   font-size: var(--fs-30);
+  font-weight: 600;
   line-height: 1;
+  padding: 0;
   cursor: pointer;
-  box-shadow: 0 6px 16px rgba(27, 58, 142, .32);
-  z-index: 30;
 }
 
 /* Tabbar iOS: barra translucida a todo lo ancho pegada abajo, icono sobre etiqueta;
@@ -450,7 +448,7 @@ body {
   background: var(--bar);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   backdrop-filter: saturate(180%) blur(20px);
-  border-top: 1px solid var(--line);
+  border-top: .5px solid var(--line);
   padding: var(--sp-6) var(--sp-16) calc(var(--sp-6) + env(safe-area-inset-bottom, 0px));
   z-index: 30;
 }
@@ -468,8 +466,12 @@ body {
   padding: var(--sp-2) var(--sp-18);
   cursor: pointer;
 }
-.tab span[aria-hidden] { font-size: var(--fs-22); line-height: 1.1; }
+.tab-ico { width: 24px; height: 24px; }
 .tab.active { color: var(--accent); font-weight: 600; }
+
+/* Al subir una hoja, la vista de detras retrocede (profundidad de page sheet iOS). */
+main.view { transition: transform .45s cubic-bezier(0.32, 0.72, 0, 1); transform-origin: 50% 0; }
+body.sheet-open main.view { transform: scale(.945); }
 
 /* ---------- Hoja modal ---------- */
 .sheet {
@@ -592,8 +594,8 @@ body {
 
 .chips { display: flex; flex-wrap: wrap; gap: var(--sp-9); padding-bottom: var(--sp-18); }
 .chip {
-  border: 1px solid var(--line);
-  background: var(--card);
+  border: none;
+  background: var(--fill);
   color: var(--text);
   border-radius: var(--r-20);
   padding: var(--sp-8) var(--sp-14);
@@ -660,7 +662,6 @@ body {
 .auth-card {
   background: var(--card);
   border-radius: var(--r-20);
-  box-shadow: var(--shadow);
   width: 100%;
   max-width: 380px;
   padding: var(--sp-34) var(--sp-30) var(--sp-26);
@@ -732,7 +733,7 @@ body {
 .avatar-btn .avatar-initial { font-size: var(--fs-17); }
 .avatar-pick .avatar-initial { font-size: var(--fs-36); }
 
-.divider { border-top: 1px solid var(--line); margin: var(--sp-18) 0 var(--sp-12); }
+.divider { border-top: .5px solid var(--line); margin: var(--sp-18) 0 var(--sp-12); }
 
 .centered { display: block; margin: 0 auto; }
 
@@ -747,7 +748,7 @@ body {
 li.clickable { cursor: pointer; }
 
 /* ---------- Editor de categorías ---------- */
-.chip.chip-add { border-style: dashed; color: var(--accent); }
+.chip.chip-add { border: 1px dashed var(--line); background: none; color: var(--accent); }
 
 .cat-editor { display: flex; flex-direction: column; align-items: stretch; }
 
@@ -828,7 +829,7 @@ li.clickable { cursor: pointer; }
 }
 .profile-name:focus { border-bottom-color: var(--accent); }
 
-.settings-group { background: var(--card); border-radius: var(--r-16); padding: 0 var(--sp-16); box-shadow: var(--shadow); margin-bottom: var(--sp-16); }
+.settings-group { background: var(--card); border-radius: var(--r-20); padding: 0 var(--sp-16); margin-bottom: var(--sp-16); }
 .settings-row {
   width: 100%; display: flex; align-items: center; gap: var(--sp-12); padding: var(--sp-12) 0;
   border: none; background: none; position: relative;
@@ -916,6 +917,35 @@ li.clickable { cursor: pointer; }
   .cat-wrap .donut { align-self: center; }
   .cat-list { width: 100%; }
 }
+
+/* Interruptor iOS. */
+.switch {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 46px;
+  height: 28px;
+  border-radius: var(--r-pill);
+  background: var(--fill);
+  position: relative;
+  cursor: pointer;
+  transition: background .2s;
+  flex: 0 0 auto;
+  margin: 0;
+}
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .3);
+  transition: left .2s;
+}
+.switch:checked { background: var(--accent); }
+.switch:checked::after { left: 20px; }
 
 /* ---------- Toast ---------- */
 .toast {

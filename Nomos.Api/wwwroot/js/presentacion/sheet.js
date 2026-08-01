@@ -50,6 +50,7 @@ function openSheet(ctx) {
   ctx.build(sheetBody);
   refreshSaveState();
   sheet.classList.remove('hidden');
+  document.body.classList.add('sheet-open'); // la vista de detrás retrocede (profundidad iOS)
   // El foco entra al diálogo al abrirse (lo anuncia el lector y el primer Tab ya está dentro);
   // las hojas con importe lo re-enfocan después a su input (bindAmount).
   sheet.querySelector('.sheet-panel').focus();
@@ -63,7 +64,8 @@ function openSheet(ctx) {
 function closeSheet(keepHistory = false) {
   sheet.classList.add('hidden');
   sheetCtx = null;
-  if (keepHistory) return;
+  if (keepHistory) return; // otra hoja se reabre ya mismo: el fondo sigue retirado
+  document.body.classList.remove('sheet-open');
   // Consumir la entrada SOLO si de verdad estamos en ella (si un diálogo nativo la
   // desincronizó, un back() a ciegas sacaría al usuario de la app).
   if (sheetInHistory) {

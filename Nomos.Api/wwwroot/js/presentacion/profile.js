@@ -20,6 +20,11 @@ function openProfileSheet() {
 
         <p class="section-title">${t('section_general')}</p>
         <div class="settings-group">
+          <label class="settings-row" for="themeSwitch">
+            <span class="tx-icon tx-icon-accent">🌙</span>
+            <span class="settings-label">${t('dark_mode')}</span>
+            <input id="themeSwitch" type="checkbox" class="switch"${document.documentElement.dataset.theme === 'dark' ? ' checked' : ''}>
+          </label>
           <button class="settings-row" id="manageCatsBtn">
             <span class="tx-icon tx-icon-accent">🏷️</span>
             <span class="settings-label">${t('manage_categories')}</span>
@@ -70,6 +75,8 @@ function openProfileSheet() {
           $('profAvatar').innerHTML = `<img src="${newPhoto}" alt="">`;
         } catch { toast(t('photo_error')); }
       });
+
+      $('themeSwitch').addEventListener('change', e => applyTheme(e.target.checked ? 'dark' : 'light'));
 
       $('manageCatsBtn').addEventListener('click', () => openCategoriesSheet());
 
