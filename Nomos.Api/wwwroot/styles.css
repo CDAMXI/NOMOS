@@ -899,9 +899,6 @@ li.clickable { cursor: pointer; }
 .boot-msg { color: var(--muted); font-size: var(--fs-145); text-align: center; max-width: 280px; line-height: 1.4; }
 
 
-/* Icono de fila en el color de acento (solido, como los iconos de Ajustes de iOS). */
-.tx-icon-accent { background: var(--accent); }
-
 /* Glifo de trazo dentro del azulejo: blanco, grosor uniforme y centrado geometrico
    (el emoji dependia de la linea base de la fuente y nunca quedaba centrado del todo). */
 .glyph {

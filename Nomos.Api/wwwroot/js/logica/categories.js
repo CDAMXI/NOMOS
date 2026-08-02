@@ -68,8 +68,10 @@ function glyphSvg(key) {
 }
 
 // Azulejo de icono al estilo Ajustes de iOS: cuadrado de color sólido con el glifo en blanco.
+// Sin color propio (cuentas, broker, perfil) el azulejo va en el acento: el glifo es blanco,
+// así que un azulejo sin fondo lo dejaría invisible.
 const iconTile = (glyph, color) =>
-  `<span class="tx-icon"${color ? ` style="background:${color}"` : ''}>${glyphSvg(glyph)}</span>`;
+  `<span class="tx-icon" style="background:${color || 'var(--accent)'}">${glyphSvg(glyph)}</span>`;
 
 // ---------- Icono automático de categoría (espejo de Nomos.Application/Common/CategoryIcon.cs) ----------
 const ICON_FALLBACK = '🏷️';
