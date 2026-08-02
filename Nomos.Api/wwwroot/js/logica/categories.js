@@ -95,7 +95,8 @@ const currencyGlyph = () => textGlyph(curGlyph, { size: CUR_GLYPH_SIZE[curGlyph.
 // Cuentas que reconocemos por el NOMBRE (mismo patrón que ICON_RULES). El azulejo lleva el color
 // de la entidad; el efectivo, el acento de la app y el símbolo de la divisa que tenga configurada.
 const ACCOUNT_MARKS = [
-  [['bbva'], { tile: '#004481', mark: () => textGlyph('BBVA', { size: 7, track: -0.35 }) }],
+  [['bbva'], { tile: '#1c5ba3', mark: () => imgMark('img/bbva.webp') }],
+  [['bac'], { tile: '#e5022c', mark: () => imgMark('img/bac.webp') }],
   [['wise'], { tile: '#9ee56f', mark: () => imgMark('img/wise.webp') }],
   [['efectivo', 'metalico', 'cash', 'monedero', 'billetera', 'wallet'], { mark: currencyGlyph }],
 ];
