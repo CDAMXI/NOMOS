@@ -248,8 +248,8 @@ async function openCategoriesSheet() {
           <span class="acc-chevron">›</span>
         </button>`).join('')}
         <button class="settings-row cat-add-row" id="addCat">
-          <span class="tx-icon cat-add-tile">＋</span>
-          <span class="settings-label">${t('add_category').replace(/^＋\s*/, '')}</span>
+          <span class="tx-icon cat-add-tile">${glyphSvg('plus')}</span>
+          <span class="settings-label">${t('add_category')}</span>
         </button></div>`;
       body.querySelectorAll('button[data-cat]').forEach(b =>
         b.addEventListener('click', () => {
@@ -398,8 +398,8 @@ async function openBrokerSheet(accountId) {
           <p class="broker-sub">${t('free_margin')}: <b>${eur(b.margin)}</b> · ${t('invested')}: <b>${eur(b.invested)}</b></p>
         </div>
         <div class="kind-toggle">
-          <button id="buyBtn" class="pill active">🛒 ${t('buy')}</button>
-          <button id="transferBtn" class="pill">🔁 ${t('deposit')} / ${t('withdraw')}</button>
+          <button id="buyBtn" class="pill active">${t('buy')}</button>
+          <button id="transferBtn" class="pill">${t('deposit')} / ${t('withdraw')}</button>
         </div>
         <p class="section-title">${t('positions')}</p>
         <ul class="sheet-list tx-list">${b.holdings.map((h, i) => `
@@ -542,7 +542,7 @@ function openSellSheet(b, h, back) {
 // Toggle Vender/Editar de la hoja de lote: las dos acciones visibles desde el primer toque
 // (cambiar de modo re-abre la otra hoja; comparten la entrada de historial).
 const lotModeToggle = mode => `<div class="kind-toggle">
-  <button class="pill${mode === 'sell' ? ' active' : ''}" id="lotSellTab">💱 ${t('sell')}</button>
+  <button class="pill${mode === 'sell' ? ' active' : ''}" id="lotSellTab">${t('sell')}</button>
   <button class="pill${mode === 'edit' ? ' active' : ''}" id="lotEditTab">${t('edit_lot')}</button>
 </div>`;
 function bindLotModeToggle(toEdit, toSell) {

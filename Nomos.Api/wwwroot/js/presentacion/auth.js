@@ -26,7 +26,7 @@ function showAuth() {
   $('fab').classList.add('hidden');
   authPhoto = null;
   $('authPhotoPick').classList.remove('filled');
-  $('authPhotoPick').textContent = '📷';
+  $('authPhotoPick').innerHTML = glyphSvg('camera');
   $('authUser').value = '';
   $('authPass').value = '';
   $('authPass2').value = '';
