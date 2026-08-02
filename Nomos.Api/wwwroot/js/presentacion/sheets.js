@@ -2,14 +2,75 @@
 'use strict';
 
 
-// Categorías ordenadas por uso reciente (recentCache), luego alfabético. Las más usadas primero
-// para tocar menos al añadir un gasto. Solo presentación: no toca lógica de negocio ni el modelo.
-// Orden alfabetico de categorias por su nombre traducido (segun el idioma activo).
-const byCatName = (a, b) => catName(a.name).localeCompare(catName(b.name), localeCode());
+// ---------- Piezas compartidas por las hojas ----------
+// Fila etiqueta-valor de un formulario. `decimal` abre el teclado numérico, `suffix` pinta la
+// divisa a la derecha y `extra` cuelga un control al final (p. ej. el chip «Todo» de la venta).
+function formRow(label, id, { value = '', placeholder = '', maxlength = 0, decimal = false,
+                              suffix = '', extra = '', autofocus = false } = {}) {
+  const attrs = [
+    decimal ? 'inputmode="decimal" autocomplete="off"' : '',
+    maxlength ? `maxlength="${maxlength}"` : '',
+    autofocus ? 'autofocus' : '',
+  ].filter(Boolean).join(' ');
+  return `<label class="form-row">
+    <span class="form-label">${label}</span>
+    <input id="${id}" class="form-input" ${attrs} placeholder="${placeholder}" value="${esc(value)}">
+    ${suffix ? `<span class="cur">${suffix}</span>` : ''}${extra}
+  </label>`;
+}
 
-// Lee cantidad y precio de las hojas comprar/vender (sin redondear; conserva signo).
+// Fila de fecha: valor visible dMed (DD/MM/AAAA) + input nativo invisible cubriéndola, para
+// conservar el calendario del sistema. bindDateRow se llama tras pintar el cuerpo.
+const dateRow = (wrapId, inputId, iso, label) => `<label class="form-row date-row" id="${wrapId}">
+  <span class="form-label">${label}</span>
+  <span class="date-value" id="${inputId}Display"></span>
+  <input id="${inputId}" type="date" aria-label="${label}" value="${iso}">
+</label>`;
+
+function bindDateRow(wrapId, inputId) {
+  const el = $(inputId);
+  const paintDate = () => { $(inputId + 'Display').textContent = dMed(el.value || todayISO()); };
+  ['input', 'change'].forEach(ev => el.addEventListener(ev, paintDate));
+  $(wrapId).addEventListener('click', () => {
+    try { el.showPicker(); } catch (_) { /* picker ya abierto o sin soporte */ }
+  });
+  paintDate();
+}
+
+// Recalcular en cada tecla: el patrón de todas las hojas con importes derivados.
+const onInput = (ids, fn) => ids.forEach(id => $(id).addEventListener('input', fn));
+
+// Toggle Vender/Editar de la hoja de lote: las dos acciones visibles desde el primer toque
+// (cambiar de modo re-abre la otra hoja; comparten la entrada de historial).
+const lotModeToggle = mode => `<div class="kind-toggle">
+  <button class="pill${mode === 'sell' ? ' active' : ''}" id="lotSellTab">${t('sell')}</button>
+  <button class="pill${mode === 'edit' ? ' active' : ''}" id="lotEditTab">${t('edit_lot')}</button>
+</div>`;
+
+function bindLotModeToggle(toEdit, toSell) {
+  if (toEdit) $('lotEditTab').addEventListener('click', toEdit);
+  if (toSell) $('lotSellTab').addEventListener('click', toSell);
+}
+
+// Cabecera del lote: la MISMA fila que el usuario tocó en Posiciones (continuidad visual).
+const lotHead = h => `<div class="lot-head">
+  ${iconTile('📈')}
+  <span class="tx-main">
+    <span class="tx-title">${esc(h.symbol)}</span>
+    <div class="tx-sub">${nfShares(h.shares)} × ${eur(h.buyPrice)} · ${dMed(h.buyDate)}</div>
+  </span>
+  <span class="lot-cost">${eur(h.cost)}</span>
+</div>`;
+
+// Lee cantidad y precio de las hojas comprar/vender/editar (sin redondear; conserva el signo
+// para que la validación pueda rechazar negativos explícitamente).
 const readSharesPrice = () => ({ sh: decValue($('sharesField')), pr: decValue($('priceField')) });
 
+// Orden alfabético de categorías por su nombre en pantalla.
+const byCatName = (a, b) => catName(a.name).localeCompare(catName(b.name), localeCode());
+
+// Categorías ordenadas por uso reciente y, a igualdad, alfabéticamente: las más usadas primero
+// para tocar menos al añadir un gasto.
 function categoriesByUse() {
   const freq = new Map();
   for (const tx of recentCache)
@@ -399,19 +460,9 @@ function openBuySheet(b, back) {
     build(body) {
       body.innerHTML = `
         <div class="form-rows">
-          <label class="form-row">
-            <span class="form-label">${t('symbol_label')}</span>
-            <input id="symField" class="form-input" maxlength="40" placeholder="AAPL" autofocus>
-          </label>
-          <label class="form-row">
-            <span class="form-label">${t('num_shares')}</span>
-            <input id="sharesField" class="form-input" inputmode="decimal" autocomplete="off" placeholder="0">
-          </label>
-          <label class="form-row">
-            <span class="form-label">${t('price_paid_label')}</span>
-            <input id="priceField" class="form-input" inputmode="decimal" autocomplete="off" placeholder="0">
-            <span class="cur">${curSymbol}</span>
-          </label>
+          ${formRow(t('symbol_label'), 'symField', { maxlength: 40, placeholder: 'AAPL', autofocus: true })}
+          ${formRow(t('num_shares'), 'sharesField', { decimal: true, placeholder: '0' })}
+          ${formRow(t('price_paid_label'), 'priceField', { decimal: true, placeholder: '0', suffix: curSymbol })}
           ${dateRow('buyDateWrap', 'buyDateField', todayISO(), t('buy_date_label'))}
         </div>
         <div class="calc-line grand"><span>${t('total_cost')}</span><b id="buyCost">—</b></div>
@@ -429,7 +480,7 @@ function openBuySheet(b, back) {
           : '';
         refreshSaveState();
       };
-      ['symField', 'sharesField', 'priceField'].forEach(id => $(id).addEventListener('input', paint));
+      onInput(['symField', 'sharesField', 'priceField'], paint);
     },
     async onSave() {
       await sendJSON(`/api/brokers/${b.accountId}/buy`, 'POST', {
@@ -457,16 +508,9 @@ function openSellSheet(b, h, back) {
         ${lotModeToggle('sell')}
         ${lotHead(h)}
         <div class="form-rows">
-          <label class="form-row">
-            <span class="form-label">${t('num_shares')}</span>
-            <input id="sharesField" class="form-input" inputmode="decimal" autocomplete="off" placeholder="0" autofocus>
-            <button id="sellAllChip" class="chip chip-max">${t('sell_all_chip')}</button>
-          </label>
-          <label class="form-row">
-            <span class="form-label">${t('sell_price_label')}</span>
-            <input id="priceField" class="form-input" inputmode="decimal" autocomplete="off" placeholder="0">
-            <span class="cur">${curSymbol}</span>
-          </label>
+          ${formRow(t('num_shares'), 'sharesField', { decimal: true, placeholder: '0', autofocus: true,
+            extra: `<button id="sellAllChip" class="chip chip-max">${t('sell_all_chip')}</button>` })}
+          ${formRow(t('sell_price_label'), 'priceField', { decimal: true, placeholder: '0', suffix: curSymbol })}
         </div>
         <div class="calc-line grand"><span>${t('total_proceeds')}</span><b id="sellTotal">—</b></div>
         <p class="field-hint" id="sellHint"></p>`;
@@ -488,7 +532,7 @@ function openSellSheet(b, h, back) {
           : '';
         refreshSaveState();
       };
-      ['sharesField', 'priceField'].forEach(id => $(id).addEventListener('input', paint));
+      onInput(['sharesField', 'priceField'], paint);
     },
     async onSave() {
       await sendJSON(`/api/brokers/${b.accountId}/sell`, 'POST', {
@@ -500,44 +544,6 @@ function openSellSheet(b, h, back) {
     },
     back, afterSave: back
   });
-}
-
-// Toggle Vender/Editar de la hoja de lote: las dos acciones visibles desde el primer toque
-// (cambiar de modo re-abre la otra hoja; comparten la entrada de historial).
-const lotModeToggle = mode => `<div class="kind-toggle">
-  <button class="pill${mode === 'sell' ? ' active' : ''}" id="lotSellTab">${t('sell')}</button>
-  <button class="pill${mode === 'edit' ? ' active' : ''}" id="lotEditTab">${t('edit_lot')}</button>
-</div>`;
-function bindLotModeToggle(toEdit, toSell) {
-  if (toEdit) $('lotEditTab').addEventListener('click', toEdit);
-  if (toSell) $('lotSellTab').addEventListener('click', toSell);
-}
-
-// Cabecera del lote: la MISMA fila que el usuario tocó en Posiciones (continuidad visual).
-const lotHead = h => `<div class="lot-head">
-  ${iconTile('📈')}
-  <span class="tx-main">
-    <span class="tx-title">${esc(h.symbol)}</span>
-    <div class="tx-sub">${nfShares(h.shares)} × ${eur(h.buyPrice)} · ${dMed(h.buyDate)}</div>
-  </span>
-  <span class="lot-cost">${eur(h.cost)}</span>
-</div>`;
-
-// Fila de fecha del formulario: valor visible dMed (DD/MM/AAAA) + input nativo invisible
-// cubriendo la fila (conserva el calendario del sistema). bindDateRow tras pintar el body.
-const dateRow = (wrapId, inputId, iso, label) => `<label class="form-row date-row" id="${wrapId}">
-  <span class="form-label">${label}</span>
-  <span class="date-value" id="${inputId}Display"></span>
-  <input id="${inputId}" type="date" aria-label="${label}" value="${iso}">
-</label>`;
-function bindDateRow(wrapId, inputId) {
-  const el = $(inputId);
-  const paintD = () => { $(inputId + 'Display').textContent = dMed(el.value || todayISO()); };
-  ['input', 'change'].forEach(ev => el.addEventListener(ev, paintD));
-  $(wrapId).addEventListener('click', () => {
-    try { el.showPicker(); } catch (_) { /* picker ya abierto o sin soporte */ }
-  });
-  paintD();
 }
 
 // --- Editar una compra registrada con error: símbolo, cantidad, precio y fecha del lote ---
@@ -559,19 +565,9 @@ function openEditLotSheet(b, h, back) {
         ${lotModeToggle('edit')}
         ${lotHead(h)}
         <div class="form-rows">
-          <label class="form-row">
-            <span class="form-label">${t('symbol_label')}</span>
-            <input id="symField" class="form-input" maxlength="40" value="${esc(h.symbol)}">
-          </label>
-          <label class="form-row">
-            <span class="form-label">${t('num_shares')}</span>
-            <input id="sharesField" class="form-input" inputmode="decimal" autocomplete="off" value="${seed(h.shares)}">
-          </label>
-          <label class="form-row">
-            <span class="form-label">${t('price_paid_label')}</span>
-            <input id="priceField" class="form-input" inputmode="decimal" autocomplete="off" value="${seed(h.buyPrice)}">
-            <span class="cur">${curSymbol}</span>
-          </label>
+          ${formRow(t('symbol_label'), 'symField', { maxlength: 40, value: h.symbol })}
+          ${formRow(t('num_shares'), 'sharesField', { decimal: true, value: seed(h.shares) })}
+          ${formRow(t('price_paid_label'), 'priceField', { decimal: true, value: seed(h.buyPrice), suffix: curSymbol })}
           ${dateRow('lotDateWrap', 'lotDateField', h.buyDate, t('buy_date_label'))}
         </div>
         <div class="calc-line grand"><span>${t('total_cost')}</span><b id="lotCost">—</b></div>
@@ -608,7 +604,7 @@ function openEditLotSheet(b, h, back) {
           : '';
         refreshSaveState();
       };
-      ['symField', 'sharesField', 'priceField'].forEach(id => $(id).addEventListener('input', paint));
+      onInput(['symField', 'sharesField', 'priceField'], paint);
       paint();
     },
     async onSave() {
