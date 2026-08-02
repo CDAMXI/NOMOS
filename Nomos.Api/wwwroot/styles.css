@@ -545,7 +545,7 @@ body.sheet-open main.view { transform: scale(calc(1 - .055 * var(--sheet-p, 1)))
   to { transform: none; opacity: 1; }
 }
 
-/* Error persistente de la hoja (guardar/borrar/escanear): visible hasta que se corrige. */
+/* Error persistente de la hoja (guardar, borrar): visible hasta que se corrige. */
 .sheet-error {
   color: var(--red);
   font-size: var(--fs-135);
@@ -744,7 +744,6 @@ body.sheet-open main.view { transform: scale(calc(1 - .055 * var(--sheet-p, 1)))
 .centered { display: block; margin: 0 auto; }
 
 /* ---------- Movimientos: gasto / ingreso ---------- */
-.scan-btn { margin-bottom: var(--sp-12); }
 
 .hero-sub { font-size: var(--fs-14); color: var(--muted); margin-top: var(--sp-3); }
 .hero-sub b { color: var(--green); font-weight: 600; }

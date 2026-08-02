@@ -21,8 +21,6 @@ const I18N = {
   amount: 'Monto',
   new_expense: 'Nuevo gasto', edit_expense: 'Editar gasto', new_income: 'Nuevo ingreso', edit_income: 'Editar ingreso',
   kind_expense: 'Gasto', kind_income: 'Ingreso', add_category_chip: '+ categoría',
-  scan_receipt: 'Escanear factura', scanning: 'Analizando…',
-  scan_done: 'Factura leída — revisa y guarda', scan_failed: 'No parece un ticket o no se pudo leer',
   more_chip: 'más',
   description_optional: 'Descripción (opcional)', date_label: 'Fecha',
   delete_expense: 'Eliminar gasto', delete_income: 'Eliminar ingreso',
