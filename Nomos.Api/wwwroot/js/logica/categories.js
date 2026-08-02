@@ -82,13 +82,10 @@ const textGlyph = (text, { size = 15, ink = '#fff', track = 0 } = {}) =>
     text-anchor="middle" dominant-baseline="central" fill="${ink}" stroke="none"
     font-size="${size}" font-weight="700" letter-spacing="${track}">${text}</text></svg>`;
 
-// Marca de trazo con la tinta de la entidad (el trazo es más grueso que el de un glifo normal:
-// un logotipo pide más peso que un icono de sistema).
-const markGlyph = (paths, ink) =>
-  `<svg class="glyph" viewBox="0 0 24 24" aria-hidden="true" style="stroke:${ink};stroke-width:3.2;stroke-linecap:butt">${paths}</svg>`;
-
-// El símbolo de flujo de Wise: la barra superior que cae en diagonal, cruzada por la segunda.
-const WISE_MARK = '<path d="M4.4 5.4h15.2L7.6 19.6"/><path d="M4.4 12.5h8.8"/>';
+// Logotipo que no se puede dibujar con un glifo de trazo: se sirve su imagen, y el color de marca
+// lo pone el azulejo. Asi las esquinas transparentes del logo se rellenan y el icono conserva el
+// MISMO radio que los demas. Decorativo (alt vacio): el nombre de la cuenta va justo al lado.
+const imgMark = src => `<img class="mark-img" src="${src}" alt="" width="40" height="40">`;
 
 // El símbolo de la divisa del usuario, al tamaño que quepa: uno de un carácter va grande; un
 // código de tres letras (CHF, PEN, VES) tiene que encoger.
@@ -99,7 +96,7 @@ const currencyGlyph = () => textGlyph(curGlyph, { size: CUR_GLYPH_SIZE[curGlyph.
 // de la entidad; el efectivo, el acento de la app y el símbolo de la divisa que tenga configurada.
 const ACCOUNT_MARKS = [
   [['bbva'], { tile: '#004481', mark: () => textGlyph('BBVA', { size: 7, track: -0.35 }) }],
-  [['wise'], { tile: '#9fe870', mark: () => markGlyph(WISE_MARK, '#163300') }],
+  [['wise'], { tile: '#9ee56f', mark: () => imgMark('img/wise.webp') }],
   [['efectivo', 'metalico', 'cash', 'monedero', 'billetera', 'wallet'], { mark: currencyGlyph }],
 ];
 

@@ -911,6 +911,15 @@ li.clickable { cursor: pointer; }
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+/* Logotipo servido como imagen: llena el azulejo y hereda su radio, de modo que el color de marca
+   del tile asoma por las esquinas transparentes del logo. */
+.tx-icon .mark-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+}
+
 /* El tile de anadir no lleva color de fondo: su glifo va en el acento. */
 .cat-add-tile .glyph { stroke: var(--accent); }
 
