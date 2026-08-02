@@ -95,52 +95,58 @@ public class ExpenseService(
         var balance = await GetBalanceAsync(userId, accs);
 
         var inWindow = items.Where(e => e.Date >= windowStart).ToList();
-
-        // Cumulative daily spend across the window (what the evolution chart plots).
-        var byDay = inWindow.GroupBy(e => e.Date).ToDictionary(g => g.Key, g => g.Sum(e => e.Amount));
-        var series = new List<SeriesPointDto>(windowDays);
-        decimal running = 0;
-        for (var d = windowStart; d <= today; d = d.AddDays(1))
-        {
-            running += byDay.GetValueOrDefault(d);
-            series.Add(new SeriesPointDto(d, running));
-        }
-
         // La RUEDA reparte el gasto del MES natural, igual que el resumen del hero (la gráfica
         // es la que sigue la ventana móvil de sus pastillas).
         var inMonth = items.Where(e => e.Date >= monthStart).ToList();
 
-        var byCategory = inMonth
-            .GroupBy(e => e.CategoryId)
-            .Select(g => new CategoryTotalDto(ToDto(g.First().Category!), g.Sum(e => e.Amount)))
-            .OrderByDescending(c => c.Total)
-            .ToList();
-
-        // Same breakdown but split per assigned account (for the per-account donut).
+        // El mismo reparto por categoría, pero separado por cuenta (la rueda por cuenta).
         var byAccount = inMonth
             .Where(e => e.AccountId != null)
             .GroupBy(e => e.AccountId!.Value)
-            .Select(g => new AccountBreakdownDto(g.Key, g
-                .GroupBy(e => e.CategoryId)
-                .Select(cg => new CategoryTotalDto(ToDto(cg.First().Category!), cg.Sum(e => e.Amount)))
-                .OrderByDescending(c => c.Total)
-                .ToList()))
+            .Select(g => new AccountBreakdownDto(g.Key, TotalsByCategory(g)))
             .ToList();
-
-        var names = accs.ToDictionary(a => a.Id, a => a.Name);
-        var recent = items.Select(e => ToTx(e, names))
-            .Concat(incomeItems.Select(i => ToTx(i, names)))
-            .OrderByDescending(t => t.Date).ThenByDescending(t => t.Id)
-            .Take(RecentCount).ToList();
 
         return new ExpensesDashboardDto(
             Balance: balance,
             MonthTotal: inMonth.Sum(e => e.Amount),
             MonthIncome: incomeItems.Where(i => i.Date >= monthStart).Sum(i => i.Amount),
-            Series: series,
-            ByCategory: byCategory,
+            Series: CumulativeDailySpend(inWindow, windowStart, today),
+            ByCategory: TotalsByCategory(inMonth),
             ByAccount: byAccount,
-            Recent: recent);
+            Recent: RecentMovements(items, incomeItems, accs));
+    }
+
+    /// <summary>Reparto por categoría, de mayor a menor: lo que pinta la rueda.</summary>
+    private static List<CategoryTotalDto> TotalsByCategory(IEnumerable<Expense> expenses) =>
+        expenses
+            .GroupBy(e => e.CategoryId)
+            .Select(g => new CategoryTotalDto(ToDto(g.First().Category!), g.Sum(e => e.Amount)))
+            .OrderByDescending(c => c.Total)
+            .ToList();
+
+    /// <summary>Gasto ACUMULADO día a día en la ventana: la curva que dibuja la gráfica.</summary>
+    private static List<SeriesPointDto> CumulativeDailySpend(List<Expense> expenses, DateOnly from, DateOnly to)
+    {
+        var byDay = expenses.GroupBy(e => e.Date).ToDictionary(g => g.Key, g => g.Sum(e => e.Amount));
+        var series = new List<SeriesPointDto>();
+        decimal running = 0;
+        for (var day = from; day <= to; day = day.AddDays(1))
+        {
+            running += byDay.GetValueOrDefault(day);
+            series.Add(new SeriesPointDto(day, running));
+        }
+        return series;
+    }
+
+    /// <summary>Gastos e ingresos mezclados, los más recientes primero.</summary>
+    private static List<TransactionDto> RecentMovements(
+        List<Expense> expenses, List<Income> incomes, List<Account> accounts)
+    {
+        var names = accounts.ToDictionary(a => a.Id, a => a.Name);
+        return expenses.Select(e => ToTx(e, names))
+            .Concat(incomes.Select(i => ToTx(i, names)))
+            .OrderByDescending(t => t.Date).ThenByDescending(t => t.Id)
+            .Take(RecentCount).ToList();
     }
 
     private async Task<Dictionary<int, string>> AccountNamesAsync(int userId) =>

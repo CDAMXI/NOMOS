@@ -27,17 +27,15 @@ public class InvestmentService(
         var broker = await GetBrokerAsync(accountId, userId);
         if (broker is null) return null;
 
-        if (string.IsNullOrWhiteSpace(request.Symbol))
-            throw new ArgumentException("El nombre de la acción es obligatorio.");
-        if (request.Shares <= 0 || request.Price <= 0)
-            throw new ArgumentException("El precio y la cantidad deben ser mayores que cero.");
+        ValidateLot(request.Symbol, request.Shares, request.Price);
 
         var cost = decimal.Round(request.Shares * request.Price, 2);
         if (cost > broker.Balance)
             throw new ArgumentException($"Margen libre insuficiente: la compra cuesta {cost:0.##} € y tienes {broker.Balance:0.##} €.");
 
-        // Atómico: crear el lote y descontar el margen van juntos o no van.
-        await unitOfWork.InTransactionAsync(async () =>
+        // El total del broker no cambia (el dinero pasa de margen a posiciones), pero el lote y
+        // el margen no pueden divergir: van en la misma transacción.
+        await CommitAsync(userId, broker, async () =>
         {
             await holdings.AddAsync(new Holding
             {
@@ -49,10 +47,6 @@ public class InvestmentService(
                 BuyDate = request.BuyDate ?? AppClock.Today() // sin fecha explícita: hoy
             });
             broker.Balance -= cost;
-            broker.UpdatedAt = DateTime.UtcNow;
-            await accounts.UpdateAsync(broker);
-            // El total del broker no cambia (margen → posiciones), pero mantenemos el snapshot fresco.
-            await snapshotWriter.RefreshAsync(userId, AppClock.Today());
         });
         return await ToDtoAsync(broker, userId);
     }
@@ -72,18 +66,13 @@ public class InvestmentService(
         if (request.Price <= 0)
             throw new ArgumentException("El precio de venta debe ser mayor que cero.");
 
-        // Atómico: ingresar en el margen y reducir/borrar el lote van juntos o no van.
-        await unitOfWork.InTransactionAsync(async () =>
+        await CommitAsync(userId, broker, async () =>
         {
             // Lo vendido entra al margen a precio de venta; ahí se materializa la ganancia o pérdida.
             broker.Balance += decimal.Round(request.Shares * request.Price, 2);
-            broker.UpdatedAt = DateTime.UtcNow;
-
             lot.Shares -= request.Shares;
             if (lot.Shares == 0) await holdings.DeleteAsync(lot);
             else await holdings.UpdateAsync(lot);
-            await accounts.UpdateAsync(broker);
-            await snapshotWriter.RefreshAsync(userId, AppClock.Today());
         });
         return await ToDtoAsync(broker, userId);
     }
@@ -101,10 +90,7 @@ public class InvestmentService(
         var lot = await holdings.GetByIdAsync(holdingId, userId);
         if (lot is null || lot.AccountId != accountId) return null;
 
-        if (string.IsNullOrWhiteSpace(request.Symbol))
-            throw new ArgumentException("El nombre de la acción es obligatorio.");
-        if (request.Shares <= 0 || request.Price <= 0)
-            throw new ArgumentException("El precio y la cantidad deben ser mayores que cero.");
+        ValidateLot(request.Symbol, request.Shares, request.Price);
 
         var oldCost = decimal.Round(lot.Shares * lot.BuyPrice, 2);
         var newCost = decimal.Round(request.Shares * request.Price, 2);
@@ -112,18 +98,14 @@ public class InvestmentService(
         if (delta > broker.Balance)
             throw new ArgumentException($"Margen libre insuficiente: la corrección necesita {delta:0.##} € más y tienes {broker.Balance:0.##} €.");
 
-        // Atómico: corregir el lote y ajustar el margen van juntos o no van.
-        await unitOfWork.InTransactionAsync(async () =>
+        await CommitAsync(userId, broker, async () =>
         {
             lot.Symbol = request.Symbol.Trim();
             lot.Shares = request.Shares;
             lot.BuyPrice = request.Price;
             if (request.BuyDate is DateOnly d) lot.BuyDate = d;
             broker.Balance -= delta;
-            broker.UpdatedAt = DateTime.UtcNow;
             await holdings.UpdateAsync(lot);
-            await accounts.UpdateAsync(broker);
-            await snapshotWriter.RefreshAsync(userId, AppClock.Today());
         });
         return await ToDtoAsync(broker, userId);
     }
@@ -140,14 +122,10 @@ public class InvestmentService(
         var lot = await holdings.GetByIdAsync(holdingId, userId);
         if (lot is null || lot.AccountId != accountId) return null;
 
-        // Atómico: borrar el lote y devolver el margen van juntos o no van.
-        await unitOfWork.InTransactionAsync(async () =>
+        await CommitAsync(userId, broker, async () =>
         {
             broker.Balance += decimal.Round(lot.Shares * lot.BuyPrice, 2);
-            broker.UpdatedAt = DateTime.UtcNow;
             await holdings.DeleteAsync(lot);
-            await accounts.UpdateAsync(broker);
-            await snapshotWriter.RefreshAsync(userId, AppClock.Today());
         });
         return await ToDtoAsync(broker, userId);
     }
@@ -188,16 +166,39 @@ public class InvestmentService(
             cash.Balance += amount;
         }
 
-        // Atómico: los dos saldos (efectivo y broker) se mueven juntos o no se mueven.
-        await unitOfWork.InTransactionAsync(async () =>
+        // Los dos saldos (efectivo y broker) se mueven juntos o no se mueven.
+        await CommitAsync(userId, broker, async () =>
         {
-            cash.UpdatedAt = broker.UpdatedAt = DateTime.UtcNow;
+            cash.UpdatedAt = DateTime.UtcNow;
             await accounts.UpdateAsync(cash);
-            await accounts.UpdateAsync(broker);
-            await snapshotWriter.RefreshAsync(userId, AppClock.Today());
         });
         return await ToDtoAsync(broker, userId);
     }
+
+    /// <summary>
+    /// Reglas comunes de un lote: nombre obligatorio y cantidad y precio positivos. Recibe
+    /// primitivos porque comprar y corregir traen tipos de petición distintos.
+    /// </summary>
+    private static void ValidateLot(string? symbol, decimal shares, decimal price)
+    {
+        if (string.IsNullOrWhiteSpace(symbol))
+            throw new ArgumentException("El nombre de la acción es obligatorio.");
+        if (shares <= 0 || price <= 0)
+            throw new ArgumentException("El precio y la cantidad deben ser mayores que cero.");
+    }
+
+    /// <summary>
+    /// Aplica los cambios de una operación y su epílogo en UNA transacción: sella el broker, lo
+    /// persiste y refresca el snapshot. O va todo, o no va nada.
+    /// </summary>
+    private Task CommitAsync(int userId, Account broker, Func<Task> changes) =>
+        unitOfWork.InTransactionAsync(async () =>
+        {
+            await changes();
+            broker.UpdatedAt = DateTime.UtcNow;
+            await accounts.UpdateAsync(broker);
+            await snapshotWriter.RefreshAsync(userId, AppClock.Today());
+        });
 
     private async Task<Account?> GetBrokerAsync(int accountId, int userId)
     {
