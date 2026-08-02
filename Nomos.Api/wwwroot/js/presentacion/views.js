@@ -43,29 +43,33 @@ async function loadGastos() {
   bindTxRows($('gRecent'), recentCache);
 }
 
-// Recientes: 8 de base y, en el layout de dos columnas, se rellena fila a fila hasta igualar la
-// altura natural de la columna izquierda (que crece con la rueda de categorías). En móvil
-// (apilado, breakpoint de .grid) se queda en 8. Se reajusta en cada carga/auto-refresco.
+// Recientes: 8 filas de base y, en el layout de dos columnas, las que quepan hasta donde
+// termina la columna izquierda, para que ambas acaben en la misma línea. En móvil (apilado,
+// breakpoint de .grid) se queda en 8. Se reajusta en cada carga y en cada auto-refresco.
 const RECENT_BASE = 8;
 function renderRecent() {
   const ul = $('gRecent');
   ul.innerHTML = recentCache.slice(0, RECENT_BASE).map((tx, i) => txRow(tx, i)).join('')
     || `<li class="tx-sub">${t('no_movements_yet')}</li>`;
-  if (recentCache.length <= RECENT_BASE) return;
-  if (window.matchMedia('(max-width: 820px)').matches) return; // espejo del breakpoint de .grid
+  const dosColumnas = !window.matchMedia('(max-width: 820px)').matches;
+  if (dosColumnas && recentCache.length > RECENT_BASE) fillRecentToLeftColumn(ul);
+}
 
+// Añade filas mientras quepan por encima de la línea donde acaba la columna izquierda. La lista
+// se centra y ocupa TODO el alto de su tarjeta, así que ni su caja ni scrollHeight (que nunca
+// baja del alto de la caja) sirven de medida: hay que sumar las filas.
+function fillRecentToLeftColumn(ul) {
   const catCard = document.querySelector('#view-gastos .col:first-child .card:last-child');
-  const recentCard = ul.closest('.card');
-  if (!catCard || !recentCard) return;
-  const leftBottom = catCard.getBoundingClientRect().bottom;
-  // La tarjeta de Recientes también se estira hasta esa línea (CSS), así que el tope de filas se
-  // mide sobre la LISTA (una tarjeta estirada siempre coincidiría) más su padding inferior.
-  const padBottom = parseFloat(getComputedStyle(recentCard).paddingBottom) || 0;
-  if (leftBottom > 0) {
-    for (let i = RECENT_BASE; i < recentCache.length; i++) {
-      ul.insertAdjacentHTML('beforeend', txRow(recentCache[i], i));
-      if (ul.getBoundingClientRect().bottom + padBottom > leftBottom) { ul.lastElementChild.remove(); break; }
-    }
+  const card = ul.closest('.card');
+  if (!catCard || !card) return;
+  const altoDeLasFilas = () =>
+    [...ul.children].reduce((alto, li) => alto + li.getBoundingClientRect().height, 0);
+  const libre = catCard.getBoundingClientRect().bottom
+    - ul.getBoundingClientRect().top
+    - (parseFloat(getComputedStyle(card).paddingBottom) || 0);
+  for (let i = RECENT_BASE; i < recentCache.length; i++) {
+    ul.insertAdjacentHTML('beforeend', txRow(recentCache[i], i));
+    if (altoDeLasFilas() > libre) { ul.lastElementChild.remove(); break; }
   }
 }
 
