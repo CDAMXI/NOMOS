@@ -10,7 +10,6 @@ using Nomos.Application.DTOs;
 using Nomos.Application.Interfaces;
 using Nomos.Application.Services;
 using Nomos.Infrastructure;
-using Nomos.Infrastructure.Ai;
 using Nomos.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
