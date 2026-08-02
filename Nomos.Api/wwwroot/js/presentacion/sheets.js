@@ -66,6 +66,9 @@ const lotHead = h => `<div class="lot-head">
 // para que la validación pueda rechazar negativos explícitamente).
 const readSharesPrice = () => ({ sh: decValue($('sharesField')), pr: decValue($('priceField')) });
 
+// Endpoint de un movimiento según su tipo: el ÚNICO sitio donde vive ese mapeo.
+const txPath = (kind, id) => `/api/${kind === 'income' ? 'incomes' : 'expenses'}${id ? '/' + id : ''}`;
+
 // Orden alfabético de categorías por su nombre en pantalla.
 const byCatName = (a, b) => catName(a.name).localeCompare(catName(b.name), localeCode());
 
@@ -134,7 +137,7 @@ async function openTxSheet(existing = null, draft = null, back = null) {
 
       bindDateRow('dateWrap', 'dateField');
 
-      const paintChips = () => {
+      const paintCatChips = () => {
         $('catChips').classList.toggle('hidden', kind === 'income');
         $('catLabel').classList.toggle('hidden', kind === 'income');
         paintChipGroup(body, 'cat', ch => +ch.dataset.cat === selectedCat, catChipStyle);
@@ -162,10 +165,10 @@ async function openTxSheet(existing = null, draft = null, back = null) {
         $('catChips').innerHTML = shown.map(catChip).join('')
           + (hiddenCount > 0 ? `<button class="chip" id="moreCatsChip">⋯ ${hiddenCount} ${t('more_chip')}</button>` : '')
           + `<button class="chip chip-add" id="addCatChip">${t('add_category_chip')}</button>`;
-        onChipPick($('catChips'), 'cat', v => { selectedCat = +v; paintChips(); refreshSaveState(); });
+        onChipPick($('catChips'), 'cat', v => { selectedCat = +v; paintCatChips(); refreshSaveState(); });
         $('moreCatsChip')?.addEventListener('click', () => { catsExpanded = true; renderCatChips(); });
         $('addCatChip').addEventListener('click', addCategory);
-        paintChips();
+        paintCatChips();
       };
       renderCatChips();
 
@@ -184,57 +187,55 @@ async function openTxSheet(existing = null, draft = null, back = null) {
         paintActive(body, 'kind', kind);
         const del = $('deleteTx');
         if (del) del.textContent = t(kind === 'income' ? 'delete_income' : 'delete_expense');
-        paintChips();
+        paintCatChips();
       };
       body.querySelectorAll('[data-kind]').forEach(p =>
         p.addEventListener('click', () => { kind = p.dataset.kind; paintKind(); refreshSaveState(); }));
       paintKind();
 
-      if (isEdit) {
-        // Borrado con Deshacer: sin diálogo de confirmación — se borra al momento y el toast
-        // ofrece revertirlo (re-crea el movimiento con los mismos datos) durante unos segundos.
-        $('deleteTx').addEventListener('click', async () => {
-          const del = $('deleteTx');
-          del.disabled = true;
-          try {
-            await sendJSON(`/api/${kind === 'income' ? 'incomes' : 'expenses'}/${existing.id}`, 'DELETE');
-          } catch (e) {
-            del.disabled = false;
-            refreshSaveState();
-            sheetError.textContent = e.message;
-            return;
-          }
-          closeSheet();
-          await refreshCurrent();
-          const restore = { amount: existing.amount, description: existing.description, date: existing.date, accountId: existing.accountId ?? null };
-          if (kind !== 'income') restore.categoryId = existing.category?.id;
-          toast(t(kind === 'income' ? 'income_deleted' : 'expense_deleted'), {
-            label: t('undo'),
-            fn: async () => {
-              try {
-                await sendJSON(kind === 'income' ? '/api/incomes' : '/api/expenses', 'POST', restore);
-                await refreshCurrent();
-                toast(t('movement_restored'));
-              } catch (e) { toast(e.message); }
-            }
-          });
-        });
-      }
+      if (isEdit) bindTxDelete($('deleteTx'), existing, kind);
     },
     async onSave() {
-      const date = $('dateField').value || todayISO();
-      const description = $('descField').value;
-      if (kind === 'income') {
-        const payload = { amount: amountValue(), description, date, accountId: selectedAccount };
-        if (isEdit) await sendJSON(`/api/incomes/${existing.id}`, 'PUT', payload);
-        else await sendJSON('/api/incomes', 'POST', payload);
-      } else {
-        const payload = { amount: amountValue(), categoryId: selectedCat, description, date, accountId: selectedAccount };
-        if (isEdit) await sendJSON(`/api/expenses/${existing.id}`, 'PUT', payload);
-        else await sendJSON('/api/expenses', 'POST', payload);
-      }
+      const payload = {
+        amount: amountValue(),
+        description: $('descField').value,
+        date: $('dateField').value || todayISO(),
+        accountId: selectedAccount,
+      };
+      if (kind !== 'income') payload.categoryId = selectedCat; // los ingresos no llevan categoría
+      await sendJSON(txPath(kind, isEdit ? existing.id : null), isEdit ? 'PUT' : 'POST', payload);
       toast(t(isEdit ? 'movement_updated' : (kind === 'income' ? 'income_saved' : 'expense_saved')));
     }
+  });
+}
+
+// Borrar un movimiento sin diálogo: se borra al momento y el toast ofrece Deshacer, que lo
+// vuelve a crear con los mismos datos. `kind` llega por valor porque en edición no hay toggle
+// gasto/ingreso: el tipo ya no cambia.
+function bindTxDelete(btn, tx, kind) {
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    try {
+      await sendJSON(txPath(kind, tx.id), 'DELETE');
+    } catch (e) {
+      btn.disabled = false;
+      showSheetError(e);
+      return;
+    }
+    closeSheet();
+    await refreshCurrent();
+    const restore = { amount: tx.amount, description: tx.description, date: tx.date, accountId: tx.accountId ?? null };
+    if (kind !== 'income') restore.categoryId = tx.category?.id;
+    toast(t(kind === 'income' ? 'income_deleted' : 'expense_deleted'), {
+      label: t('undo'),
+      fn: async () => {
+        try {
+          await sendJSON(txPath(kind), 'POST', restore);
+          await refreshCurrent();
+          toast(t('movement_restored'));
+        } catch (e) { toast(e.message); }
+      }
+    });
   });
 }
 
@@ -374,30 +375,31 @@ function openAccountSheet(onDone = null, opts = {}) {
   });
 }
 
-// --- Editar cuenta (actualizar saldo / eliminar) ---
-function openAccountEditSheet(id) {
-  const acc = accountsCache.find(a => a.id === id);
-  if (!acc) return;
-  setAmount(acc.balance);
+// --- Editar una cuenta: renombrar, corregir su saldo o eliminarla ---
+// En un broker el «saldo» es el margen libre: los movimientos no se asignan a cuentas de
+// inversión, así que su baseline coincide con el margen. De ahí el `balanceLabel`.
+function openAccountEditSheet({ id, name, balance, balanceLabel = 'current_balance', back }) {
+  setAmount(balance);
 
   openSheet({
-    title: acc.name,
+    title: name,
     canSave: () => $('nameField')?.value.trim().length > 0,
     build(body) {
-      body.innerHTML = amountBlock(t('current_balance')) + `
-        <input id="nameField" class="text-field" maxlength="80" value="${esc(acc.name)}">
+      body.innerHTML = amountBlock(t(balanceLabel)) + `
+        <input id="nameField" class="text-field" maxlength="80" value="${esc(name)}">
         <button id="deleteAcc" class="pill pill-danger centered">${t('delete_account')}</button>`;
       bindAmount(body, false);
       $('nameField').addEventListener('input', refreshSaveState);
-      bindDelete('deleteAcc', { url: `/api/accounts/${acc.id}`, doneToast: 'account_deleted' });
+      bindDelete('deleteAcc', { url: `/api/accounts/${id}`, doneToast: 'account_deleted' });
     },
     async onSave() {
-      await sendJSON(`/api/accounts/${acc.id}`, 'PUT', {
+      await sendJSON(`/api/accounts/${id}`, 'PUT', {
         name: $('nameField').value,
         balance: amountValue()
       });
       toast(t('balance_updated'));
-    }
+    },
+    back, afterSave: back
   });
 }
 
@@ -442,7 +444,8 @@ async function openBrokerSheet(accountId) {
 
       $('buyBtn').addEventListener('click', () => openBuySheet(b, back));
       $('transferBtn').addEventListener('click', () => openBrokerTransferSheet(b, back).catch(sheetFail));
-      $('editBrokerBtn').addEventListener('click', () => openBrokerEditSheet(b, back));
+      $('editBrokerBtn').addEventListener('click', () => openAccountEditSheet(
+        { id: b.accountId, name: b.name, balance: b.margin, balanceLabel: 'free_margin', back }));
       body.querySelectorAll('li[data-h]').forEach(li =>
         li.addEventListener('click', () => openSellSheet(b, b.holdings[+li.dataset.h], back)));
     }
@@ -667,30 +670,4 @@ async function openBrokerTransferSheet(b, back) {
   });
 }
 
-// --- Editar la cuenta broker: renombrar, fijar el margen libre a mano o eliminarla ---
-function openBrokerEditSheet(b, back) {
-  setAmount(b.margin);
 
-  openSheet({
-    title: b.name,
-    canSave: () => $('nameField')?.value.trim().length > 0,
-    build(body) {
-      body.innerHTML = amountBlock(t('free_margin')) + `
-        <input id="nameField" class="text-field" maxlength="80" value="${esc(b.name)}">
-        <button id="deleteAcc" class="pill pill-danger centered">${t('delete_account')}</button>`;
-      bindAmount(body, false);
-      $('nameField').addEventListener('input', refreshSaveState);
-      bindDelete('deleteAcc', { url: `/api/accounts/${b.accountId}`, doneToast: 'account_deleted' });
-    },
-    async onSave() {
-      // Para una cuenta de inversión, el valor introducido es el margen libre (los movimientos
-      // no se asignan a brokers, así que el baseline coincide con el margen).
-      await sendJSON(`/api/accounts/${b.accountId}`, 'PUT', {
-        name: $('nameField').value,
-        balance: amountValue()
-      });
-      toast(t('balance_updated'));
-    },
-    back, afterSave: back
-  });
-}

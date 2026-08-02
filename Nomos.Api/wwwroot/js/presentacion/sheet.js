@@ -213,6 +213,13 @@ function sheetLoading(title, back) {
   openSheet({ title, back, build(body) { body.innerHTML = '<div class="sheet-loading"><span class="boot-spinner"></span></div>'; } });
 }
 
+// Error de una accion CON la hoja abierta: deja el motivo a la vista y reactiva Guardar (un
+// toast se esfuma antes de leerse). Su pareja, sheetFail, es para cuando ni siquiera hay hoja.
+function showSheetError(e) {
+  refreshSaveState();
+  sheetError.textContent = e.message;
+}
+
 // Fallo del fetch inicial de una hoja: cierra el esqueleto (si sigue abierto) y avisa.
 function sheetFail(e) {
   if (sheetCtx) closeSheet();
@@ -236,9 +243,7 @@ sheetSave.addEventListener('click', async () => {
     if (ctx.afterSave) ctx.afterSave();
     else if (ctx.back) ctx.back();
   } catch (e) {
-    // El error queda a la vista dentro de la hoja (un toast desaparece antes de leerse).
-    refreshSaveState();
-    sheetError.textContent = e.message;
+    showSheetError(e);
   } finally {
     sheetSave.textContent = saveLabel;
   }
@@ -400,8 +405,7 @@ function bindDelete(btnId, { url, doneToast }) {
       await refreshCurrent();
       toast(t(doneToast));
     } catch (e) {
-      refreshSaveState();
-      sheetError.textContent = e.message;
+      showSheetError(e);
     }
   });
 }

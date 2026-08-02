@@ -230,7 +230,7 @@ async function loadPatrimonio() {
     li.addEventListener('click', () => {
       const acc = accountsCache.find(x => x.id === +li.dataset.acc);
       if (acc?.type === 'Investment') openBrokerSheet(acc.id).catch(sheetFail);
-      else openAccountEditSheet(+li.dataset.acc);
+      else if (acc) openAccountEditSheet(acc);
     }));
 }
 
