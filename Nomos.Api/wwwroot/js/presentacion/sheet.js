@@ -90,12 +90,20 @@ function hideSheetNow() {
 function openSheet(ctx) {
   if (!sheetCtx && !sheetOpener) sheetOpener = document.activeElement;
   const wasVisible = !sheet.classList.contains('hidden');
+  const previo = sheetCtx;
   sheetCtx = ctx;
   sheetTitle.textContent = ctx.title;
   sheetError.textContent = '';
   sheetSave.style.visibility = ctx.onSave ? 'visible' : 'hidden';
   sheetBody.innerHTML = '';
-  ctx.build(sheetBody);
+  // Si build() revienta, la hoja no llega a abrirse: hay que devolver sheetCtx a donde estaba o
+  // la app se queda creyendo que hay una hoja abierta y el auto-refresco no vuelve a correr.
+  try {
+    ctx.build(sheetBody);
+  } catch (e) {
+    sheetCtx = previo;
+    throw e;
+  }
   refreshSaveState();
   sheet.classList.remove('hidden');
   document.body.classList.add('sheet-open'); // la vista de detrás retrocede (profundidad iOS)

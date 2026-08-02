@@ -379,8 +379,8 @@ function openAccountSheet(onDone = null, opts = {}) {
     back: onDone ? () => onDone() : undefined, // vuelve al movimiento si se llegó desde el chip "＋ cuenta"
     build(body) {
       body.innerHTML = amountBlock(t('current_balance')) + `
-        ${opts.cashOnly ? '' : `<div class="chips">${Object.keys(TYPE_ICON).map(type =>
-          `<button class="chip" data-type="${type}">${TYPE_ICON[type]} ${t(TYPE_KEY[type])}</button>`).join('')}</div>`}
+        ${opts.cashOnly ? '' : `<div class="chips">${Object.keys(ACCOUNT_TYPE_GLYPH).map(type =>
+          `<button class="chip" data-type="${type}">${ACCOUNT_TYPE_GLYPH[type]} ${t(TYPE_KEY[type])}</button>`).join('')}</div>`}
         <input id="nameField" class="text-field" placeholder="${t('account_name_ph')}" maxlength="80" autofocus>`;
       bindAmount(body, false);
       if (!opts.cashOnly) {
