@@ -228,15 +228,11 @@ body {
 .hero-delta.invert .up { color: var(--green); }
 .hero-delta.invert .down { color: var(--red); }
 
-/* Las columnas se estiran a la misma altura; la última tarjeta de la izquierda ("Por categoría")
-   absorbe el hueco y centra su contenido, de modo que ambas columnas terminan alineadas. */
-.grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-16); }
+/* Cada tarjeta se ajusta a SU contenido: estirar «Por categoría» para cuadrar columnas dejaba
+   media tarjeta vacía cuando había pocas categorías. La alineación entre columnas la consigue
+   renderRecent, rellenando «Recientes» hasta donde llega la izquierda. */
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-16); align-items: start; }
 .col { display: flex; flex-direction: column; gap: var(--sp-16); }
-.col:first-child .card:last-child { flex: 1; display: flex; flex-direction: column; }
-.col:first-child .card:last-child .cat-wrap { flex: 1; }
-/* Recientes se estira hasta el borde inferior de la columna izquierda: ambas tarjetas terminan
-   SIEMPRE en la misma línea (las filas topan ahí; el relleno lo decide renderRecent). */
-.col:last-child .card:last-child { flex: 1; }
 @media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
 
 .card {

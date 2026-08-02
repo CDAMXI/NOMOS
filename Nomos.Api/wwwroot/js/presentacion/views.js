@@ -54,12 +54,9 @@ function renderRecent() {
   if (recentCache.length <= RECENT_BASE) return;
   if (window.matchMedia('(max-width: 820px)').matches) return; // espejo del breakpoint de .grid
 
-  // "Por categoría" tiene flex:1 (absorbe hueco): se neutraliza un instante para medir la altura
-  // NATURAL de la izquierda; si no, la propia lista estiraría la referencia y no habría tope.
   const catCard = document.querySelector('#view-gastos .col:first-child .card:last-child');
   const recentCard = ul.closest('.card');
   if (!catCard || !recentCard) return;
-  catCard.style.flex = 'none';
   const leftBottom = catCard.getBoundingClientRect().bottom;
   // La tarjeta de Recientes también se estira hasta esa línea (CSS), así que el tope de filas se
   // mide sobre la LISTA (una tarjeta estirada siempre coincidiría) más su padding inferior.
@@ -70,7 +67,6 @@ function renderRecent() {
       if (ul.getBoundingClientRect().bottom + padBottom > leftBottom) { ul.lastElementChild.remove(); break; }
     }
   }
-  catCard.style.flex = '';
 }
 
 // "Por categoría": una rueda genérica (todas las cuentas) y una por cada cuenta, con selector.
