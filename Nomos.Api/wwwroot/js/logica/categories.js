@@ -5,7 +5,8 @@
 // El emoji sigue siendo lo que guarda la BD (espejo de CategoryIcon.cs); aquí se traduce a un
 // glifo monocromo. Todos son SOLO trazo: heredan el color y el grosor del contenedor.
 const GLYPHS = {
-  food: '<path d="M6 3v5M8.5 3v5M11 3v5M8.5 8v13"/><path d="M16.5 3c2 2.2 2 6.5 0 8.5v9.5"/>',
+  food: '<path d="M5.6 2.6v4.6c0 1.7 1.3 3.1 2.9 3.1s2.9-1.4 2.9-3.1V2.6M8.5 2.6v4.3M8.5 10.3v11.1"/>'
+      + '<path d="M16.2 2.6v18.8"/><path d="M16.2 2.6c2.7 2.3 2.7 7.4 0 9.8"/>',
   cup: '<path d="M4.5 8h11v6a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M15.5 9.5h2a2.5 2.5 0 0 1 0 5h-2"/><path d="M7 3v2M11 3v2"/>',
   cart: '<circle cx="9.5" cy="19.5" r="1.5"/><circle cx="17.5" cy="19.5" r="1.5"/><path d="M2.5 4h2.2l2.6 11h11l2.2-8H6"/>',
   car: '<path d="M3.5 15.5l1.4-5.2A2 2 0 0 1 6.8 8.8h10.4a2 2 0 0 1 1.9 1.5l1.4 5.2v3.2h-2.6v-1.7H6.1v1.7H3.5z"/><circle cx="7.4" cy="15" r="1.1"/><circle cx="16.6" cy="15" r="1.1"/>',
