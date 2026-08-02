@@ -79,7 +79,7 @@ const SHORT_ROUND_UP = 0.999995;
 const eurShort = v => {
   const abs = Math.abs(v);
   if (abs < 1000) return Number.isInteger(v) ? grouped(_curShort, v) : eur(v);
-  return compactUnit(v) + ' ' + curSymbol;
+  return compactUnit(v) + ' ' + curSymbol;
 };
 
 // Mantisa ya redondeada + su sufijo, para una cifra de 1000 en adelante.
