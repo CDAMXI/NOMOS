@@ -9,14 +9,14 @@ const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 // Divisa principal del usuario (solo display). Se fija desde me.currency tras el login.
 let currency = 'EUR';
 let curSymbol = '€';
-let _nf0, _cur, _curShort, _short1, _nfShares, _pct;
+let _nf0, _cur, _curShort, _short2, _nfShares, _pct;
 function buildFormatters() {
   const l = localeCode();
   _nf0 = new Intl.NumberFormat(l, { useGrouping: true });
   _cur = new Intl.NumberFormat(l, { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: true });
   _curShort = new Intl.NumberFormat(l, { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0, useGrouping: true });
-  // Mantisa de K/M/B: un decimal como máximo y sin ceros de relleno (18, no 18,0).
-  _short1 = new Intl.NumberFormat(l, { maximumFractionDigits: 1, useGrouping: false });
+  // Mantisa de K/M/B: dos decimales como máximo y sin ceros de relleno (18, no 18,00).
+  _short2 = new Intl.NumberFormat(l, { maximumFractionDigits: 2, useGrouping: false });
   _nfShares = new Intl.NumberFormat(l, { maximumFractionDigits: 6, useGrouping: true });
   _pct = new Intl.NumberFormat(l, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   curSymbol = (_cur.formatToParts(0).find(p => p.type === 'currency') || {}).value || currency;
@@ -49,19 +49,21 @@ const eur = v => grouped(_cur, v);
 const nf0 = v => grouped(_nf0, v);
 // Sufijos técnicos, de mayor a menor: se usa la primera unidad que quepa.
 const SHORT_UNITS = [[1e9, 'B'], [1e6, 'M'], [1e3, 'K']];
-// A partir de este porcentaje de la unidad, el redondeo a un decimal ya daría «1000K»: se sube
-// de unidad para no enseñar cuatro cifras (999 999 € es 1M €, no 1000K €).
-const SHORT_ROUND_UP = 0.99995;
+// A partir de este porcentaje de la unidad, el redondeo a dos decimales ya daría «1000K»: se
+// sube de unidad para no enseñar cuatro cifras (999 999 € es 1M €, no 1000K €).
+const SHORT_ROUND_UP = 0.999995;
 
 // Cifra compacta de las listas (Patrimonio, chips, centro de la rueda): desde el millar, K/M/B
-// con un decimal como mucho (1,5M) y sin él cuando la cifra es redonda (18K). Por debajo del
-// millar, la cifra tal cual con sus decimales. El símbolo va SIEMPRE al final, tras un espacio
-// duro para que no se separe de la cifra al saltar de línea.
+// con dos decimales como mucho (2,95K) y sin ellos cuando la cifra es redonda (18K). Dos y no
+// uno porque en Inversiones y en las cuentas se leen saldos de cuatro cifras, donde un solo
+// decimal se come decenas de euros (2 950 € no puede enseñarse como 3K €). Por debajo del millar,
+// la cifra tal cual. El símbolo va SIEMPRE al final, tras un espacio duro para que no se separe
+// de la cifra al saltar de línea.
 const eurShort = v => {
   const abs = Math.abs(v);
   if (abs < 1000) return Number.isInteger(v) ? grouped(_curShort, v) : eur(v);
   const [min, suffix] = SHORT_UNITS.find(([m]) => abs >= m * SHORT_ROUND_UP);
-  return _short1.format(Math.round(v / min * 10) / 10) + suffix + ' ' + curSymbol;
+  return _short2.format(Math.round(v / min * 100) / 100) + suffix + ' ' + curSymbol;
 };
 const pct1 = v => _pct.format(Math.abs(v)) + '%';
 // Número de acciones: hasta 6 decimales (permite fracciones), miles con espacio.
