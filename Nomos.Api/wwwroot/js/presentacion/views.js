@@ -159,7 +159,7 @@ function renderHeroBalance(cash, total) {
 function txRow(tx, index) {
   const isIncome = tx.kind === 'income';
   const icon = isIncome ? '💶' : tx.category.icon;
-  const bg = isIncome ? tint(incomeColor(), .16) : tint(tx.category.color, .16);
+  const bg = isIncome ? incomeColor() : tx.category.color; // azulejo de color solido
   let sub = (isIncome ? t('income_word') : catName(tx.category.name)) + ' · ' + dMed(tx.date);
   if (tx.accountName) sub += ' · ' + tx.accountName;
   const amount = isIncome
@@ -167,7 +167,7 @@ function txRow(tx, index) {
     : `<span class="tx-amount">−${eur(tx.amount)}</span>`;
   // tabindex+role: fila operable por teclado (Enter/Espacio via el listener global de main.js).
   return `<li class="clickable" data-i="${index}" tabindex="0" role="button" title="${t('edit')}">
-    <span class="tx-icon" style="background:${bg}">${icon}</span>
+    ${iconTile(icon, bg)}
     <span class="tx-main">
       <span class="tx-title">${esc(tx.description)}</span>
       <div class="tx-sub">${esc(sub)}</div>
@@ -242,7 +242,7 @@ function accRow(a) {
   const isLiab = a.type === 'Liability';
   // Icono en tinte de ACENTO: verde/rojo son colores de dato (la cifra), no decoración.
   return `<li data-acc="${a.id}" class="clickable" tabindex="0" role="button">
-    <span class="tx-icon tx-icon-accent">${TYPE_ICON[a.type]}</span>
+    ${iconTile(TYPE_ICON[a.type])}
     <span class="tx-main">
       <span class="tx-title">${esc(a.name)}</span>
       <div class="tx-sub">${t('updated_prefix')} ${dMed(a.updatedAt)}</div>

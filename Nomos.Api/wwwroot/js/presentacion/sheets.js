@@ -243,7 +243,7 @@ async function openCategoriesSheet() {
       const sorted = [...categories].sort(byCatName);
       body.innerHTML = `<div class="settings-group cat-manage">${sorted.map(c => `
         <button class="settings-row" data-cat="${c.id}">
-          <span class="tx-icon" style="background:${tint(c.color, .16)}">${c.icon}</span>
+          ${iconTile(c.icon, c.color)}
           <span class="settings-label">${esc(catName(c.name))}</span>
           <span class="acc-chevron">›</span>
         </button>`).join('')}
@@ -404,7 +404,7 @@ async function openBrokerSheet(accountId) {
         <p class="section-title">${t('positions')}</p>
         <ul class="sheet-list tx-list">${b.holdings.map((h, i) => `
           <li class="clickable" data-h="${i}" tabindex="0" role="button" title="${t('sell')}">
-            <span class="tx-icon tx-icon-accent">📈</span>
+            ${iconTile('📈')}
             <span class="tx-main">
               <span class="tx-title">${esc(h.symbol)}</span>
               <div class="tx-sub">${nfShares(h.shares)} × ${eur(h.buyPrice)} · ${dMed(h.buyDate)}</div>
@@ -552,7 +552,7 @@ function bindLotModeToggle(toEdit, toSell) {
 
 // Cabecera del lote: la MISMA fila que el usuario tocó en Posiciones (continuidad visual).
 const lotHead = h => `<div class="lot-head">
-  <span class="tx-icon tx-icon-accent">📈</span>
+  ${iconTile('📈')}
   <span class="tx-main">
     <span class="tx-title">${esc(h.symbol)}</span>
     <div class="tx-sub">${nfShares(h.shares)} × ${eur(h.buyPrice)} · ${dMed(h.buyDate)}</div>

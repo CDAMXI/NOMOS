@@ -869,7 +869,7 @@ li.clickable { cursor: pointer; }
 .danger-text { color: var(--red); font-size: var(--fs-135); line-height: 1.4; margin-bottom: var(--sp-8); }
 
 /* Fila "Añadir categoría": tile ＋ y texto en azul de acento. */
-.cat-add-tile { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+.cat-add-tile { background: var(--fill); color: var(--accent); font-weight: 700; }
 .cat-add-row .settings-label { color: var(--accent); font-weight: 600; }
 
 /* ---------- Pantalla de carga inicial ---------- */
@@ -897,8 +897,14 @@ li.clickable { cursor: pointer; }
 .boot-msg { color: var(--muted); font-size: var(--fs-145); text-align: center; max-width: 280px; line-height: 1.4; }
 
 
-/* Icono de fila en tinte de ACENTO (verde/rojo quedan reservados a los datos). */
-.tx-icon-accent { background: var(--accent-soft); }
+/* Icono de fila en el color de acento (solido, como los iconos de Ajustes de iOS). */
+.tx-icon-accent { background: var(--accent); }
+
+/* El glifo del azulejo, en blanco: el filtro aplana el emoji a silueta monocroma. */
+.ico-glyph {
+  filter: grayscale(1) brightness(0) invert(1);
+  line-height: 1;
+}
 
 /* Rotulo de un grupo de chips en la hoja (Categoria / Cuenta), alineado a la izquierda. */
 .group-label { color: var(--muted); font-size: var(--fs-14); margin-bottom: var(--sp-8); }

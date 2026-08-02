@@ -69,6 +69,12 @@ const todayISO = () => {
 };
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+// Azulejo de icono al estilo Ajustes de iOS: cuadrado de color SOLIDO con el glifo en
+// blanco. El emoji se convierte en silueta con un filtro, asi que no hace falta un juego
+// de iconos propio y el color de la categoria pasa a ser el protagonista.
+const iconTile = (glyph, color) =>
+  `<span class="tx-icon"${color ? ` style="background:${color}"` : ''}><span class="ico-glyph">${glyph}</span></span>`;
+
 function tint(hex, alpha) {
   const n = parseInt(hex.slice(1), 16);
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;

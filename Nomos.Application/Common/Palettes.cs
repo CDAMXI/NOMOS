@@ -25,33 +25,32 @@ public static class Palettes
     /// usuarios la llevan; el registro la fija en el alta y el backfill migra a los existentes
     /// cuando cambia (basta con apuntar aquí a otra entrada del registro).
     /// </summary>
-    public const string DefaultName = "prisma";
+    public const string DefaultName = "apple";
 
     /// <summary>Espejo de PALETTES en categories.js (el front solo necesita Income).</summary>
     public static readonly IReadOnlyDictionary<string, Palette> All =
         new Dictionary<string, Palette>(StringComparer.OrdinalIgnoreCase)
         {
-            // «prisma»: tonos VARIADOS que armonizan con el marino de la marca — todos a la
-            // misma luminancia (contraste ≥4:1 sobre la tarjeta clara Y la oscura, calculado)
-            // y con 22° mínimo de separación de tono, para que la rueda se lea de un vistazo.
-            // Sin rojos ni verdes: siguen reservados como colores de DATO.
+            // Los colores de sistema de iOS: la paleta de Apple, tal cual. Fuera systemRed y
+            // systemGreen, que en la app son colores de DATO (gasto e ingreso). Los calidos van
+            // ligeramente oscurecidos para que el glifo BLANCO del azulejo se lea sobre ellos.
             [DefaultName] = new(
                 [
-                    "#557ad2", // índigo de marca
-                    "#3487a5", // azul cielo
-                    "#9568ca", // violeta
-                    "#be51be", // púrpura
-                    "#c9528e", // fucsia
-                    "#b16d2a", // ámbar
-                    "#8b7e25", // oro
-                    "#2e8a7e", // teal
-                    "#777c94", // slate frío
-                    "#8f7968", // taupe cálido
+                    "#007aff", // systemBlue
+                    "#5856d6", // systemIndigo
+                    "#af52de", // systemPurple
+                    "#ff2d55", // systemPink
+                    "#e68600", // systemOrange
+                    "#00aea6", // systemMint
+                    "#2ea9bf", // systemTeal
+                    "#bd9700", // systemYellow
+                    "#a2845e", // systemBrown
+                    "#8e8e93", // systemGray
                 ],
                 new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
-                    ["error"] = "#b16d2a", // ámbar: el registro de aviso, sin invadir el rojo de dato
-                    ["salud"] = "#2e8a7e", // teal: el registro clínico
+                    ["error"] = "#e68600", // naranja: aviso, sin invadir el rojo de dato
+                    ["salud"] = "#ff2d55", // rosa: el color de Salud en iOS
                 },
                 Income: "#34c759") // el verde de dato de la app ES su color de ingreso
         };

@@ -21,21 +21,21 @@ function openProfileSheet() {
         <p class="section-title">${t('section_general')}</p>
         <div class="settings-group">
           <label class="settings-row" for="themeSwitch">
-            <span class="tx-icon tx-icon-accent">🌙</span>
+            ${iconTile('🌙')}
             <span class="settings-label">${t('dark_mode')}</span>
             <input id="themeSwitch" type="checkbox" class="switch"${document.documentElement.dataset.theme === 'dark' ? ' checked' : ''}>
           </label>
           <button class="settings-row" id="manageCatsBtn">
-            <span class="tx-icon tx-icon-accent">🏷️</span>
+            ${iconTile('🏷️')}
             <span class="settings-label">${t('manage_categories')}</span>
             <span class="acc-chevron">›</span>
           </button>
           <button class="settings-row" id="exportCsvBtn">
-            <span class="tx-icon tx-icon-accent">📄</span>
+            ${iconTile('📄')}
             <span class="settings-label">${t('export_csv')}</span>
           </button>
           <label class="settings-row" for="currencySel">
-            <span class="tx-icon tx-icon-accent">💱</span>
+            ${iconTile('💱')}
             <span class="settings-label">${t('currency_label_setting')}</span>
             <select id="currencySel" class="settings-select">${CURRENCIES.map(c =>
               `<option value="${c[0]}"${c[0] === me.currency ? ' selected' : ''}>${c[0]} — ${esc(c[1])}</option>`).join('')}</select>
@@ -53,7 +53,7 @@ function openProfileSheet() {
 
         <div class="settings-group prof-logout">
           <button id="logoutBtn" class="settings-row accent">
-            <span class="tx-icon tx-icon-accent">🚪</span>
+            ${iconTile('🚪')}
             <span class="settings-label">${t('logout')}</span>
           </button>
         </div>
