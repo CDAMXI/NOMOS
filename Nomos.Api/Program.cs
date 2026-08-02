@@ -228,6 +228,10 @@ auth.MapPut("/password", async (ChangePasswordRequest request, ClaimsPrincipal p
 api.MapGet("/categories", (ClaimsPrincipal principal, CategoryService service) =>
     service.GetAllAsync(UserId(principal)));
 
+// La tabla de iconos automaticos. El cliente la usa para la vista previa: si la copiara, un dia
+// divergirian y se veria un icono distinto del que se guarda.
+api.MapGet("/categories/icon-rules", () => CategoryIcon.ForClient());
+
 api.MapPost("/categories", async Task<Results<Created<CategoryDto>, Conflict<string>, BadRequest<string>>>
     (CreateCategoryRequest request, ClaimsPrincipal principal, CategoryService service) =>
 {

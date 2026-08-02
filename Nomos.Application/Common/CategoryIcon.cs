@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using Nomos.Application.DTOs;
 
 namespace Nomos.Application.Common;
 
@@ -12,8 +13,13 @@ public static class CategoryIcon
     public const string Fallback = "🏷️";
 
     // First matching rule wins, so put more specific keywords before generic ones.
+    // ⚠️ Esta tabla es la ÚNICA: el cliente la pide por /api/categories/icon-rules para pintar la
+    // vista previa. No la copies en el front — cuando existían dos, escribir «Salud» enseñaba un
+    // corazón y guardaba un hospital.
     private static readonly (string Emoji, string[] Keywords)[] Rules =
     [
+        // Antes que la del restaurante: «barberia» contiene «bar».
+        ("✂️", ["barberia", "barbería", "corte"]),
         ("🍽️", ["restaurante", "restaurant", "cena", "comer fuera", "bar", "tapas", "menu", "menú"]),
         ("🛒", ["mercadona", "carrefour", "lidl", "aldi", "dia", "super", "supermercado", "compra", "alimentacion", "alimentación", "grocery"]),
         ("☕", ["cafe", "café", "cafeteria", "cafetería", "starbucks"]),
@@ -35,7 +41,7 @@ public static class CategoryIcon
         ("🔥", ["calefaccion", "calefacción", "naturgy", "butano", "gas natural"]),
         ("📶", ["internet", "fibra", "wifi", "movil", "móvil", "telefono", "teléfono", "movistar", "vodafone", "orange", "yoigo"]),
         ("💊", ["farmacia", "medicina", "medicamento"]),
-        ("🏥", ["medico", "médico", "hospital", "dentista", "clinica", "clínica", "seguro medico", "salud"]),
+        ("🏥", ["medico", "médico", "hospital", "dentista", "clinica", "clínica", "seguro medico"]),
         ("🏋️", ["gimnasio", "gym", "fitness", "crossfit", "padel", "pádel", "deporte"]),
         ("🎬", ["cine", "netflix", "hbo", "disney", "peliculas", "películas", "teatro"]),
         ("🎵", ["spotify", "musica", "música", "concierto", "apple music"]),
@@ -44,7 +50,7 @@ public static class CategoryIcon
         ("📚", ["libro", "libreria", "librería", "curso", "universidad", "upv", "matricula", "matrícula", "educacion", "educación", "estudios", "formacion", "formación"]),
         ("👕", ["ropa", "moda", "zara", "camiseta", "zapatos", "calzado", "vestir"]),
         ("💻", ["ordenador", "portatil", "portátil", "pc", "software", "tecnologia", "tecnología", "gadget"]),
-        ("📱", ["telefono movil", "smartphone", "iphone", "android"]),
+        ("📱", ["smartphone", "iphone", "android"]),
         ("🎁", ["regalo", "cumpleanos", "cumpleaños", "navidad"]),
         ("🐶", ["mascota", "perro", "gato", "veterinario", "pienso"]),
         ("💄", ["belleza", "peluqueria", "peluquería", "cosmetica", "cosmética", "maquillaje"]),
@@ -57,10 +63,13 @@ public static class CategoryIcon
         ("🧾", ["impuesto", "hacienda", "irpf", "iva", "multa"]),
         ("❤️", ["salud"]),
         ("🛠️", ["reparacion", "reparación", "herramienta", "ferreteria", "ferretería", "hogar"]),
-        ("✂️", ["barberia", "barbería", "corte"]),
         ("⚠️", ["error", "mistake"]),
         ("📦", ["otros", "otro", "other", "varios", "misc", "miscelanea", "miscelánea"]),
     ];
+
+    /// <summary>Las reglas tal cual, para que el cliente pinte la vista previa con ESTA tabla.</summary>
+    public static IconRuleDto[] ForClient() =>
+        [.. Rules.Select(r => new IconRuleDto(r.Emoji, r.Keywords))];
 
     public static string ForName(string? name)
     {

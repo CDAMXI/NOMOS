@@ -2,6 +2,10 @@ namespace Nomos.Application.DTOs;
 
 public record CategoryDto(int Id, string Name, string Icon, string Color);
 
+/// <summary>Una regla de icono automatico, servida al cliente para que pinte la vista previa con
+/// la MISMA tabla con la que el servidor decide el icono que guarda.</summary>
+public record IconRuleDto(string Icon, string[] Keywords);
+
 public record CreateCategoryRequest(string Name);
 
 public record UpdateCategoryRequest(string Name);

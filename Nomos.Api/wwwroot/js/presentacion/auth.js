@@ -37,6 +37,7 @@ function showAuth() {
 function enterApp() {
   authScreen.classList.add('hidden');
   applyUserCurrency();   // fija la divisa del usuario en los formateadores
+  ensureIconRules();     // tabla de iconos automáticos, para la vista previa de categoría
   renderTopAvatar();
   $('fab').classList.remove('hidden');
   refreshCurrent();

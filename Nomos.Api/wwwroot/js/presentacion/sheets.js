@@ -335,6 +335,8 @@ function openCategoryEditSheet(cat = null, onDone = null) {
       const paintIcon = () => { preview.textContent = categoryIcon(nameEl.value); };
       nameEl.addEventListener('input', () => { paintIcon(); refreshSaveState(); });
       if (!isEdit) paintIcon();
+      // Si la tabla no llegó al entrar, se reintenta aquí y se repinta cuando esté.
+      if (!iconRules) ensureIconRules().then(() => { if (!isEdit || nameEl.value) paintIcon(); });
 
       if (isEdit) {
         armDelete($('deleteCat'), t('delete_category'), async () => {

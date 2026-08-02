@@ -60,6 +60,7 @@ const EMOJI_GLYPH = {
   '🧾': 'receipt', '🛠️': 'wrench', '⚠️': 'warning', '📦': 'box', '🏷️': 'tag',
   '📈': 'chart', '💳': 'card', '📄': 'doc', '🌙': 'moon', '🚪': 'exit', '📷': 'camera',
   '💱': 'swap', '🔁': 'swap', '✏️': 'pencil', '＋': 'plus',
+  '🎓': 'book', '🎈': 'gift', '🚬': 'flame', '🍺': 'cup', '💰': 'cash', '🧾': 'receipt',
 };
 
 /** SVG del glifo que corresponde a un emoji (o a un nombre de glifo directo). */
@@ -92,7 +93,7 @@ const imgMark = src => `<img class="mark-img" src="${src}" alt="" width="40" hei
 const CUR_GLYPH_SIZE = { 1: 16, 2: 11.5, 3: 8.5 };
 const currencyGlyph = () => textGlyph(curGlyph, { size: CUR_GLYPH_SIZE[curGlyph.length] || 8 });
 
-// Cuentas que reconocemos por el NOMBRE (mismo patrón que ICON_RULES). El azulejo lleva el color
+// Cuentas que reconocemos por el NOMBRE (mismo patrón que las reglas de icono del servidor). El azulejo lleva el color
 // de la entidad; el efectivo, el acento de la app y el símbolo de la divisa que tenga configurada.
 const ACCOUNT_MARKS = [
   [['bbva'], { tile: '#1c5ba3', mark: () => imgMark('img/bbva.webp') }],
@@ -113,70 +114,38 @@ function accountTile(account) {
   return `<span class="tx-icon" style="background:${m.tile || 'var(--accent)'}">${m.mark()}</span>`;
 }
 
-// ---------- Icono automático de categoría (espejo de Nomos.Application/Common/CategoryIcon.cs) ----------
-const ICON_FALLBACK = '🏷️';
-const ICON_RULES = [
-  ['🍽️', ['restaurante', 'restaurant', 'cena', 'bar', 'tapas', 'menu']],
-  ['🛒', ['mercadona', 'carrefour', 'lidl', 'aldi', 'dia', 'super', 'compra', 'alimentacion', 'grocery']],
-  ['☕', ['cafe', 'cafeteria', 'starbucks', 'coffee']],
-  ['🍔', ['burger', 'hamburguesa', 'pizza', 'kebab', 'mcdonald', 'telepizza', 'comida rapida', 'fast food']],
-  ['🎰', ['expendedora', 'vending', 'maquina expendedora']],
-  ['🍱', ['comida', 'almuerzo', 'desayuno', 'food', 'lunch', 'dinner']],
-  // Antes de 🚗: «sacar» contiene «car» y la regla del coche se lo llevaría.
-  ['💶', ['efectivo', 'sacar dinero', 'cajero', 'retirada', 'reintegro', 'atm', 'cash', 'withdrawal']],
-  ['⛽', ['gasolina', 'combustible', 'diesel', 'repsol', 'cepsa', 'gasolinera', 'fuel', 'gas station', 'petrol']],
-  ['🚇', ['metro', 'subway']],
-  ['🚌', ['bus', 'autobus', 'abono', 'emt']],
-  ['🚆', ['tren', 'renfe', 'ave', 'train']],
-  ['🚕', ['taxi', 'uber', 'cabify', 'bolt']],
-  ['✈️', ['vuelo', 'avion', 'viaje', 'vacaciones', 'hotel', 'airbnb', 'booking', 'flight', 'travel', 'holiday']],
-  ['🚗', ['coche', 'auto', 'parking', 'peaje', 'itv', 'taller', 'transporte', 'car', 'transport']],
-  ['🏠', ['alquiler', 'hipoteca', 'casa', 'vivienda', 'piso', 'comunidad', 'renta', 'rent', 'mortgage', 'home', 'housing']],
-  ['💡', ['luz', 'electricidad', 'endesa', 'iberdrola', 'electricity', 'power']],
-  ['💧', ['agua', 'canal', 'water']],
-  ['🔥', ['calefaccion', 'naturgy', 'heating', 'butano', 'gas natural']],
-  ['📶', ['internet', 'fibra', 'wifi', 'movil', 'telefono', 'movistar', 'vodafone', 'orange', 'yoigo', 'phone', 'mobile']],
-  ['💊', ['farmacia', 'medicina', 'medicamento', 'pharmacy', 'medicine']],
-  ['🏥', ['medico', 'hospital', 'dentista', 'clinica', 'doctor', 'dentist']],
-  ['🏋️', ['gimnasio', 'gym', 'fitness', 'padel', 'deporte', 'crossfit', 'sport']],
-  ['🎬', ['cine', 'netflix', 'hbo', 'disney', 'teatro', 'pelicula', 'cinema', 'movie']],
-  ['🎵', ['spotify', 'musica', 'concierto', 'apple music', 'music', 'concert']],
-  ['🎮', ['juego', 'videojuego', 'gaming', 'steam', 'playstation', 'xbox', 'nintendo', 'ocio', 'game', 'leisure']],
-  ['🕺', ['baile', 'bailar', 'danza', 'dance', 'salsa', 'bachata', 'zumba', 'discoteca']],
-  ['📚', ['libro', 'libreria', 'curso', 'universidad', 'upv', 'matricula', 'educacion', 'estudios', 'formacion', 'book', 'course', 'university', 'education']],
-  ['👕', ['ropa', 'moda', 'zara', 'camiseta', 'zapatos', 'calzado', 'vestir', 'clothes', 'fashion']],
-  ['💻', ['ordenador', 'portatil', 'pc', 'software', 'tecnologia', 'gadget', 'laptop', 'tech']],
-  ['📱', ['iphone', 'smartphone', 'android']],
-  ['🎁', ['regalo', 'cumpleanos', 'navidad', 'gift', 'birthday', 'christmas']],
-  ['🐶', ['mascota', 'perro', 'gato', 'veterinario', 'pienso', 'pet', 'dog', 'cat', 'vet']],
-  ['💄', ['belleza', 'peluqueria', 'cosmetica', 'maquillaje', 'beauty', 'makeup']],
-  ['💰', ['ahorro', 'inversion', 'nomina', 'sueldo', 'salario', 'savings', 'salary', 'investment']],
-  ['🏦', ['banco', 'comision', 'hucha', 'bank']],
-  ['🍺', ['cerveza', 'alcohol', 'copas', 'bebida', 'beer', 'drink']],
-  ['🧾', ['impuesto', 'hacienda', 'irpf', 'iva', 'multa', 'tax', 'fine']],
-  ['❤️', ['salud', 'health']],
-  ['🛠️', ['reparacion', 'herramienta', 'ferreteria', 'hogar', 'repair', 'tools']],
-  ['✂️', ['barberia', 'corte', 'barber', 'haircut']],
-  ['⚠️', ['error', 'mistake']],
-  ['📦', ['otros', 'otro', 'other', 'varios', 'misc', 'miscelanea']],
-];
-
-// ---------- Paletas temáticas (espejo de Palettes.cs; el front solo necesita `income`) ----------
-// El tinte del icono de ingreso sigue la paleta del usuario; el «+importe» conserva el verde
-// de DATO (esa semántica no pertenece a la paleta).
-const PALETTES = {
-  prisma: { income: '#34c759' }, // el verde de dato de la app ES su color de ingreso
-};
-const incomeColor = () => PALETTES[me?.palette]?.income || '#34c759';
-
+// Normalizacion compartida: minusculas y sin acentos, IGUAL que Normalize() en CategoryIcon.cs.
+// Si las dos dejan de coincidir, la vista previa vuelve a discrepar de lo que se guarda.
 const stripAccents = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '');
 const normKey = s => stripAccents((s || '').toLowerCase().trim());
+
+// Verde de INGRESO. Es color de DATO, no de la paleta decorativa: no cambia con ella. Antes esto
+// consultaba un objeto PALETTES cuya unica clave («prisma») ya no existia en el servidor
+// («apple»), asi que la busqueda daba undefined y siempre caia a este mismo literal.
+const incomeColor = () => '#34c759';
+
+// ---------- Icono automático de categoría ----------
+// La tabla vive en el SERVIDOR (Nomos.Application/Common/CategoryIcon.cs) y se pide una vez. No se
+// copia aquí: cuando existían dos tablas, escribir «Salud» enseñaba un corazón en la vista previa
+// y guardaba un hospital. La vista previa tiene que salir de la misma tabla que decide lo guardado.
+const ICON_FALLBACK = '🏷️';
+let iconRules = null;
+
+/** Trae la tabla de reglas si aún no está. Silencioso: sin ella, la vista previa cae al genérico. */
+async function ensureIconRules() {
+  if (iconRules) return iconRules;
+  try {
+    iconRules = await getJSON('/api/categories/icon-rules');
+  } catch (_) { /* sin conexión: se reintenta la próxima vez que se abra la hoja */ }
+  return iconRules;
+}
+
 function categoryIcon(name) {
   const n = normKey(name);
-  if (!n) return ICON_FALLBACK;
-  for (const [emoji, keywords] of ICON_RULES)
+  if (!n || !iconRules) return ICON_FALLBACK;
+  for (const { icon, keywords } of iconRules)
     for (const k of keywords)
-      if (n.includes(k)) return emoji;
+      if (n.includes(k)) return icon; // clave TAL CUAL, igual que Contains() en el servidor
   return ICON_FALLBACK;
 }
 
