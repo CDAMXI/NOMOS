@@ -27,7 +27,7 @@ async function loadGastos() {
     color: 'var(--accent)',
     label: t('evolution'),
     xFmt: iso => { const dt = localDate(iso); return dt.getDate() + ' ' + shortMonth(dt); },
-    yFmt: v => nf0(Math.round(v)),
+    yFmt: numShort,
     // La serie es acumulada: el gasto de ese día es la diferencia con el punto anterior.
     tip: (pt, i, pts) => {
       const daily = i === 0 ? pt.y : pt.y - pts[i - 1].y;
@@ -213,7 +213,7 @@ async function loadPatrimonio() {
     color: 'var(--accent)',
     label: t('evolution'),
     xFmt: daily ? dayLabel : iso => shortMonth(localDate(iso)),
-    yFmt: v => v >= 1000 ? nf0(Math.round(v / 1000)) + 'k' : nf0(Math.round(v)),
+    yFmt: numShort,
     tip: pt => `<b>${eur(pt.y)}</b><div class="d">${daily ? dayLabel(pt.x) : shortMonth(localDate(pt.x))}</div>`
   });
 

@@ -17,7 +17,9 @@ let _nf0, _cur, _curShort, _short2, _nfShares, _pct;
 function buildFormatters() {
   const l = localeCode();
   _nf0 = new Intl.NumberFormat(l, { useGrouping: true });
-  _cur = new Intl.NumberFormat(l, { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: true });
+  // Sin fijar decimales: los decide la divisa. JPY, CLP, PYG y COP no tienen centimos, y
+  // forzar dos escribia «1234,00 JPY».
+  _cur = new Intl.NumberFormat(l, { style: 'currency', currency, useGrouping: true });
   _curShort = new Intl.NumberFormat(l, { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0, useGrouping: true });
   // Mantisa de K/M/B: dos decimales como máximo y sin ceros de relleno (18, no 18,00).
   _short2 = new Intl.NumberFormat(l, { maximumFractionDigits: 2, useGrouping: false });
@@ -77,9 +79,19 @@ const SHORT_ROUND_UP = 0.999995;
 const eurShort = v => {
   const abs = Math.abs(v);
   if (abs < 1000) return Number.isInteger(v) ? grouped(_curShort, v) : eur(v);
-  const [min, suffix] = SHORT_UNITS.find(([m]) => abs >= m * SHORT_ROUND_UP);
-  return _short2.format(Math.round(v / min * 100) / 100) + suffix + ' ' + curSymbol;
+  return compactUnit(v) + ' ' + curSymbol;
 };
+
+// Mantisa ya redondeada + su sufijo, para una cifra de 1000 en adelante.
+function compactUnit(v) {
+  const [min, suffix] = SHORT_UNITS.find(([m]) => Math.abs(v) >= m * SHORT_ROUND_UP);
+  return _short2.format(Math.round(v / min * 100) / 100) + suffix;
+}
+
+// La MISMA abreviatura, sin divisa: para ejes y etiquetas donde el simbolo seria ruido. Que la
+// lista diga «13K €» y el eje de al lado «15k» son dos compactos conviviendo en una pantalla.
+const numShort = v => Math.abs(v) < 1000 ? nf0(Math.round(v)) : compactUnit(v);
+
 const pct1 = v => _pct.format(Math.abs(v)) + '%';
 // Número de acciones: hasta 6 decimales (permite fracciones), miles con espacio.
 const nfShares = v => grouped(_nfShares, v);

@@ -1036,7 +1036,9 @@ li.clickable:active, .acc-list li:active, .settings-row:active { background: var
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
   body.sheet-open main.view { transform: none; }
-  .chip:active, .pill:active, .icon-btn:active, .primary-btn:active, #fab:active { transform: none; }
+  /* El indicador de progreso es INFORMACION, no decoracion: congelarlo lo deja sin indicar nada
+     justo durante el arranque en frio, que puede durar un minuto. */
+  .boot-spinner { animation-duration: .8s !important; animation-iteration-count: infinite !important; }
 }
 
 /* Transparencia reducida: las barras se vuelven solidas (sin desenfoque). */
