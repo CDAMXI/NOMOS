@@ -9,6 +9,10 @@ const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 // Divisa principal del usuario (solo display). Se fija desde me.currency tras el login.
 let currency = 'EUR';
 let curSymbol = '€';
+// Simbolo ESTRECHO, el que cabe en un azulejo de icono: en es-ES, USD normal es «US$» y GBP es
+// «GBP»; en estrecho son «$» y «£». Tres divisas (CHF, PEN, VES) no tienen simbolo y se quedan
+// en su codigo de tres letras, que el azulejo encoge para que quepa.
+let curGlyph = '€';
 let _nf0, _cur, _curShort, _short2, _nfShares, _pct;
 function buildFormatters() {
   const l = localeCode();
@@ -20,6 +24,17 @@ function buildFormatters() {
   _nfShares = new Intl.NumberFormat(l, { maximumFractionDigits: 6, useGrouping: true });
   _pct = new Intl.NumberFormat(l, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   curSymbol = (_cur.formatToParts(0).find(p => p.type === 'currency') || {}).value || currency;
+  curGlyph = narrowSymbol(l) || curSymbol;
+}
+
+// Simbolo estrecho de la divisa actual, o null si el navegador no admite narrowSymbol.
+function narrowSymbol(l) {
+  try {
+    const nf = new Intl.NumberFormat(l, { style: 'currency', currency, currencyDisplay: 'narrowSymbol' });
+    return (nf.formatToParts(0).find(p => p.type === 'currency') || {}).value;
+  } catch {
+    return null;
+  }
 }
 buildFormatters();
 

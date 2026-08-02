@@ -186,7 +186,6 @@ function bindTxRows(listEl, cache, back = null) {
 // ---------- Vista Patrimonio ----------
 // Orden de las secciones: de lo más líquido a lo menos, y las deudas al final.
 const TYPE_ORDER = ['Cash', 'Investment', 'Other', 'Liability'];
-const TYPE_ICON = { Cash: '🏦', Investment: '📈', Other: '📦', Liability: '💳' };
 const TYPE_KEY = { Cash: 'section_cash', Investment: 'section_investment', Other: 'section_other', Liability: 'section_liability' };
 
 async function loadPatrimonio() {
@@ -240,9 +239,10 @@ async function loadPatrimonio() {
 
 function accRow(a) {
   const isLiab = a.type === 'Liability';
-  // Icono en tinte de ACENTO: verde/rojo son colores de dato (la cifra), no decoración.
+  // Icono en tinte de ACENTO salvo que la cuenta tenga marca propia (BBVA, Wise, efectivo):
+  // verde/rojo son colores de dato (la cifra), no decoración.
   return `<li data-acc="${a.id}" class="clickable" tabindex="0" role="button">
-    ${iconTile(TYPE_ICON[a.type])}
+    ${accountTile(a)}
     <span class="tx-main">
       <span class="tx-title">${esc(a.name)}</span>
       <div class="tx-sub">${t('updated_prefix')} ${dMed(a.updatedAt)}</div>

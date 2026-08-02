@@ -73,6 +73,48 @@ function glyphSvg(key) {
 const iconTile = (glyph, color) =>
   `<span class="tx-icon" style="background:${color || 'var(--accent)'}">${glyphSvg(glyph)}</span>`;
 
+// ---------- Marcas de cuenta (entidad concreta o divisa) ----------
+// Glifo de TEXTO: el símbolo de la divisa del usuario o una marca denominativa. Va RELLENO y no a
+// trazo, así que lleva fill/stroke propios: el `.glyph` del CSS pinta a trazo y se hereda. Hereda
+// en cambio la tipografía de la página, para que la marca no desentone con el resto.
+const textGlyph = (text, { size = 15, ink = '#fff', track = 0 } = {}) =>
+  `<svg class="glyph" viewBox="0 0 24 24" aria-hidden="true"><text x="12" y="12"
+    text-anchor="middle" dominant-baseline="central" fill="${ink}" stroke="none"
+    font-size="${size}" font-weight="700" letter-spacing="${track}">${text}</text></svg>`;
+
+// Marca de trazo con la tinta de la entidad (el trazo es más grueso que el de un glifo normal:
+// un logotipo pide más peso que un icono de sistema).
+const markGlyph = (paths, ink) =>
+  `<svg class="glyph" viewBox="0 0 24 24" aria-hidden="true" style="stroke:${ink};stroke-width:3.2;stroke-linecap:butt">${paths}</svg>`;
+
+// El símbolo de flujo de Wise: la barra superior que cae en diagonal, cruzada por la segunda.
+const WISE_MARK = '<path d="M4.4 5.4h15.2L7.6 19.6"/><path d="M4.4 12.5h8.8"/>';
+
+// El símbolo de la divisa del usuario, al tamaño que quepa: uno de un carácter va grande; un
+// código de tres letras (CHF, PEN, VES) tiene que encoger.
+const CUR_GLYPH_SIZE = { 1: 16, 2: 11.5, 3: 8.5 };
+const currencyGlyph = () => textGlyph(curGlyph, { size: CUR_GLYPH_SIZE[curGlyph.length] || 8 });
+
+// Cuentas que reconocemos por el NOMBRE (mismo patrón que ICON_RULES). El azulejo lleva el color
+// de la entidad; el efectivo, el acento de la app y el símbolo de la divisa que tenga configurada.
+const ACCOUNT_MARKS = [
+  [['bbva'], { tile: '#004481', mark: () => textGlyph('BBVA', { size: 7, track: -0.35 }) }],
+  [['wise'], { tile: '#9fe870', mark: () => markGlyph(WISE_MARK, '#163300') }],
+  [['efectivo', 'metalico', 'cash', 'monedero', 'billetera', 'wallet'], { mark: currencyGlyph }],
+];
+
+// Glifo por defecto de cada tipo de cuenta, cuando no reconocemos la entidad.
+const ACCOUNT_TYPE_GLYPH = { Cash: '🏦', Investment: '📈', Other: '📦', Liability: '💳' };
+
+/** Azulejo de una cuenta: su marca si la reconocemos por el nombre; si no, el glifo de su tipo. */
+function accountTile(account) {
+  const name = normKey(account.name);
+  const found = ACCOUNT_MARKS.find(([keys]) => keys.some(k => name.includes(k)));
+  if (!found) return iconTile(ACCOUNT_TYPE_GLYPH[account.type]);
+  const [, m] = found;
+  return `<span class="tx-icon" style="background:${m.tile || 'var(--accent)'}">${m.mark()}</span>`;
+}
+
 // ---------- Icono automático de categoría (espejo de Nomos.Application/Common/CategoryIcon.cs) ----------
 const ICON_FALLBACK = '🏷️';
 const ICON_RULES = [
