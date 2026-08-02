@@ -106,14 +106,18 @@ public class ExpenseService(
             series.Add(new SeriesPointDto(d, running));
         }
 
-        var byCategory = inWindow
+        // La RUEDA reparte el gasto del MES natural, igual que el resumen del hero (la gráfica
+        // es la que sigue la ventana móvil de sus pastillas).
+        var inMonth = items.Where(e => e.Date >= monthStart).ToList();
+
+        var byCategory = inMonth
             .GroupBy(e => e.CategoryId)
             .Select(g => new CategoryTotalDto(ToDto(g.First().Category!), g.Sum(e => e.Amount)))
             .OrderByDescending(c => c.Total)
             .ToList();
 
         // Same breakdown but split per assigned account (for the per-account donut).
-        var byAccount = inWindow
+        var byAccount = inMonth
             .Where(e => e.AccountId != null)
             .GroupBy(e => e.AccountId!.Value)
             .Select(g => new AccountBreakdownDto(g.Key, g
@@ -131,7 +135,7 @@ public class ExpenseService(
 
         return new ExpensesDashboardDto(
             Balance: balance,
-            MonthTotal: items.Where(e => e.Date >= monthStart).Sum(e => e.Amount),
+            MonthTotal: inMonth.Sum(e => e.Amount),
             MonthIncome: incomeItems.Where(i => i.Date >= monthStart).Sum(i => i.Amount),
             Series: series,
             ByCategory: byCategory,

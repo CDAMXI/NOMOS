@@ -9,25 +9,25 @@ namespace Nomos.Tests;
 
 public class PaletteTests
 {
-    private static readonly Palettes.Palette Indigo = Palettes.Get(Palettes.DefaultName)!;
+    private static readonly Palettes.Palette Prisma = Palettes.Get(Palettes.DefaultName)!;
 
     [Fact]
     public void NextColor_WalksBaseColorsInOrder_ThenInterpolatesMidpoints()
     {
-        Assert.Equal("#1b2447", Palettes.NextColor(Indigo, []));
-        Assert.Equal("#27367d", Palettes.NextColor(Indigo, ["#1b2447"]));
+        Assert.Equal("#557ad2", Palettes.NextColor(Prisma, []));
+        Assert.Equal("#3487a5", Palettes.NextColor(Prisma, ["#557ad2"]));
         // Los 10 base agotados → punto medio del primer par (mezcla RGB al 50%).
-        var overflow = Palettes.NextColor(Indigo, Indigo.Colors);
-        Assert.Equal("#212d62", overflow);
-        Assert.DoesNotContain(overflow, Indigo.Colors);
+        var overflow = Palettes.NextColor(Prisma, Prisma.Colors);
+        Assert.Equal("#4480bc", overflow);
+        Assert.DoesNotContain(overflow, Prisma.Colors);
     }
 
     [Fact]
     public void SemanticSlots_MatchByNormalizedName()
     {
-        Assert.Equal("#1b2447", Palettes.SemanticColor(Indigo, "Error"));
-        Assert.Equal("#93a5ec", Palettes.SemanticColor(Indigo, "  SALUD "));
-        Assert.Null(Palettes.SemanticColor(Indigo, "Comida"));
+        Assert.Equal("#b16d2a", Palettes.SemanticColor(Prisma, "Error"));
+        Assert.Equal("#2e8a7e", Palettes.SemanticColor(Prisma, "  SALUD "));
+        Assert.Null(Palettes.SemanticColor(Prisma, "Comida"));
     }
 
     [Fact]
@@ -50,11 +50,11 @@ public class PaletteTests
 
         Assert.Equal(Palettes.DefaultName, charlie.Palette); // la paleta anterior también migra: paleta única
         Assert.Equal(Palettes.DefaultName, sissy.Palette);
-        Assert.Equal("#1b2447", error.Color);               // hueco semántico
-        Assert.Equal("#93a5ec", salud.Color);               // hueco semántico
-        Assert.Contains(comida.Color, Indigo.Colors);       // primer base libre
-        Assert.NotEqual("#1b2447", comida.Color);           // sin robar el color reservado
-        Assert.Contains(ocio.Color, Indigo.Colors);
+        Assert.Equal("#b16d2a", error.Color);               // hueco semántico
+        Assert.Equal("#2e8a7e", salud.Color);               // hueco semántico
+        Assert.Contains(comida.Color, Prisma.Colors);       // primer base libre
+        Assert.NotEqual("#b16d2a", comida.Color);           // sin robar el color reservado
+        Assert.Contains(ocio.Color, Prisma.Colors);
 
         // Idempotente: con todos en la paleta por defecto, la segunda pasada no toca nada.
         var snapshot = (comida.Color, error.Color, salud.Color, ocio.Color);
@@ -75,9 +75,9 @@ public class PaletteTests
         var second = await service.CreateAsync(user.Id, new CreateCategoryRequest("Transporte"));
         var semantic = await service.CreateAsync(user.Id, new CreateCategoryRequest("Error"));
 
-        Assert.Equal("#1b2447", first.Color);
-        Assert.Equal("#27367d", second.Color);
-        Assert.Equal("#1b2447", semantic.Color); // semántico, aunque el base ya esté repartido
+        Assert.Equal("#557ad2", first.Color);
+        Assert.Equal("#3487a5", second.Color);
+        Assert.Equal("#b16d2a", semantic.Color); // semántico, aunque el base ya esté repartido
     }
 
     [Fact]

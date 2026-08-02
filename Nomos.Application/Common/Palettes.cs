@@ -25,32 +25,33 @@ public static class Palettes
     /// usuarios la llevan; el registro la fija en el alta y el backfill migra a los existentes
     /// cuando cambia (basta con apuntar aquí a otra entrada del registro).
     /// </summary>
-    public const string DefaultName = "indigo";
+    public const string DefaultName = "prisma";
 
     /// <summary>Espejo de PALETTES en categories.js (el front solo necesita Income).</summary>
     public static readonly IReadOnlyDictionary<string, Palette> All =
         new Dictionary<string, Palette>(StringComparer.OrdinalIgnoreCase)
         {
-            // «índigo»: variante de la familia «Cuño» desplazada hacia el perivinca — índigos
-            // del acento #1b3a8e virados al violeta y slates fríos, de oscuro a claro.
-            // Compatible por construcción con la app; verde y rojo siguen siendo colores de DATO.
+            // «prisma»: tonos VARIADOS que armonizan con el marino de la marca — todos a la
+            // misma luminancia (contraste ≥4:1 sobre la tarjeta clara Y la oscura, calculado)
+            // y con 22° mínimo de separación de tono, para que la rueda se lea de un vistazo.
+            // Sin rojos ni verdes: siguen reservados como colores de DATO.
             [DefaultName] = new(
                 [
-                    "#1b2447", // medianoche
-                    "#27367d", // índigo profundo
-                    "#3a4cae", // índigo
-                    "#5468cf", // índigo medio
-                    "#7286e0", // perivinca
-                    "#93a5ec", // claro
-                    "#b4c0f0", // pálido
-                    "#8e97b8", // slate lila
-                    "#5c6485", // slate
-                    "#363c57", // slate oscuro
+                    "#557ad2", // índigo de marca
+                    "#3487a5", // azul cielo
+                    "#9568ca", // violeta
+                    "#be51be", // púrpura
+                    "#c9528e", // fucsia
+                    "#b16d2a", // ámbar
+                    "#8b7e25", // oro
+                    "#2e8a7e", // teal
+                    "#777c94", // slate frío
+                    "#8f7968", // taupe cálido
                 ],
                 new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
-                    ["error"] = "#1b2447", // el más oscuro y grave de la paleta
-                    ["salud"] = "#93a5ec", // el registro suave y claro
+                    ["error"] = "#b16d2a", // ámbar: el registro de aviso, sin invadir el rojo de dato
+                    ["salud"] = "#2e8a7e", // teal: el registro clínico
                 },
                 Income: "#34c759") // el verde de dato de la app ES su color de ingreso
         };

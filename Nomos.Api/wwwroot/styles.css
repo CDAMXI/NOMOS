@@ -117,6 +117,8 @@
   --sp-30: 30px;
   --sp-34: 34px;
   --sp-90: 90px;
+  /* Altura FIJA del bloque inferior: ancla comun de tabbar, FAB y toast. */
+  --tabbar-h: 58px;
 }
 
 
@@ -133,7 +135,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background: var(--bg);
   color: var(--text);
-  padding-bottom: var(--sp-90);
+  padding-bottom: calc(var(--tabbar-h) + var(--sp-30)); /* el contenido nunca queda bajo la barra */
 }
 
 /* ---------- Top bar ---------- */
@@ -394,12 +396,10 @@ body {
 }
 
 .eyebrow {
-  text-transform: uppercase;
-  letter-spacing: .25em;
-  font-size: var(--fs-115);
-  font-weight: 600;
+  font-size: var(--fs-15);
+  font-weight: 500;
   color: var(--muted);
-  margin-bottom: var(--sp-8);
+  margin-bottom: var(--sp-2);
 }
 
 .two-cards { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-14); margin-bottom: var(--sp-16); }
@@ -410,9 +410,7 @@ body {
 .red { color: var(--red); }
 
 .section-title, .muted-label {
-  text-transform: uppercase;
-  letter-spacing: .18em;
-  font-size: var(--fs-12);
+  font-size: var(--fs-15);
   font-weight: 600;
   color: var(--muted);
 }
@@ -427,7 +425,7 @@ body {
 #fab {
   position: fixed;
   right: var(--sp-26);
-  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--tabbar-h) + var(--sp-16)); /* anclado a la tabbar: misma altura en toda la app */
   width: 58px;
   height: 58px;
   border: none;
@@ -454,7 +452,11 @@ body {
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   backdrop-filter: saturate(180%) blur(20px);
   border-top: .5px solid var(--line);
-  padding: var(--sp-6) var(--sp-16) calc(var(--sp-6) + env(safe-area-inset-bottom, 0px));
+  /* Altura y relleno CONSTANTES. Con env(safe-area-inset-bottom) la barra subia y bajaba
+     cuando el sistema mostraba u ocultaba la suya, y arrastraba al FAB con ella. */
+  height: var(--tabbar-h);
+  align-items: center;
+  padding: var(--sp-6) var(--sp-16) var(--sp-12);
   z-index: 30;
 }
 
@@ -958,7 +960,7 @@ li.clickable { cursor: pointer; }
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--tabbar-h) + var(--sp-20));
   background: var(--text);
   color: var(--bg);
   padding: var(--sp-10) var(--sp-18);
