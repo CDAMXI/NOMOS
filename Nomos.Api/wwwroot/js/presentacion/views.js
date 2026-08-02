@@ -69,14 +69,40 @@ function renderRecent() {
   }
 }
 
+// ---------- Selector de cuenta (fila de chips) ----------
+// Lo comparten el saldo del hero y la tarjeta «Por categoría». Solo aparece con 2+ cuentas de
+// efectivo: con una sola, la vista genérica YA es esa cuenta. Devuelve la selección vigente,
+// reparándola si apuntaba a una cuenta que ya no existe.
+function renderAccountPicker(box, attr, cash, selected, onPick) {
+  const sigueExistiendo = selected === 'all' || cash.some(a => a.id === selected);
+  if (cash.length < 2) {
+    box.classList.add('hidden');
+    box.innerHTML = '';
+    return 'all';
+  }
+  box.classList.remove('hidden');
+  box.innerHTML = `<button class="chip" data-${attr}="all">${t('all_accounts')}</button>`
+    + cash.map(a => cashChip(a, attr, cash)).join('');
+  box.querySelectorAll(`[data-${attr}]`).forEach(ch =>
+    ch.addEventListener('click', () => onPick(ch.dataset[attr] === 'all' ? 'all' : +ch.dataset[attr])));
+  return sigueExistiendo ? selected : 'all';
+}
+
+// Marca el chip activo (y lo anuncia a los lectores de pantalla).
+function paintAccountPicker(box, attr, selected) {
+  box.querySelectorAll(`[data-${attr}]`).forEach(ch => {
+    const activo = ch.dataset[attr] === String(selected);
+    ch.classList.toggle('selected', activo);
+    ch.setAttribute('aria-pressed', activo ? 'true' : 'false');
+  });
+}
+
 // "Por categoría": una rueda genérica (todas las cuentas) y una por cada cuenta, con selector.
 let catAccountSel;   // 'all' o id de cuenta; se mantiene entre refrescos
 let donutSel = null; // categoría seleccionada tocando la rueda; se mantiene entre refrescos
 
 function renderCategoryCard(d, cash) {
   const box = $('gCatAccounts');
-  const ids = cash.map(a => a.id);
-  if (catAccountSel !== 'all' && !ids.includes(catAccountSel)) catAccountSel = 'all';
 
   const paint = () => {
     const byCat = catAccountSel === 'all'
@@ -92,31 +118,18 @@ function renderCategoryCard(d, cash) {
       <li><span class="dot" style="background:${c.category.color}"></span>
         ${esc(catName(c.category.name))}<span class="amount">${eur(c.total)}</span></li>`).join('')
       || `<li class="tx-sub">${t('no_expenses_period')}</li>`;
-    box.querySelectorAll('[data-catacc]').forEach(ch => {
-      const sel = ch.dataset.catacc === String(catAccountSel);
-      ch.classList.toggle('selected', sel);
-      ch.setAttribute('aria-pressed', sel ? 'true' : 'false');
-    });
+    paintAccountPicker(box, 'catacc', catAccountSel);
   };
 
-  // El selector solo aparece con 2+ cuentas de efectivo (con una, la genérica ya es esa cuenta).
-  if (cash.length < 2) { box.classList.add('hidden'); box.innerHTML = ''; catAccountSel = 'all'; paint(); return; }
-  box.classList.remove('hidden');
-  box.innerHTML = `<button class="chip" data-catacc="all">${t('all_accounts')}</button>`
-    + cash.map(a => cashChip(a, 'catacc', cash)).join('');
-  box.querySelectorAll('[data-catacc]').forEach(ch =>
-    ch.addEventListener('click', () => { catAccountSel = ch.dataset.catacc === 'all' ? 'all' : +ch.dataset.catacc; paint(); }));
+  catAccountSel = renderAccountPicker(box, 'catacc', cash, catAccountSel,
+    sel => { catAccountSel = sel; paint(); });
   paint();
 }
 
-// Hero balance: shows the live balance of one cash account at a time, with a chip switcher.
-// 'all' shows the total across cash accounts. The selection survives auto-refresh.
+// Saldo del hero: el de UNA cuenta de efectivo a la vez, con el selector de chips. 'all' (el
+// aterrizaje por defecto) muestra el total; la selección sobrevive al auto-refresco.
 function renderHeroBalance(cash, total) {
   const box = $('gBalanceAccounts');
-  const ids = cash.map(a => a.id);
-  // El aterrizaje honesto es el TOTAL ('Todas'): aterrizar en la cuenta más vieja enseñaba
-  // el número menos significativo (p. ej. la «Efectivo» vacía del alta) como primer saldo.
-  if (heroAccountSel !== 'all' && !ids.includes(heroAccountSel)) heroAccountSel = 'all';
 
   const paint = () => {
     const bal = heroAccountSel === 'all'
@@ -127,28 +140,11 @@ function renderHeroBalance(cash, total) {
     // Cifras de 7+ dígitos desbordan el hero a --fs-44: se compacta la fuente, no el dato.
     el.style.fontSize = el.textContent.length > 12 ? 'var(--fs-30)' : '';
     el.classList.toggle('red', bal < 0);
-    box.querySelectorAll('[data-bal]').forEach(ch => {
-      const sel = ch.dataset.bal === String(heroAccountSel);
-      ch.classList.toggle('selected', sel);
-      ch.setAttribute('aria-pressed', sel ? 'true' : 'false');
-    });
+    paintAccountPicker(box, 'bal', heroAccountSel);
   };
 
-  // Only offer the switcher when there is more than one cash account.
-  if (cash.length < 2) {
-    box.classList.add('hidden');
-    box.innerHTML = '';
-    paint();
-    return;
-  }
-  box.classList.remove('hidden');
-  box.innerHTML = `<button class="chip" data-bal="all">${t('all_accounts')}</button>`
-    + cash.map(a => cashChip(a, 'bal', cash)).join('');
-  box.querySelectorAll('[data-bal]').forEach(ch =>
-    ch.addEventListener('click', () => {
-      heroAccountSel = ch.dataset.bal === 'all' ? 'all' : +ch.dataset.bal;
-      paint();
-    }));
+  heroAccountSel = renderAccountPicker(box, 'bal', cash, heroAccountSel,
+    sel => { heroAccountSel = sel; paint(); });
   paint();
 }
 
