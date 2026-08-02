@@ -365,7 +365,7 @@ const cashChip = (a, attr, all) => {
   const dup = all && all.filter(x => x.name === a.name).length > 1;
   return `<button class="chip" data-${attr}="${esc(String(a.id))}">${esc(a.name)}${dup ? ` · ${eurShort(a.balance)}` : ''}</button>`;
 };
-const catChip = c => `<button class="chip" data-cat="${c.id}">${esc(catName(c.name))}</button>`;
+const catChip = c => `<button class="chip" data-cat="${c.id}">${esc(c.name)}</button>`;
 
 // Marca activo el boton cuyo data-<attr> coincide con `val`, dentro de `scope`.
 const paintActive = (scope, attr, val) => scope.querySelectorAll(`[data-${attr}]`).forEach(p => {

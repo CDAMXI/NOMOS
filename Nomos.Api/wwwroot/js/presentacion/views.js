@@ -59,7 +59,7 @@ function renderRecent() {
 // se centra y ocupa TODO el alto de su tarjeta, así que ni su caja ni scrollHeight (que nunca
 // baja del alto de la caja) sirven de medida: hay que sumar las filas.
 function fillRecentToLeftColumn(ul) {
-  const catCard = document.querySelector('#view-gastos .col:first-child .card:last-child');
+  const catCard = $('gCatCard');
   const card = ul.closest('.card');
   if (!catCard || !card) return;
   const altoDeLasFilas = () =>
@@ -116,11 +116,11 @@ function renderCategoryCard(d, cash) {
     $('gDonut').classList.toggle('hidden', !byCat.length);
     $('gCatList').classList.toggle('empty', !byCat.length);
     renderDonut($('gDonut'),
-      byCat.map(c => ({ id: c.category.id, name: catName(c.category.name), color: c.category.color, value: c.total })),
+      byCat.map(c => ({ id: c.category.id, name: c.category.name, color: c.category.color, value: c.total })),
       { selected: donutSel, onSelect: id => { donutSel = id; } });
     $('gCatList').innerHTML = byCat.map(c => `
       <li><span class="dot" style="background:${c.category.color}"></span>
-        ${esc(catName(c.category.name))}<span class="amount">${eur(c.total)}</span></li>`).join('')
+        ${esc(c.category.name)}<span class="amount">${eur(c.total)}</span></li>`).join('')
       || `<li class="tx-sub">${t('no_expenses_period')}</li>`;
     paintAccountPicker(box, 'catacc', catAccountSel);
   };
@@ -128,6 +128,13 @@ function renderCategoryCard(d, cash) {
   catAccountSel = renderAccountPicker(box, 'catacc', cash, catAccountSel,
     sel => { catAccountSel = sel; paint(); });
   paint();
+}
+
+// Cifra grande de una cabecera. A partir de 7 dígitos desborda a --fs-44: se compacta la
+// FUENTE, nunca el dato.
+function paintBigFigure(el, value) {
+  el.textContent = eur(value);
+  el.style.fontSize = el.textContent.length > 12 ? 'var(--fs-30)' : '';
 }
 
 // Saldo del hero: el de UNA cuenta de efectivo a la vez, con el selector de chips. 'all' (el
@@ -140,9 +147,7 @@ function renderHeroBalance(cash, total) {
       ? total
       : (cash.find(a => a.id === heroAccountSel)?.balance ?? total);
     const el = $('gBalance');
-    el.textContent = eur(bal);
-    // Cifras de 7+ dígitos desbordan el hero a --fs-44: se compacta la fuente, no el dato.
-    el.style.fontSize = el.textContent.length > 12 ? 'var(--fs-30)' : '';
+    paintBigFigure(el, bal);
     el.classList.toggle('red', bal < 0);
     paintAccountPicker(box, 'bal', heroAccountSel);
   };
@@ -156,7 +161,7 @@ function txRow(tx, index) {
   const isIncome = tx.kind === 'income';
   const icon = isIncome ? '💶' : tx.category.icon;
   const bg = isIncome ? incomeColor() : tx.category.color; // azulejo de color solido
-  let sub = (isIncome ? t('income_word') : catName(tx.category.name)) + ' · ' + dMed(tx.date);
+  let sub = (isIncome ? t('income_word') : tx.category.name) + ' · ' + dMed(tx.date);
   if (tx.accountName) sub += ' · ' + tx.accountName;
   const amount = isIncome
     ? `<span class="tx-amount green">+${eur(tx.amount)}</span>`
@@ -179,6 +184,8 @@ function bindTxRows(listEl, cache, back = null) {
 }
 
 // ---------- Vista Patrimonio ----------
+// Orden de las secciones: de lo más líquido a lo menos, y las deudas al final.
+const TYPE_ORDER = ['Cash', 'Investment', 'Other', 'Liability'];
 const TYPE_ICON = { Cash: '🏦', Investment: '📈', Other: '📦', Liability: '💳' };
 const TYPE_KEY = { Cash: 'section_cash', Investment: 'section_investment', Other: 'section_other', Liability: 'section_liability' };
 
@@ -186,9 +193,7 @@ async function loadPatrimonio() {
   const d = await getJSON('/api/networth');
   accountsCache = d.accounts;
 
-  const nwEl = $('nwTotal');
-  nwEl.textContent = eur(d.net);
-  nwEl.style.fontSize = nwEl.textContent.length > 12 ? 'var(--fs-30)' : '';
+  paintBigFigure($('nwTotal'), d.net);
   const deltaEl = $('nwDelta');
   deltaEl.classList.add('invert');
   if (d.yearDeltaPct === null || d.yearDeltaPct === undefined) {
@@ -213,15 +218,14 @@ async function loadPatrimonio() {
     tip: pt => `<b>${eur(pt.y)}</b><div class="d">${daily ? dayLabel(pt.x) : shortMonth(localDate(pt.x))}</div>`
   });
 
-  // Cada cuenta de efectivo/banco muestra su saldo vivo (base + ingresos − gastos asignados).
-  const cashAccs = d.accounts.filter(a => a.type === 'Cash');
-  let html = cashAccs.length
-    ? `<p class="section-title">${t('section_cash')}</p><ul class="acc-list">${cashAccs.map(accRow).join('')}</ul>`
-    : '';
-  ['Investment', 'Other', 'Liability'].forEach(type => {
+  // Una sección por tipo, y solo si tiene cuentas. Las de efectivo muestran su saldo vivo
+  // (base + ingresos − gastos asignados).
+  const html = TYPE_ORDER.map(type => {
     const accs = d.accounts.filter(a => a.type === type);
-    if (accs.length) html += `<p class="section-title">${t(TYPE_KEY[type])}</p><ul class="acc-list">${accs.map(accRow).join('')}</ul>`;
-  });
+    return accs.length
+      ? `<p class="section-title">${t(TYPE_KEY[type])}</p><ul class="acc-list">${accs.map(accRow).join('')}</ul>`
+      : '';
+  }).join('');
   $('nwSections').innerHTML = html || `<p class="tx-sub">${t('add_first_account')}</p>`;
 
   // Las cuentas de inversión abren la hoja del broker (posiciones, compra/venta); el resto,

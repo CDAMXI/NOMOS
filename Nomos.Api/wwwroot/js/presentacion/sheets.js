@@ -52,25 +52,42 @@ function bindLotModeToggle(toEdit, toSell) {
   if (toSell) $('lotSellTab').addEventListener('click', toSell);
 }
 
-// Cabecera del lote: la MISMA fila que el usuario tocó en Posiciones (continuidad visual).
-const lotHead = h => `<div class="lot-head">
+// Las tripas de una fila de lote: icono, símbolo, cantidad × precio · fecha y coste.
+const lotBody = (h, costClass) => `
   ${iconTile('📈')}
   <span class="tx-main">
     <span class="tx-title">${esc(h.symbol)}</span>
     <div class="tx-sub">${nfShares(h.shares)} × ${eur(h.buyPrice)} · ${dMed(h.buyDate)}</div>
   </span>
-  <span class="lot-cost">${eur(h.cost)}</span>
-</div>`;
+  <span class="${costClass}">${eur(h.cost)}</span>`;
+
+// Cabecera del lote: la MISMA fila que el usuario tocó en Posiciones (continuidad visual).
+const lotHead = h => `<div class="lot-head">${lotBody(h, 'lot-cost')}</div>`;
 
 // Lee cantidad y precio de las hojas comprar/vender/editar (sin redondear; conserva el signo
 // para que la validación pueda rechazar negativos explícitamente).
 const readSharesPrice = () => ({ sh: decValue($('sharesField')), pr: decValue($('priceField')) });
 
+// Un lote se puede guardar si tiene nombre, cantidad y precio positivos y su coste cabe en el
+// margen disponible `max`. Comprar y corregir la compra comparten la regla; solo cambia el `max`
+// (al corregir, el coste del propio lote vuelve al margen).
+const lotIsValid = max => {
+  const { sh, pr } = readSharesPrice();
+  return !!$('symField')?.value.trim() && sh > 0 && pr > 0 && round2(sh * pr) <= max;
+};
+
+// El motivo por el que NO se puede guardar (cadena vacía si todo va bien).
+const lotHint = max => {
+  const { sh, pr } = readSharesPrice();
+  if (sh < 0 || pr < 0) return t('must_be_positive');
+  return round2(sh * pr) > max ? t('insufficient_margin', eur(max)) : '';
+};
+
 // Endpoint de un movimiento según su tipo: el ÚNICO sitio donde vive ese mapeo.
 const txPath = (kind, id) => `/api/${kind === 'income' ? 'incomes' : 'expenses'}${id ? '/' + id : ''}`;
 
 // Orden alfabético de categorías por su nombre en pantalla.
-const byCatName = (a, b) => catName(a.name).localeCompare(catName(b.name), localeCode());
+const byCatName = (a, b) => a.name.localeCompare(b.name, localeCode());
 
 // Categorías ordenadas por uso reciente y, a igualdad, alfabéticamente: las más usadas primero
 // para tocar menos al añadir un gasto.
@@ -143,11 +160,19 @@ async function openTxSheet(existing = null, draft = null, back = null) {
         paintChipGroup(body, 'cat', ch => +ch.dataset.cat === selectedCat, catChipStyle);
       };
 
+      // Lo tecleado hasta AHORA. Se captura antes de abrir la otra hoja (después, estos campos
+      // ya no existen en el DOM) para devolverlo intacto al volver.
+      const draftNow = () => ({
+        kind, amount: amountValue(), description: $('descField').value, date: $('dateField').value,
+        categoryId: selectedCat, accountId: selectedAccount
+      });
+
       const addCategory = () => {
-        const carry = { kind, amount: amountValue(), description: $('descField').value, date: $('dateField').value, accountId: selectedAccount };
+        const draft = draftNow();
         // Se pasa `existing`: si estabas editando, vuelves al MISMO gasto en edición con la nueva
         // categoría ya seleccionada; si era nuevo, sigue siendo nuevo.
-        openCategoryEditSheet(null, saved => openTxSheet(existing, { ...carry, categoryId: saved?.id }).catch(sheetFail));
+        openCategoryEditSheet(null, saved =>
+          openTxSheet(existing, { ...draft, categoryId: saved?.id ?? draft.categoryId }).catch(sheetFail));
       };
 
       // Revelado progresivo: las 6 más usadas + «⋯ N más» expande el resto. La seleccionada se
@@ -178,8 +203,10 @@ async function openTxSheet(existing = null, draft = null, back = null) {
 
       const addAccChip = $('addAccChip');
       if (addAccChip) addAccChip.addEventListener('click', () => {
-        const carry = { kind, amount: amountValue(), description: $('descField').value, date: $('dateField').value, categoryId: selectedCat };
-        openAccountSheet(saved => openTxSheet(null, { ...carry, accountId: saved?.id }).catch(sheetFail), { cashOnly: true });
+        const draft = draftNow();
+        openAccountSheet(saved =>
+          openTxSheet(existing, { ...draft, accountId: saved?.id ?? draft.accountId }).catch(sheetFail),
+          { cashOnly: true });
       });
 
       const paintKind = () => {
@@ -269,7 +296,7 @@ async function openCategoriesSheet() {
       body.innerHTML = `<div class="settings-group cat-manage">${sorted.map(c => `
         <button class="settings-row" data-cat="${c.id}">
           ${iconTile(c.icon, c.color)}
-          <span class="settings-label">${esc(catName(c.name))}</span>
+          <span class="settings-label">${esc(c.name)}</span>
           <span class="acc-chevron">›</span>
         </button>`).join('')}
         <button class="settings-row cat-add-row" id="addCat">
@@ -300,7 +327,7 @@ function openCategoryEditSheet(cat = null, onDone = null) {
         <div class="cat-editor">
           <div class="cat-icon-preview" id="catIconPreview">${cat ? cat.icon : ICON_FALLBACK}</div>
           <p class="tx-sub cat-hint">${t('icon_auto_hint')}</p>
-          <input id="catName" class="text-field" placeholder="${t('category_name_ph')}" maxlength="40" value="${cat ? esc(catName(cat.name)) : ''}">
+          <input id="catName" class="text-field" placeholder="${t('category_name_ph')}" maxlength="40" value="${cat ? esc(cat.name) : ''}">
         </div>
         ${isEdit ? `<button id="deleteCat" class="pill pill-danger centered">${t('delete_category')}</button>` : ''}`;
 
@@ -430,12 +457,7 @@ async function openBrokerSheet(accountId) {
         <p class="section-title">${t('positions')}</p>
         <ul class="sheet-list tx-list">${b.holdings.map((h, i) => `
           <li class="clickable" data-h="${i}" tabindex="0" role="button" title="${t('sell')}">
-            ${iconTile('📈')}
-            <span class="tx-main">
-              <span class="tx-title">${esc(h.symbol)}</span>
-              <div class="tx-sub">${nfShares(h.shares)} × ${eur(h.buyPrice)} · ${dMed(h.buyDate)}</div>
-            </span>
-            <span class="tx-amount">${eur(h.cost)}</span>
+            ${lotBody(h, 'tx-amount')}
             <span class="acc-chevron">›</span>
           </li>`).join('') || `<li class="tx-sub">${t('no_positions')}</li>`}
         </ul>
@@ -456,10 +478,7 @@ async function openBrokerSheet(accountId) {
 function openBuySheet(b, back) {
   openSheet({
     title: t('buy_title'),
-    canSave: () => {
-      const { sh, pr } = readSharesPrice();
-      return !!$('symField')?.value.trim() && sh > 0 && pr > 0 && round2(sh * pr) <= b.margin;
-    },
+    canSave: () => lotIsValid(b.margin),
     build(body) {
       body.innerHTML = `
         <div class="form-rows">
@@ -477,10 +496,7 @@ function openBuySheet(b, back) {
         const { sh, pr } = readSharesPrice();
         const cost = round2(sh * pr);
         $('buyCost').textContent = sh > 0 && pr > 0 ? eur(cost) : '—';
-        $('buyHint').textContent =
-          sh < 0 || pr < 0 ? t('must_be_positive')
-          : cost > b.margin ? t('insufficient_margin', eur(b.margin))
-          : '';
+        $('buyHint').textContent = lotHint(b.margin);
         refreshSaveState();
       };
       onInput(['symField', 'sharesField', 'priceField'], paint);
@@ -559,10 +575,7 @@ function openEditLotSheet(b, h, back) {
 
   openSheet({
     title: t('edit_lot_title', h.symbol),
-    canSave: () => {
-      const { sh, pr } = readSharesPrice();
-      return !!$('symField')?.value.trim() && sh > 0 && pr > 0 && round2(sh * pr) <= maxCost;
-    },
+    canSave: () => lotIsValid(maxCost),
     build(body) {
       body.innerHTML = `
         ${lotModeToggle('edit')}
@@ -587,10 +600,7 @@ function openEditLotSheet(b, h, back) {
           await refreshCurrent();
           toast(t('lot_deleted'));
           back?.();
-        } catch (e) {
-          refreshSaveState();
-          sheetError.textContent = e.message;
-        }
+        } catch (e) { showSheetError(e); }
       });
 
       bindDateRow('lotDateWrap', 'lotDateField');
@@ -601,10 +611,7 @@ function openEditLotSheet(b, h, back) {
         const ok = sh > 0 && pr > 0;
         $('lotCost').textContent = ok ? eur(cost) : '—';
         $('lotMargin').textContent = ok ? eur(round2(maxCost - cost)) : '—';
-        $('lotHint').textContent =
-          sh < 0 || pr < 0 ? t('must_be_positive')
-          : ok && cost > maxCost ? t('insufficient_margin', eur(maxCost))
-          : '';
+        $('lotHint').textContent = lotHint(maxCost);
         refreshSaveState();
       };
       onInput(['symField', 'sharesField', 'priceField'], paint);

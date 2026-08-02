@@ -53,11 +53,7 @@ document.querySelectorAll('.tab').forEach(tab =>
 document.querySelectorAll('.pill[data-days]').forEach(pill =>
   pill.addEventListener('click', () => {
     days = +pill.dataset.days;
-    document.querySelectorAll('.pill[data-days]').forEach(p => {
-      const active = p === pill;
-      p.classList.toggle('active', active);
-      p.setAttribute('aria-pressed', active ? 'true' : 'false');
-    });
+    paintActive(document, 'days', pill.dataset.days);
     if (me) loadGastos().catch(e => toast(e.message));
   }));
 

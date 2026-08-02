@@ -142,4 +142,3 @@ function categoryIcon(name) {
 
 // El nombre de la categoría se muestra tal cual lo escribió el usuario (la tabla de
 // traducción ES/EN se retiró con el selector de idioma; vive en el historial de git).
-const catName = name => name;

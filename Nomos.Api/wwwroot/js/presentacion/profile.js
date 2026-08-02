@@ -3,6 +3,34 @@
 
 
 // --- Perfil ---
+// Borrado de la cuenta: zona de peligro dentro de la hoja (aviso + contraseña ENMASCARADA),
+// sin confirm()/prompt() nativos. El servidor verifica la contraseña.
+function bindDeleteAccount() {
+  const dangerZone = $('dangerZone'), delPass = $('deleteUserPass'),
+    delErr = $('deleteUserErr'), delConfirm = $('confirmDeleteUser');
+
+  $('deleteUserBtn').addEventListener('click', () => {
+    const visible = !dangerZone.classList.toggle('hidden');
+    if (visible) delPass.focus();
+  });
+  delPass.addEventListener('input', () => {
+    delConfirm.disabled = !delPass.value;
+    delErr.textContent = '';
+  });
+  delConfirm.addEventListener('click', async () => {
+    delConfirm.disabled = true;
+    try {
+      await sendJSON('/api/auth/account/delete', 'POST', { password: delPass.value });
+      closeSheet();
+      showAuth();
+      toast(t('user_deleted'));
+    } catch (e) {
+      delErr.textContent = e.message; // contraseña incorrecta, etc.: motivo a la vista
+      delConfirm.disabled = false;
+    }
+  });
+}
+
 function openProfileSheet() {
   let newPhoto = null; // solo se envía si el usuario elige una nueva
 
@@ -124,30 +152,7 @@ function openProfileSheet() {
         showAuth();
       });
 
-      // Borrado de la cuenta: zona de peligro dentro de la hoja (aviso + contraseña
-      // ENMASCARADA), sin confirm()/prompt() nativos. El servidor verifica la contraseña.
-      const dangerZone = $('dangerZone'), delPass = $('deleteUserPass'),
-        delErr = $('deleteUserErr'), delConfirm = $('confirmDeleteUser');
-      $('deleteUserBtn').addEventListener('click', () => {
-        const shown = !dangerZone.classList.toggle('hidden');
-        if (shown) delPass.focus();
-      });
-      delPass.addEventListener('input', () => {
-        delConfirm.disabled = !delPass.value;
-        delErr.textContent = '';
-      });
-      delConfirm.addEventListener('click', async () => {
-        delConfirm.disabled = true;
-        try {
-          await sendJSON('/api/auth/account/delete', 'POST', { password: delPass.value });
-          closeSheet();
-          showAuth();
-          toast(t('user_deleted'));
-        } catch (e) {
-          delErr.textContent = e.message; // contraseña incorrecta, etc.: motivo a la vista
-          delConfirm.disabled = false;
-        }
-      });
+      bindDeleteAccount();
     },
     async onSave() {
       me = await sendJSON('/api/auth/profile', 'PUT', {
