@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Pluto.Api/Pluto.Api.csproj" />
+  <Project Path="Pluto.Application/Pluto.Application.csproj" />
+  <Project Path="Pluto.Domain/Pluto.Domain.csproj" />
+  <Project Path="Pluto.Infrastructure/Pluto.Infrastructure.csproj" />
+  <Project Path="Pluto.Tests/Pluto.Tests.csproj" />
+</Solution>

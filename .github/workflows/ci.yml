@@ -17,10 +17,10 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restore
-        run: dotnet restore Nomos.slnx
+        run: dotnet restore Pluto.slnx
 
       - name: Build
-        run: dotnet build Nomos.slnx --no-restore -c Release
+        run: dotnet build Pluto.slnx --no-restore -c Release
 
       - name: Test
-        run: dotnet test Nomos.Tests/Nomos.Tests.csproj --no-build -c Release
+        run: dotnet test Pluto.Tests/Pluto.Tests.csproj --no-build -c Release

@@ -1,9 +1,13 @@
 # Render Blueprint. On render.com: New → Blueprint → pick this repo → Apply.
 # Deploys with zero config (uses a local SQLite DB out of the box).
 # For a PERSISTENT database, add an env var in the Render dashboard:
-#   ConnectionStrings__Nomos = <your Supabase session-pooler connection string>
+#   ConnectionStrings__Pluto = <your Supabase session-pooler connection string>
+# La app tambien acepta la clave antigua ConnectionStrings__Nomos mientras dure la transicion.
 services:
   - type: web
+    # ⚠️ El nombre del servicio se queda en "nomos" A PROPOSITO: de el sale el dominio
+    # nomos-7wqy.onrender.com, y cambiarlo romperia la PWA ya instalada en los moviles, que
+    # apunta a ese origen. Se renombrara el dia que haya un dominio propio delante.
     name: nomos
     runtime: docker
     dockerfilePath: ./Dockerfile

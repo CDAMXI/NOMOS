@@ -1,7 +1,0 @@
-<Solution>
-  <Project Path="Nomos.Api/Nomos.Api.csproj" />
-  <Project Path="Nomos.Application/Nomos.Application.csproj" />
-  <Project Path="Nomos.Domain/Nomos.Domain.csproj" />
-  <Project Path="Nomos.Infrastructure/Nomos.Infrastructure.csproj" />
-  <Project Path="Nomos.Tests/Nomos.Tests.csproj" />
-</Solution>

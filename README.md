@@ -7,26 +7,26 @@ original mockups. Layered .NET architecture with a web front end served by the A
 Multi-user: cookie login, per-user data, editable profile with avatar, and a **Supabase
 (PostgreSQL)** database.
 
-> Technical/internal name: **nomos**. Project names, C# namespaces, the Supabase project and
+> Technical/internal name: **pluto**. Project names, C# namespaces, the Supabase project and
 > other infrastructure identifiers keep it (renaming them would break the deployment); the
 > product name everywhere users can see it is **PLUTO**.
 
 ## Architecture
 
 ```
-Nomos.Domain          Entities: User, Category, Expense, Income, Account, NetWorthSnapshot. No dependencies.
-Nomos.Application     DTOs, repository interfaces, PBKDF2 hashing, auto-icon picker, business services
+Pluto.Domain          Entities: User, Category, Expense, Income, Account, NetWorthSnapshot. No dependencies.
+Pluto.Application     DTOs, repository interfaces, PBKDF2 hashing, auto-icon picker, business services
                       (AuthService, CategoryService, ExpenseService, IncomeService, NetWorthService).
-Nomos.Infrastructure  EF Core + Npgsql (PostgreSQL): NomosDbContext, repositories, migrations, DbSeeder, DI.
-Nomos.Api             ASP.NET Core minimal API + cookie auth + static front end (wwwroot).
+Pluto.Infrastructure  EF Core + Npgsql (PostgreSQL): PlutoDbContext, repositories, migrations, DbSeeder, DI.
+Pluto.Api             ASP.NET Core minimal API + cookie auth + static front end (wwwroot).
 ```
 
 Dependency flow: `Api → Infrastructure → Application → Domain`.
 
 ## Database (Supabase / PostgreSQL)
 
-Hosted on Supabase project **`nomos`** (ref `pwcggulwqgpizlbaoory`, region eu-west-3).
-The schema is managed with **EF Core migrations** (`Nomos.Infrastructure/Migrations`); the app
+Hosted on Supabase project **`pluto`** (ref `pwcggulwqgpizlbaoory`, region eu-west-3).
+The schema is managed with **EF Core migrations** (`Pluto.Infrastructure/Migrations`); the app
 runs `Database.Migrate()` on startup and seeds a demo user on first run. Every row carries a
 `UserId`; all queries are scoped to the signed-in user. Row Level Security is enabled on all
 tables so the public Supabase Data API cannot read the data — only the backend, which connects
@@ -36,13 +36,13 @@ as the `postgres` pooler role (bypasses RLS).
 
 ### Connection string
 
-The app reads connection string `Nomos` from configuration. It lives in
-`Nomos.Api/appsettings.Development.json` (git-ignored — it holds the Supabase DB password):
+The app reads connection string `Pluto` from configuration. It lives in
+`Pluto.Api/appsettings.Development.json` (git-ignored — it holds the Supabase DB password):
 
 ```json
 {
   "ConnectionStrings": {
-    "Nomos": "Host=aws-0-eu-west-3.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.pwcggulwqgpizlbaoory;Password=<DB_PASSWORD>;SSL Mode=Require;Trust Server Certificate=true"
+    "Pluto": "Host=aws-0-eu-west-3.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.pwcggulwqgpizlbaoory;Password=<DB_PASSWORD>;SSL Mode=Require;Trust Server Certificate=true"
   }
 }
 ```
@@ -53,7 +53,7 @@ Project Settings → Database → *Reset database password*.
 ## Run
 
 ```
-dotnet run --project Nomos.Api --urls http://localhost:5210
+dotnet run --project Pluto.Api --urls http://localhost:5210
 ```
 
 Then open http://localhost:5210 and log in (or register a new account).
